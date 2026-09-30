@@ -560,7 +560,7 @@
 
         <!-- Painel de Estatísticas da Partida -->
         <div class="stats-dashboard">
-            <div class="stat-badge">⏱️ Tempo de Jogo: <strong id="game-timer-display" style="color: #38bdf8;">00:00</strong></div>
+            <div class="stat-badge">⏱️️ Tempo de Jogo: <strong id="game-timer-display" style="color: #38bdf8;">00:00</strong></div>
             <div class="stat-badge">🏁 Total de Casas: <strong id="total-tiles-display" style="color: #f59e0b;">70</strong></div>
         </div>
 
@@ -775,12 +775,38 @@
         let bonusTiles = [];
         let penaltyTiles = [];
 
-        // Variáveis de Rede Multiplayer
+        // Variáveis de Rede Multiplayer e Reconexão
         let peer = null;
         let connections = [];
         let hostConnection = null;
         let isHost = false;
         let myPlayerIndex = 0;
+
+        // =========================================================================
+        // CONFIRMAÇÃO DE SAÍDA DO JOGO (beforeunload)
+        // =========================================================================
+        window.addEventListener('beforeunload', (event) => {
+            const isGameActive = playerPositions.some(pos => pos > 1) && !playerFinished.every(f => f);
+            if (isGameActive) {
+                event.preventDefault();
+                event.returnValue = 'Tem certeza de que deseja sair? O seu progresso na partida será perdido.';
+                return event.returnValue;
+            }
+        });
+
+        // =========================================================================
+        // RECONEXÃO P2P ESTABILIZADA COM PERSISTÊNCIA DE POSIÇÃO
+        // =========================================================================
+        function getUniquePlayerId() {
+            let id = localStorage.getItem('MECANICA_PLAYER_ID');
+            if (!id) {
+                id = 'p_' + Math.random().toString(36).substring(2, 9);
+                localStorage.setItem('MECANICA_PLAYER_ID', id);
+            }
+            return id;
+        }
+
+        const myUniqueId = getUniquePlayerId();
 
         function generateSpecialTiles(numTiles) {
             bonusTiles = [
@@ -848,8 +874,6 @@
             return array;
         }
 
-        // --- MULTIPLAYER P2P (PEERJS) ---
-
         function updateMyName() {
             const name = document.getElementById('my-name-input').value.trim() || `Jogador ${myPlayerIndex + 1}`;
             playerNames[myPlayerIndex] = name;
@@ -874,31 +898,48 @@
                 myPlayerIndex = 0;
                 document.getElementById('connection-status').innerText = 'Servidor (Host)';
                 document.getElementById('room-code-display').innerText = `Código: ${roomCode}`;
+                
+                localStorage.setItem('MECANICA_LAST_ROOM', roomCode);
                 updateMyName();
                 alert(`Sala criada! Compartilhe o código: ${roomCode}`);
             });
 
             peer.on('connection', (conn) => {
-                if (connections.length >= 3) {
-                    conn.send({ type: 'ERROR', message: 'Sala cheia (máximo 4 jogadores).' });
-                    conn.close();
-                    return;
-                }
-
-                connections.push(conn);
-                const clientIndex = connections.length;
-
-                conn.on('open', () => {
-                    conn.send({ type: 'INIT_CLIENT', playerIndex: clientIndex });
-                    broadcastGameState();
-                });
-
                 conn.on('data', (data) => {
-                    handleHostData(data, clientIndex);
+                    if (data.type === 'IDENTIFY_CLIENT') {
+                        let assignedIndex = -1;
+
+                        // Verifica se o jogador já estava na sala antes de cair a rede
+                        for (let i = 0; i < connections.length; i++) {
+                            if (connections[i] && connections[i].playerId === data.playerId) {
+                                assignedIndex = i + 1;
+                                connections[i] = conn;
+                                conn.playerId = data.playerId;
+                                break;
+                            }
+                        }
+
+                        // Se for uma nova conexão
+                        if (assignedIndex === -1) {
+                            if (connections.length >= numPlayers - 1) {
+                                conn.send({ type: 'ERROR', message: 'Sala cheia.' });
+                                conn.close();
+                                return;
+                            }
+                            conn.playerId = data.playerId;
+                            connections.push(conn);
+                            assignedIndex = connections.length;
+                        }
+
+                        conn.send({ type: 'INIT_CLIENT', playerIndex: assignedIndex });
+                        broadcastGameState();
+                    } else {
+                        handleHostData(data, getConnIndex(conn));
+                    }
                 });
 
                 conn.on('close', () => {
-                    connections = connections.filter(c => c !== conn);
+                    console.warn(`A conexão de um jogador foi pausada temporariamente.`);
                 });
             });
 
@@ -907,8 +948,12 @@
             });
         }
 
-        function joinRoom() {
-            const code = document.getElementById('join-room-input').value.trim().toUpperCase();
+        function getConnIndex(conn) {
+            return connections.findIndex(c => c && c.playerId === conn.playerId) + 1;
+        }
+
+        function joinRoom(savedCode) {
+            const code = savedCode || document.getElementById('join-room-input').value.trim().toUpperCase();
             if (!code) {
                 alert('Digite um código de sala válido.');
                 return;
@@ -923,6 +968,9 @@
                     isHost = false;
                     document.getElementById('connection-status').innerText = 'Cliente Conectado';
                     document.getElementById('num-players').disabled = true;
+                    
+                    localStorage.setItem('MECANICA_LAST_ROOM', code);
+                    hostConnection.send({ type: 'IDENTIFY_CLIENT', playerId: myUniqueId });
                     updateMyName();
                 });
 
@@ -931,7 +979,11 @@
                 });
 
                 hostConnection.on('close', () => {
-                    alert('Conexão com o Host foi encerrada.');
+                    document.getElementById('connection-status').innerText = 'Tentando reconectar...';
+                    setTimeout(() => {
+                        const lastRoom = localStorage.getItem('MECANICA_LAST_ROOM');
+                        if (lastRoom) joinRoom(lastRoom);
+                    }, 3000);
                 });
             });
 
@@ -957,7 +1009,9 @@
                 gameSecondsElapsed
             };
 
-            connections.forEach(conn => conn.send(state));
+            connections.forEach(conn => {
+                if (conn && conn.open) conn.send(state);
+            });
             syncUI();
         }
 
@@ -1327,7 +1381,9 @@
             };
 
             if (currentGameMode === 'online' && isHost) {
-                connections.forEach(conn => conn.send({ type: 'SHOW_QUESTION', question: currentQuestion }));
+                connections.forEach(conn => {
+                    if (conn && conn.open) conn.send({ type: 'SHOW_QUESTION', question: currentQuestion });
+                });
             }
 
             renderQuestionModal(currentQuestion);
@@ -1361,7 +1417,6 @@
                 btn.disabled = false;
                 btn.style.pointerEvents = 'auto';
                 
-                // Bloqueia clique no multiplayer se não for a vez do cliente
                 if (currentGameMode === 'online' && currentPlayer !== myPlayerIndex) {
                     btn.disabled = true;
                     btn.style.pointerEvents = 'none';
@@ -1406,7 +1461,9 @@
             const msg = '❌ Tempo esgotado! O jogador permanece na mesma casa.';
             
             if (currentGameMode === 'online' && isHost) {
-                connections.forEach(conn => conn.send({ type: 'ANSWER_RESULT', isCorrect: false, msg: msg }));
+                connections.forEach(conn => {
+                    if (conn && conn.open) conn.send({ type: 'ANSWER_RESULT', isCorrect: false, msg: msg });
+                });
             }
 
             const feedback = document.getElementById('feedback-msg');
@@ -1461,7 +1518,7 @@
                         extraMsg = ` 🚀 CAIU EM CASA BÔNUS! Avançou +${BONUS_VALUE} casas!`;
                     } else if (penaltyTiles.includes(targetPos)) {
                         targetPos = Math.max(1, targetPos - PENALTY_VALUE);
-                        extraMsg = ` ⚠️️ CAIU EM CASA ÔNUS! Recuou -${PENALTY_VALUE} casas!`;
+                        extraMsg = ` ⚠ CAIU EM CASA ÔNUS! Recuou -${PENALTY_VALUE} casas!`;
                     }
                 }
 
@@ -1485,7 +1542,9 @@
             showExplanation();
 
             if (currentGameMode === 'online' && isHost) {
-                connections.forEach(conn => conn.send({ type: 'ANSWER_RESULT', isCorrect, msg }));
+                connections.forEach(conn => {
+                    if (conn && conn.open) conn.send({ type: 'ANSWER_RESULT', isCorrect, msg });
+                });
             }
 
             setTimeout(() => {
@@ -1505,7 +1564,9 @@
             clearInterval(timerInterval);
             document.getElementById('question-modal').style.display = 'none';
             if (currentGameMode === 'online' && isHost) {
-                connections.forEach(conn => conn.send({ type: 'CLOSE_QUESTION' }));
+                connections.forEach(conn => {
+                    if (conn && conn.open) conn.send({ type: 'CLOSE_QUESTION' });
+                });
             }
             advanceToNextActivePlayer();
         }
@@ -1514,7 +1575,9 @@
             clearInterval(gameClockInterval);
             clearInterval(timerInterval);
             if (currentGameMode === 'online' && isHost) {
-                connections.forEach(conn => conn.send({ type: 'SHOW_WIN' }));
+                connections.forEach(conn => {
+                    if (conn && conn.open) conn.send({ type: 'SHOW_WIN' });
+                });
             }
             showWinModalUI();
         }
