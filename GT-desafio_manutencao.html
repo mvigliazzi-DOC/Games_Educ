@@ -1,0 +1,1368 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jogo de Tabuleiro - Manutenção Mecânica Industrial</title>
+    <!-- PeerJS Library para Conexão P2P via WebRTC -->
+    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --card-bg: #1e293b;
+            --text-color: #f8fafc;
+            --accent-color: #38bdf8;
+            --p1-color: #ef4444; /* Vermelho */
+            --p2-color: #3b82f6; /* Azul */
+            --p3-color: #10b981; /* Verde */
+            --p4-color: #f59e0b; /* Amarelo */
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        header h1 {
+            color: var(--accent-color);
+            font-size: 2rem;
+            margin-bottom: 5px;
+        }
+
+        .network-bar {
+            background-color: #1e293b;
+            border: 2px solid var(--accent-color);
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            width: 100%;
+            max-width: 1100px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .net-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .net-input {
+            background-color: #0f172a;
+            border: 1px solid #334155;
+            color: #fff;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 0.9rem;
+        }
+
+        .controls-bar {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            background-color: var(--card-bg);
+            padding: 15px 25px;
+            border-radius: 8px;
+            border: 1px solid #334155;
+            align-items: center;
+            margin-bottom: 20px;
+            width: 100%;
+            max-width: 1100px;
+        }
+
+        .controls-row {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            flex-wrap: wrap;
+            justify-content: center;
+            width: 100%;
+        }
+
+        .players-inputs {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            justify-content: center;
+            width: 100%;
+            border-top: 1px solid #334155;
+            padding-top: 12px;
+        }
+
+        .player-input-group {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background: #0f172a;
+            padding: 4px 10px;
+            border-radius: 6px;
+            border: 1px solid #334155;
+        }
+
+        .player-color-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+
+        .dot-p1 { background-color: var(--p1-color); }
+        .dot-p2 { background-color: var(--p2-color); }
+        .dot-p3 { background-color: var(--p3-color); }
+        .dot-p4 { background-color: var(--p4-color); }
+
+        select, button {
+            background-color: #0f172a;
+            color: var(--accent-color);
+            border: 1px solid var(--accent-color);
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        button.btn-roll {
+            background-color: var(--accent-color);
+            color: #0f172a;
+            font-size: 1rem;
+            transition: background 0.2s;
+        }
+
+        button.btn-roll:hover:not(:disabled) {
+            background-color: #0284c7;
+            color: #fff;
+        }
+
+        button.btn-study {
+            background-color: #10b981;
+            color: #0f172a;
+            border-color: #10b981;
+        }
+
+        button.btn-study:hover {
+            background-color: #059669;
+            color: #fff;
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .dice-display {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #f59e0b;
+            min-width: 90px;
+            text-align: center;
+        }
+
+        .turn-display {
+            font-size: 1.1rem;
+            font-weight: bold;
+        }
+
+        .board-container {
+            display: grid;
+            grid-template-columns: repeat(10, 1fr);
+            gap: 6px;
+            width: 100%;
+            max-width: 1100px;
+            margin-bottom: 20px;
+            background-color: #334155;
+            padding: 10px;
+            border-radius: 10px;
+        }
+
+        .tile {
+            background-color: var(--card-bg);
+            border: 2px solid #475569;
+            border-radius: 6px;
+            height: 75px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            align-items: center;
+            padding: 4px;
+            position: relative;
+        }
+
+        .tile-number {
+            font-size: 0.7rem;
+            font-weight: bold;
+            color: #94a3b8;
+            align-self: flex-start;
+        }
+
+        .tile-tag {
+            font-size: 0.6rem;
+            font-weight: bold;
+            text-transform: uppercase;
+            text-align: center;
+        }
+
+        .tile-start { border-color: #10b981; background-color: rgba(16, 185, 129, 0.15); }
+        .tile-end { border-color: #f59e0b; background-color: rgba(245, 158, 11, 0.15); }
+        
+        .tile-bonus { 
+            border-color: #10b981; 
+            background-color: rgba(16, 185, 129, 0.25); 
+        }
+        .tile-bonus .tile-tag { color: #10b981; }
+
+        .tile-penalty { 
+            border-color: #ef4444; 
+            background-color: rgba(239, 68, 68, 0.25); 
+        }
+        .tile-penalty .tile-tag { color: #ef4444; }
+
+        .pawns-container {
+            display: flex;
+            gap: 3px;
+            flex-wrap: wrap;
+            justify-content: center;
+            align-items: center;
+            width: 100%;
+            height: 100%;
+        }
+
+        .pawn {
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            border: 1.5px solid #ffffff;
+            box-shadow: 0 0 4px rgba(0,0,0,0.6);
+            transition: all 0.3s ease;
+        }
+
+        .p1 { background-color: var(--p1-color); }
+        .p2 { background-color: var(--p2-color); }
+        .p3 { background-color: var(--p3-color); }
+        .p4 { background-color: var(--p4-color); }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+        }
+
+        .modal-content {
+            background-color: var(--card-bg);
+            padding: 25px;
+            border-radius: 12px;
+            max-width: 700px;
+            width: 90%;
+            border: 2px solid var(--accent-color);
+            position: relative;
+        }
+
+        .study-modal-content {
+            max-width: 900px;
+            max-height: 85vh;
+            overflow-y: auto;
+            text-align: left;
+            line-height: 1.6;
+            padding-right: 20px;
+        }
+
+        .study-modal-content h2 {
+            color: var(--accent-color);
+            border-bottom: 2px solid #334155;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+
+        .study-modal-content h3 {
+            color: #10b981;
+            margin-top: 20px;
+            margin-bottom: 10px;
+        }
+
+        .study-modal-content p, .study-modal-content ul {
+            margin-bottom: 12px;
+            font-size: 0.95rem;
+            color: #cbd5e1;
+        }
+
+        .study-modal-content ul {
+            padding-left: 20px;
+        }
+
+        .study-card {
+            background: #0f172a;
+            border: 1px solid #334155;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+
+        .btn-close-study {
+            position: sticky;
+            top: 0;
+            float: right;
+            background: #ef4444;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            border-bottom: 1px solid #334155;
+            padding-bottom: 10px;
+        }
+
+        .difficulty-badge {
+            font-size: 0.8rem;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-weight: bold;
+            text-transform: uppercase;
+            margin-left: 10px;
+        }
+
+        .diff-fácil { background-color: #10b981; color: #000; }
+        .diff-médio { background-color: #f59e0b; color: #000; }
+        .diff-difícil { background-color: #ef4444; color: #fff; }
+
+        .timer {
+            font-size: 1.3rem;
+            font-weight: bold;
+            color: #ef4444;
+            background-color: #0f172a;
+            padding: 4px 12px;
+            border-radius: 20px;
+            border: 1px solid #ef4444;
+        }
+
+        .question-text {
+            font-size: 1.05rem;
+            margin-bottom: 20px;
+            line-height: 1.4;
+        }
+
+        .options-container {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .option-btn {
+            background-color: #0f172a;
+            color: var(--text-color);
+            border: 1px solid #334155;
+            padding: 12px;
+            border-radius: 6px;
+            text-align: left;
+            font-size: 0.95rem;
+            transition: background 0.2s;
+            line-height: 1.3;
+        }
+
+        .option-btn:hover:not(:disabled) {
+            border-color: var(--accent-color);
+            background-color: #1e293b;
+        }
+
+        .explanation-box {
+            margin-top: 15px;
+            padding: 10px 15px;
+            background-color: #0f172a;
+            border-left: 4px solid var(--accent-color);
+            border-radius: 4px;
+            font-size: 0.9rem;
+            display: none;
+        }
+
+        .feedback-msg {
+            margin-top: 15px;
+            font-weight: bold;
+            font-size: 1.05rem;
+            text-align: center;
+        }
+
+        .win-modal-content {
+            text-align: center;
+        }
+
+        .win-modal-content h2 {
+            color: #10b981;
+            font-size: 2rem;
+            margin-bottom: 15px;
+        }
+
+        .leaderboard {
+            margin: 20px 0;
+            text-align: left;
+            background: #0f172a;
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #334155;
+        }
+
+        .leaderboard-item {
+            padding: 6px 0;
+            border-bottom: 1px solid #1e293b;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .status-badge {
+            font-size: 0.85rem;
+            padding: 4px 8px;
+            border-radius: 4px;
+            background-color: #334155;
+            color: #38bdf8;
+            font-weight: bold;
+        }
+
+        @media (max-width: 900px) {
+            .board-container { grid-template-columns: repeat(5, 1fr); }
+            .tile { height: 70px; }
+        }
+
+        @media (max-width: 500px) {
+            .board-container { grid-template-columns: repeat(4, 1fr); }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>Jogo de Tabuleiro: Manutenção Mecânica Industrial</h1>
+        <p id="game-mode-subtitle">Modo: Sala de Aula / Local (Sem Rede) • 1 a 4 Jogadores/Equipes</p>
+    </header>
+
+    <!-- Barra de Conexão e Seleção de Modo -->
+    <div class="network-bar">
+        <div class="net-group">
+            <label>Seu Nome / Equipe:</label>
+            <input type="text" id="my-name-input" class="net-input" value="Jogador 1" style="width: 120px;">
+            <span id="connection-status" class="status-badge">Modo Sala / Local</span>
+        </div>
+
+        <div class="net-group">
+            <label>Modo de Jogo:</label>
+            <select id="game-mode-select" onchange="changeGameMode()">
+                <option value="local">🏫 Sala de Aula / Local (Sem Rede)</option>
+                <option value="single">🎯 Treino Solo (vs Robô IA)</option>
+                <option value="online">🌐 Multiplayer Online (Rede P2P)</option>
+            </select>
+        </div>
+
+        <div class="net-group" id="online-controls" style="display: none;">
+            <button onclick="createRoom()">🌐 Criar Sala (Host)</button>
+            <span id="room-code-display" style="font-weight: bold; color: #f59e0b; font-size: 0.95rem;"></span>
+            <input type="text" id="join-room-input" class="net-input" placeholder="Código" style="width: 90px; text-transform: uppercase;">
+            <button onclick="joinRoom()">🔗 Entrar</button>
+        </div>
+    </div>
+
+    <div class="controls-bar">
+        <div class="controls-row">
+            <div class="control-group" id="player-count-group">
+                <label for="num-players">Qtd. Jogadores/Equipes:</label>
+                <select id="num-players" onchange="resetGame()">
+                    <option value="1">1 Jogador (Solo)</option>
+                    <option value="2">2 Jogadores/Equipes</option>
+                    <option value="3">3 Jogadores/Equipes</option>
+                    <option value="4" selected>4 Jogadores/Equipes</option>
+                </select>
+            </div>
+
+            <button class="btn-study" onclick="openStudyModal()">📖 Guia de Estudos</button>
+            <div class="turn-display" id="turn-display">Vez de: Jogador 1</div>
+            <button class="btn-roll" id="btn-roll" onclick="rollDice()">🎲 Rolar Dado</button>
+            <div class="dice-display" id="dice-display">Dado: -</div>
+        </div>
+
+        <div class="players-inputs" id="players-inputs-container"></div>
+    </div>
+
+    <div class="board-container" id="board"></div>
+
+    <!-- Modal do Material de Estudos -->
+    <div class="modal" id="study-modal">
+        <div class="modal-content study-modal-content">
+            <button class="btn-close-study" onclick="closeStudyModal()">✕ Fechar</button>
+            <h2>📚 Guia Prático de Estudos: Manutenção Mecânica Industrial</h2>
+            
+            <div class="study-card">
+                <h3>1. Controle Dimensional e Metrologia</h3>
+                <ul>
+                    <li><strong>Unidade Padrão:</strong> O milímetro (mm) é a unidade base para desenhos e medições industriais no Brasil[cite: 2].</li>
+                    <li><strong>Intercambialidade:</strong> Substituição de peças idênticas produzidas sob a mesma tolerância sem retoques[cite: 2].</li>
+                    <li><strong>Sistema ISO:</strong> MAIÚSCULAS para Furos; minúsculas para Eixos (ex: H7/g6)[cite: 2].</li>
+                    <li><strong>Instrumentos:</strong> Paquímetro (nônio)[cite: 2], Micrômetro (tambor/fuso)[cite: 2], Goniômetro (ângulos)[cite: 2], Súbito (ovalização)[cite: 2].</li>
+                </ul>
+            </div>
+
+            <div class="study-card">
+                <h3>2. Elementos de Máquinas e Vedações</h3>
+                <ul>
+                    <li><strong>Chavetas:</strong> Transmitem torque entre eixos e cubos (paralelas, Woodruff/meia-lua)[cite: 2].</li>
+                    <li><strong>Vedações:</strong> Retentores (dinâmica com mola)[cite: 2], Gaxetas (gotejamento para lubrificação)[cite: 2], O-rings.</li>
+                    <li><strong>Rolamentos:</strong> Esferas (altas rotações/cargas leves)[cite: 2], Rolos (cargas elevadas)[cite: 2]. Gaiolas mantém o espaçamento[cite: 2].</li>
+                </ul>
+            </div>
+
+            <div class="study-card">
+                <h3>3. Técnicas de Manutenção e Procedimentos</h3>
+                <ul>
+                    <li><strong>Tipos:</strong> Corretiva Não Planejada[cite: 2], Corretiva Planejada[cite: 2], Preventiva[cite: 2], Preditiva[cite: 2].</li>
+                    <li><strong>Ordem de Serviço (OS):</strong> Documento formal com diagnósticos e recursos[cite: 2].</li>
+                    <li><strong>Montagem:</strong> Torquímetro (aperto controlado)[cite: 2], Aquecimento por Indução (rolamentos até 110°C)[cite: 2].</li>
+                </ul>
+            </div>
+
+            <div class="study-card">
+                <h3>4. Lubrificação e Tribologia Industrial</h3>
+                <ul>
+                    <li><strong>Função:</strong> Reduzir atrito, desgaste e dissipar calor[cite: 2].</li>
+                    <li><strong>Graxas:</strong> Óleo base + Espessante (ex: lítio multipurpose) + Aditivos[cite: 2]. Ponto de Gota é o limite térmico[cite: 2].</li>
+                    <li><strong>Sintéticos (PAO):</strong> Estabilidade e vida útil em temperaturas extremas[cite: 2]. Rerrefino regenera óleos usados[cite: 2].</li>
+                </ul>
+            </div>
+
+            <div class="study-card">
+                <h3>5. Segurança, Preditiva e Análise de Falhas</h3>
+                <ul>
+                    <li><strong>Segurança (LOTO):</strong> Lockout/Tagout com cadeados e etiquetas individuais[cite: 2]. Ferramentas antifaiscantes[cite: 2].</li>
+                    <li><strong>Vibração:</strong> 1xRPM (desbalanceamento)[cite: 2], 2xRPM/Axial (desalinhamento)[cite: 2], BPFO (pista externa de rolamento)[cite: 2].</li>
+                    <li><strong>Análises:</strong> Cavitação em bombas[cite: 2], FMEA no RCM (Análise de Modos e Efeitos de Falha)[cite: 2].</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Perguntas -->
+    <div class="modal" id="question-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div>
+                    <span id="question-topic" style="color: var(--accent-color); font-weight: bold;">Tema</span>
+                    <span id="question-difficulty" class="difficulty-badge">Fácil</span>
+                </div>
+                <div class="timer" id="timer">⏱️ 45s</div>
+            </div>
+            <div class="question-text" id="question-text">Pergunta...</div>
+            <div class="options-container" id="options-container"></div>
+            <div class="explanation-box" id="explanation-box"></div>
+            <div class="feedback-msg" id="feedback-msg"></div>
+        </div>
+    </div>
+
+    <!-- Modal de Fim de Jogo -->
+    <div class="modal" id="win-modal">
+        <div class="modal-content win-modal-content">
+            <h2>🏆 Fim da Partida! 🏆</h2>
+            <p style="font-size: 1.1rem; margin-bottom: 10px;">O percurso foi concluído!</p>
+            <div class="leaderboard" id="leaderboard"></div>
+            <button class="btn-roll" onclick="resetGame()">Nova Partida</button>
+        </div>
+    </div>
+
+    <script>
+        const bonusTiles = [7, 17, 27, 37, 44];
+        const penaltyTiles = [12, 22, 32, 42, 48];
+
+        const BONUS_VALUE = 2;
+        const PENALTY_VALUE = 3;
+
+        // BANCO DE DADOS COM AS 80 QUESTÕES
+        const questionsDatabase = [
+            // --- NÍVEL 1: FÁCIL / BÁSICO (1 a 25) ---
+            { difficulty: "Fácil", topic: "Controle Dimensional", question: "Qual é a unidade base de medida linear utilizada no desenho técnico e nas oficinas de manutenção mecânica industrial no Brasil?", options: ["Centímetro (cm)", "Metro (m)", "Milímetro (mm)", "Polegada fracionária (in)"], answer: 2, explanation: "A mecânica industrial adota o milímetro (mm) como unidade base." },
+            { difficulty: "Fácil", topic: "Controle Dimensional", question: "O que significa o conceito de 'intercambialidade' no sistema de tolerâncias e ajustes mecânicos?", options: ["Capacidade de substituir uma peça por outra do mesmo lote sem ajustes adicionais.", "A necessidade de usinar cada peça na montagem.", "A calibração diária dos instrumentos.", "A troca obrigatória de rolamentos."], answer: 0, explanation: "Intercambialidade permite substituir peças idênticas sem necessidade de adaptação manual." },
+            { difficulty: "Fácil", topic: "Controle Dimensional", question: "No Sistema ISO, qual letra indica a posição do campo de tolerância de FUROS?", options: ["Minúsculas (a, b, c, h)", "Maiúsculas (A, B, C, H)", "Símbolos gregos", "Números romanos"], answer: 1, explanation: "Letras maiúsculas indicam tolerância de furos e minúsculas de eixos." },
+            { difficulty: "Fácil", topic: "Controle Dimensional", question: "Qual instrumento dimensional utiliza um nônio ou vernier para subdividir a escala fixa?", options: ["Relógio apalpador", "Paquímetro", "Micrômetro digital", "Súbito"], answer: 1, explanation: "O paquímetro possui nônio ou vernier acoplado à sua escala móvel." },
+            { difficulty: "Fácil", topic: "Controle Dimensional", question: "Qual a função do tambor graduado no micrômetro convencional?", options: ["Fixar a haste de encosto.", "Dar o aperto final.", "Permitir a leitura das frações da rosca (centésimos de mm).", "Medir ângulos."], answer: 2, explanation: "O tambor subdivide o avanço do fuso micrométrico em centésimos de milímetro (0,01 mm)." },
+            { difficulty: "Fácil", topic: "Controle Dimensional", question: "O goniômetro é destinado à verificação de:", options: ["Diâmetros internos.", "Rugosidade.", "Ângulos em peças e ferramentas.", "Excentricidade."], answer: 2, explanation: "Goniômetros medem e verificam ângulos em graus e minutos." },
+            { difficulty: "Fácil", topic: "Elementos de Máquinas", question: "Qual elemento transmite torque entre um eixo e o cubo de uma polia?", options: ["Arruela de pressão", "Anel Seeger", "Chaveta", "Retentor"], answer: 2, explanation: "A chaveta evita o escorregamento relativo e transmite momento de rotação." },
+            { difficulty: "Fácil", topic: "Elementos de Máquinas", question: "Parafusos com cabeça sextavada interna são acionados por qual chave?", options: ["Chave de fenda", "Chave Allen", "Chave inglesa", "Torquímetro"], answer: 1, explanation: "Parafusos sextavados internos (Allen) exigem chaves Allen L ou T." },
+            { difficulty: "Fácil", topic: "Elementos de Máquinas", question: "Elemento de vedação composto por lábio de borracha, carcaça metálica e mola helicoidal:", options: ["Junta hidráulica", "Gaxeta de teflon", "Retentor", "Anel O-ring"], answer: 2, explanation: "O retentor é um elemento de vedação dinâmica para eixos giratórios." },
+            { difficulty: "Fácil", topic: "Elementos de Máquinas", question: "Rolamentos de esferas são recomendados para:", options: ["Cargas elevadas e baixas rotações.", "Cargas radiais baixas/moderadas e altas rotações.", "Impactos severos.", "Cargas axiais puras."], answer: 1, explanation: "Rolamentos de esferas têm menor atrito, ideais para rotações elevadas com cargas leves." },
+            { difficulty: "Fácil", topic: "Elementos de Máquinas", question: "Qual a função da gaiola no rolamento?", options: ["Transmitir carga radial.", "Manter os elementos rolantes espaçados de forma equidistante.", "Vedar contra poeira.", "Fixar o anel externo."], answer: 1, explanation: "A gaiola separa e guia as esferas/rolos evitando atrito direto entre eles." },
+            { difficulty: "Fácil", topic: "Técnicas de Manutenção", question: "Intervenção emergencial realizada logo após a quebra do equipamento:", options: ["Manutenção preventiva", "Manutenção preditiva", "Manutenção corretiva não planejada", "Manutenção autônoma"], answer: 2, explanation: "Realizada imediatamente pós-falha sem agendamento prévio." },
+            { difficulty: "Fácil", topic: "Técnicas de Manutenção", question: "Substituição regular de óleos e filtros em intervalos fixos de tempo:", options: ["Manutenção preditiva", "Manutenção preventiva", "Manutenção corretiva", "Engenharia RCM"], answer: 1, explanation: "Ação realizada em intervalos pré-determinados para evitar falhas." },
+            { difficulty: "Fácil", topic: "Técnicas de Manutenção", question: "Manutenção que utiliza monitoramento contínuo (ex: vibrações) para definir a intervenção:", options: ["Manutenção preditiva", "Corretiva emergencial", "Preventiva por oportunidade", "Reativa"], answer: 0, explanation: "A preditiva monitora parâmetros físicos para atuar antes da quebra." },
+            { difficulty: "Fácil", topic: "Técnicas de Manutenção", question: "Documento formal que orienta e autoriza o serviço de manutenção:", options: ["Relatório de Ensaio", "Ordem de Serviço (OS)", "Manual", "Nota Fiscal"], answer: 1, explanation: "A OS controla e registra todas as etapas e recursos do reparo." },
+            { difficulty: "Fácil", topic: "Técnicas de Manutenção", question: "Jogo de ferramentas para aperto rápido de sextavados em locais profundos:", options: ["Alicates de pressão", "Chaves soquete com catraca", "Chaves de fenda", "Sacadores"], answer: 1, explanation: "Extensores e catracas em soquetes garantem agilidade e alcance." },
+            { difficulty: "Fácil", topic: "Segurança na Manutenção", question: "Procedimento de segurança com cadeados e etiquetas para impedir o religamento acidental:", options: ["RCM", "Bloqueio e Etiquetagem (LOTO)", "ISO 9001", "TPM"], answer: 1, explanation: "O LOTO (Lockout/Tagout) desenergiza e sinaliza a máquina com segurança." },
+            { difficulty: "Fácil", topic: "Técnicas de Manutenção", question: "Marcas com puncionador antes da desmontagem mecânica servem para:", options: ["Alterar tolerância.", "Identificar fabricante.", "Garantir o alinhamento e posição original na remontagem.", "Testar dureza."], answer: 2, explanation: "Evita inversão de lados e desbalanceamento na montagem." },
+            { difficulty: "Fácil", topic: "Lubrificação Industrial", question: "Função principal do lubrificante entre superfícies em movimento:", options: ["Aumentar o atrito.", "Interpor película para reduzir atrito, desgaste e dissipar calor.", "Dilatar peças.", "Soldar imperfeições."], answer: 1, explanation: "Separa as superfícies metálicas reduzindo a atrição e a temperatura." },
+            { difficulty: "Fácil", topic: "Lubrificação Industrial", question: "Composição química básica da graxa lubrificante:", options: ["Óleo base, espessante (sabão metálico) e aditivos.", "Água e detergente.", "Solvente e resina.", "Vaselina e grafite."], answer: 0, explanation: "O espessante retém o óleo base como uma esponja sólida." },
+            { difficulty: "Fácil", topic: "Lubrificação Industrial", question: "Graxas à base de sabão de Lítio caracterizam-se por:", options: ["Baixa resistência térmica.", "Multiaplicabilidade, resistência à água e estabilidade térmica.", "Serem puramente sólidas.", "Uso exclusivo em papelão."], answer: 1, explanation: "Graxas de lítio são multiuso (multipurpose) por sua alta versatilidade." },
+            { difficulty: "Fácil", topic: "Segurança na Manutenção", question: "Sigla para Equipamentos de Proteção Individual:", options: ["EPC", "EPI", "CIPA", "ABNT"], answer: 1, explanation: "EPIs são equipamentos individuais regulamentados pela NR-6." },
+            { difficulty: "Fácil", topic: "Segurança na Manutenção", question: "Hierarquia de segurança entre EPC e EPI:", options: ["Priorizar EPI.", "Priorizar EPC (proteção coletiva) antes dos EPIs.", "Eliminar EPCs.", "Usar EPIs apenas em auditoria."], answer: 1, explanation: "A legislação exige a implementação de proteção coletiva prioritariamente." },
+            { difficulty: "Fácil", topic: "Segurança na Manutenção", question: "Cintas para elevação de cargas mecânicas pesadas são feitas de:", options: ["Arame galvanizado.", "Fibras sintéticas de poliéster de alta tenacidade.", "Ferro fundido.", "Algodão trançado."], answer: 1, explanation: "O poliéster oferece alta resistência sem danificar superfícies usinadas." },
+            { difficulty: "Fácil", topic: "Segurança na Manutenção", question: "O que deve ser EVITADO ao utilizar ar comprimido?", options: ["Acionar ferramentas pneumáticas.", "Limpar poeira e cavacos do próprio corpo/roupa.", "Usar filtros de pressão.", "Armazenar segundo NR-13."], answer: 1, explanation: "O jato de ar pode introduzir cavacos nos olhos ou provocar embolias sob a pele." },
+
+            // --- NÍVEL 2: INTERMEDIÁRIO (26 a 55) ---
+            { difficulty: "Médio", topic: "Controle Dimensional", question: "Resolução do paquímetro com escala fixa em mm e nônio de 20 divisões:", options: ["0,1 mm", "0,05 mm", "0,02 mm", "0,001 mm"], answer: 1, explanation: "Resolução = 1 mm / 20 divisões = 0,05 mm." },
+            { difficulty: "Médio", topic: "Controle Dimensional", question: "Leitura no micrômetro (25-50mm): bainha indica 32,5 mm e tambor marca 18:", options: ["18,32 mm", "32,68 mm", "32,50 mm", "32,18 mm"], answer: 1, explanation: "32,50 mm + (18 x 0,01 mm) = 32,68 mm." },
+            { difficulty: "Médio", topic: "Controle Dimensional", question: "O 'Súbito' é utilizado em cilindros para verificar:", options: ["Rugosidade.", "Ovalização e conicidade interna.", "Alinhamento de polias.", "Passo de rosca."], answer: 1, explanation: "Instrumento por comparação para diagnóstico de cilindros internos." },
+            { difficulty: "Médio", topic: "Controle Dimensional", question: "O ajuste H7/g6 é classificado como:", options: ["Forçado com interferência.", "Deslizante com folga precisa.", "Prensado a quente.", "Rotativo de grande folga."], answer: 1, explanation: "Permite deslizamento suave manual com lubrificação." },
+            { difficulty: "Médio", topic: "Elementos de Máquinas", question: "Na rosca M12 x 1.75, o valor 1,75 representa:", options: ["Diâmetro do furo.", "Comprimento roscado.", "Passo da rosca em mm.", "Classe de tolerância."], answer: 2, explanation: "Na norma ISO, o valor após o 'x' indica a distância entre filetes (passo)." },
+            { difficulty: "Médio", topic: "Elementos de Máquinas", question: "Diferença entre rolamento ZZ (blindado) e 2RS (vedado):", options: ["ZZ usa chapa sem atrito; 2RS usa borracha com contato direto.", "2RS não tem graxa.", "ZZ é axial e 2RS é radial.", "São sinônimos."], answer: 0, explanation: "ZZ evita poeiras grossas sem atrito; 2RS veda com borracha contra umidade." },
+            { difficulty: "Médio", topic: "Técnicas de Manutenção", question: "A verificação de 'pé manco' (soft foot) no alinhamento serve para:", options: ["Tensionar correias.", "Corrigir a falta de apoio plano dos pés na base antes do aperto.", "Lubrificar rolamentos.", "Medir rotação."], answer: 1, explanation: "Evita deformações na carcaça que causam vibração e falha prematura." },
+            { difficulty: "Médio", topic: "Elementos de Máquinas", question: "Chaveta em formato de meia-lua aplicada em eixos cônicos:", options: ["Paralela", "Inclinada", "Woodruff (disco)", "Tangencial"], answer: 2, explanation: "A chaveta Woodruff ajusta-se automaticamente ao rasgo do eixo cônicos." },
+            { difficulty: "Médio", topic: "Elementos de Máquinas", question: "Arruelas Belleville (molas prato) servem para:", options: ["Vedar combustível.", "Manter pré-carga e absorver dilatações/choques.", "Substituir porcas.", "Isolar eletricidade."], answer: 1, explanation: "Atuam como molas rígidas mantendo a força de aperto constante." },
+            { difficulty: "Médio", topic: "Elementos de Máquinas", question: "Acoplamento elástico flexível difere do rígido pois:", options: ["Exige alinhamento 100% perfeito.", "Absorve pequenos desalinhamentos e amortecimentos de choque.", "Não transmite torque reverso.", "É puramente metálico."], answer: 1, explanation: "Elastômeros internos acomodam imperfeições dinâmicas e dilatações." },
+            { difficulty: "Médio", topic: "Técnicas de Manutenção", question: "Ferramenta para extrair rolamento montado com interferência no eixo:", options: ["Alicate de pressão", "Sacador aplicando força no anel interno", "Martelo de aço nas esferas", "Torquês"], answer: 1, explanation: "A força de extração deve ser aplicada diretamente sobre o anel prensado." },
+            { difficulty: "Médio", topic: "Técnicas de Manutenção", question: "Vantagem do aquecedor por indução na montagem de rolamentos:", options: ["Resfriar o anel.", "Aquecer uniforme e controladamente dilatando o anel interno sem martelar.", "Magnetizar peças.", "Queimar graxa."], answer: 1, explanation: "A dilatação térmica homogênea (até 110°C) permite o encaixe suave no eixo." },
+            { difficulty: "Médio", topic: "Técnicas de Manutenção", question: "O 'Registro de Sintoma de Falha' na OS serve para:", options: ["Pagar hora extra.", "Descrever a evidência observada pelo operador (ruído, vazamento).", "Listar CNPJs.", "Arquivar calibrações."], answer: 1, explanation: "Descreve o problema perceptível que motivou a chamada da manutenção." },
+            { difficulty: "Médio", topic: "Técnicas de Manutenção", question: "A 'Manutenção Corretiva Planejada' ocorre quando:", options: ["A máquina é reparada em 2 minutos.", "Detecta-se a falha e programa-se o reparo para data futura conveniente.", "Usa-se robôs de graxa.", "Trocam-se filtros anualmente."], answer: 1, explanation: "O defeito é identificado, mas a parada é agendada para aguardar peças/recursos." },
+            { difficulty: "Médio", topic: "Segurança na Manutenção", question: "Como várias equipes fazem o bloqueio elétrico LOTO no mesmo painel?", options: ["Usa-se só o cadeado do chefe.", "Usa-se garra de bloqueio múltiplo com cadeados/etiquetas individuais.", "Amarra-se fita zebrada.", "Deixa-se a chave com o operador."], answer: 1, explanation: "A garra multifuros exige a liberação individual de cada técnico para religar." },
+            { difficulty: "Médio", topic: "Técnicas de Manutenção", question: "Sequência correta de aperto para flanges circulares de tubulação:", options: ["Sequência circular (1,2,3,4...)", "Aperto cruzado em estrela progressivo", "Aperto total do primeiro parafuso", "Aperto aleatório"], answer: 1, explanation: "O aperto cruzado distribui a pressão uniformemente sobre a junta de vedação." },
+            { difficulty: "Médio", topic: "Lubrificação Industrial", question: "Vantagem do óleo sintético (PAO) sobre o óleo mineral:", options: ["Oxida mais rápido.", "Maior estabilidade térmica, resistência à oxidação e vida útil superior.", "É feito de água e sabão.", "Não aceita aditivos."], answer: 1, explanation: "Moléculas homogêneas garantem alto desempenho sob condições extremas." },
+            { difficulty: "Médio", topic: "Lubrificação Industrial", question: "O Ponto de Gota de uma graxa é:", options: ["A temperatura de congelamento.", "A temperatura em que o espessante perde o óleo e a graxa se liquefaz.", "O número de gotas aplicadas.", "Contaminação por água."], answer: 1, explanation: "Mede o limite superior de temperatura operacional da graxa." },
+            { difficulty: "Médio", topic: "Lubrificação Industrial", question: "O processo de 'Rerrefino' do óleo usado (OLUC) consiste em:", options: ["Queimar óleo em caldeiras.", "Processo industrial para remover contaminantes e gerar óleo básico limpo.", "Misturar com diesel.", "Aterro sanitário."], answer: 1, explanation: "Regeneração sustentável do óleo lubrificante transformando-o em matéria-prima." },
+            { difficulty: "Médio", topic: "Elementos de Máquinas", question: "Cuidado essencial no ajuste do prensa-gaxeta em bombas de água:", options: ["Apertar até bloquear vazamentos totalmente.", "Deixar um gotejamento mínimo controlado para lubrificação/resfriamento.", "Usar ácido sulfúrico.", "Usar gaxeta de madeira."], answer: 1, explanation: "O gotejamento impede o superaquecimento do engaxetamento e do eixo." },
+            { difficulty: "Médio", topic: "Controle Dimensional", question: "Relógio comparador centesimal: ponteiro menor em 2 mm e maior no 45. Medida:", options: ["0,45 mm", "2,45 mm", "24,5 mm", "2,045 mm"], answer: 1, explanation: "2 mm inteiros + 0,45 mm centesimais = 2,45 mm." },
+            { difficulty: "Médio", topic: "Técnicas de Manutenção", question: "O torquímetro (chave dinamométrica) é utilizado para:", options: ["Medir rotação.", "Aplicar valor exato e controlado de torque no aperto.", "Extrair parafusos.", "Medir a cabeça da porca."], answer: 1, explanation: "Garante a tensão exata no parafuso sem deformar a rosca." },
+            { difficulty: "Médio", topic: "Elementos de Máquinas", question: "Engrenagem indicada para altas velocidades com baixo ruído em eixos paralelos:", options: ["Dentes retos", "Cilíndrica de dentes helicoidais", "Cônica reta", "Sem-fim e coroa"], answer: 1, explanation: "Dentes helicoidais engrenam gradualmente, reduzindo ruídos e impactos." },
+            { difficulty: "Médio", topic: "Segurança na Manutenção", question: "Prática considerada INSEGURA no uso de ferramentas manuais:", options: ["Usar martelos com cabo de madeira trincado ou solto.", "Usar óculos de proteção.", "Manter cabos limpos de graxa.", "Usar chave do tamanho exato."], answer: 0, explanation: "Ferramentas trincadas podem desprender a cabeça metálica e causar ferimentos graves." },
+            { difficulty: "Médio", topic: "Segurança na Manutenção", question: "A etiqueta presa ao cadeado no bloqueio LOTO DEVE conter:", options: ["Preço das ferramentas.", "Nome do responsável, data, hora, departamento e motivo.", "Esquema do inversor.", "Logo do fabricante."], answer: 1, explanation: "Identifica o responsável direto para prevenir liberação não autorizada." },
+            { difficulty: "Médio", topic: "Elementos de Máquinas", question: "Mancal de deslizamento difere do mancal de rolamento pois:", options: ["Deslizamento é por atrito de escorregamento; rolamento usa elementos rolantes.", "Deslizamento aceita apenas carga axial.", "Deslizamento não usa óleo.", "Rolamento é de náilon."], answer: 0, explanation: "Rolamentos substituem o escorregamento por elementos rolantes, reduzindo o atrito." },
+            { difficulty: "Médio", topic: "Controle Dimensional", question: "Relógio apalpador difere do comparador convencional por ter:", options: ["Nônio de 50 divisões.", "Ponta de contato articulada de alavanca para locais difíceis.", "Curso de 500 mm.", "Display microprocessado."], answer: 1, explanation: "Ideal para centragem e superfícies pequenas com haste articulada." },
+            { difficulty: "Médio", topic: "Controle Dimensional", question: "A calibração periódica dos instrumentos garante:", options: ["Garantia eterna.", "Rastreabilidade metrológica e confiabilidade das medições.", "Evitar desgastes físicos.", "Eliminar o uso de vernier."], answer: 1, explanation: "Compara as leituras com padrões oficiais (RBC) identificando erros." },
+            { difficulty: "Médio", topic: "Técnicas de Manutenção", question: "Função principal dos filtros de óleo em sistemas hidráulicos:", options: ["Resfriar óleo.", "Aumentar pressão das tubulações.", "Reter partículas sólidas abrasivas para proteger bombas e válvulas.", "Aumentar densidade."], answer: 2, explanation: "Previne desgastes premudaturos causados por partículas contaminantes." },
+            { difficulty: "Médio", topic: "Lubrificação Industrial", question: "Cuidado principal na lubrificação por Banho de Óleo em redutores:", options: ["Encher o reservatório até a tampa.", "Manter o nível estritamente dentro da faixa do visor.", "Trocar o óleo diariamente.", "Usar graxa líquida."], answer: 1, explanation: "Excesso gera espuma e aquecimento por atrito fluido; falta gera desgate." },
+
+            // --- NÍVEL 3: AVANÇADO (56 a 80) ---
+            { difficulty: "Difícil", topic: "Controle Dimensional", question: "Eixo Ø 40 mm g6 (es = -9 µm, ei = -25 µm). Diâmetros máximo e mínimo:", options: ["40,009 mm e 40,025 mm", "39,991 mm e 39,975 mm", "40,000 mm e 39,984 mm", "39,900 mm e 39,750 mm"], answer: 1, explanation: "Dmáx = 40,000 - 0,009 = 39,991 mm. Dmín = 40,000 - 0,025 = 39,975 mm." },
+            { difficulty: "Difícil", topic: "Controle Dimensional", question: "Furo Ø 50 H7 (+25/0 µm) e Eixo Ø 50 p6 (+42/+26 µm). O ajuste resultante é:", options: ["Ajuste com folga garantida.", "Ajuste incerto de transição.", "Ajuste com interferência garantida (prensado).", "Ajuste deslizante."], answer: 2, explanation: "Mínimo do eixo (50,026 mm) é maior que máximo do furo (50,025 mm)." },
+            { difficulty: "Difícil", topic: "Metrologia & Diagnóstico", question: "Excentricidade no torno: agulha oscila de -0,12 mm a +0,18 mm. TIR e Excentricidade:", options: ["TIR 0,06 mm; Excentricidade 0,03 mm", "TIR 0,30 mm; Excentricidade 0,15 mm", "TIR 0,18 mm; Excentricidade 0,09 mm", "TIR 0,12 mm; Excentricidade 0,06 mm"], answer: 1, explanation: "TIR = +0,18 - (-0,12) = 0,30 mm. Excentricidade = TIR / 2 = 0,15 mm." },
+            { difficulty: "Difícil", topic: "Análise de Vibração", question: "Teste a 1780 RPM mostra pico elevado em 1xRPM radial. Causa mais provável:", options: ["Falha de rolamento (BPFO)", "Desbalanceamento de massa no rotor", "Desalinhamento angular", "Cavitação"], answer: 1, explanation: "Desbalanceamento gera força centrífuga na frequência fundamental (1xRPM)." },
+            { difficulty: "Difícil", topic: "Análise de Vibração", question: "Vibração com picos em 2xRPM e 3xRPM acompanhada de alta vibração AXIAL indica:", options: ["Desalinhamento entre eixos", "Correia frouxa", "Rotor desbalanceado", "Sucção excessiva"], answer: 0, explanation: "Desalinhamentos geram esforços axiais e harmônicos característicos em 2xRPM." },
+            { difficulty: "Difícil", topic: "Engenharia de Manutenção", question: "Quando se justifica o investimento em Manutenção Preditiva em uma fábrica?", options: ["Equipamento reserva sem impacto.", "Ativos gargalos 24/7 onde a quebra causa grandes prejuízos e riscos.", "Ferramentas manuais.", "Equipamentos sucateados."], answer: 1, explanation: "Alto custo de instrumentos preditivos é amortizado em equipamentos críticos." },
+            { difficulty: "Difícil", topic: "Análise de Falhas", topic: "Causa primária de descascamento (spalling) na pista externa de rolamentos:", options: ["Passagem de corrente elétrica.", "Fadiga de contato por rolamento (L10) após ciclos de carga.", "Vazamento de graxa.", "Folga no paquímetro."], answer: 1, explanation: "Spalling é o modo clássico de falha por fadiga superficial por ciclagem de carga." },
+            { difficulty: "Difícil", topic: "Análise de Óleo", question: "Óleo com partículas de ferro altas (PQ Index) e QUEDA na viscosidade a 40°C:", options: ["Óleo perfeito.", "Contaminação por combustível/solvente e desgaste abrasivo severo.", "Filtro invertido.", "Graxa no reservatório."], answer: 1, explanation: "Queda da viscosidade rompe a película gerando desgaste metal-metal." },
+            { difficulty: "Difícil", topic: "Metrologia de Precisão", question: "Micrômetro (fuso 0,5mm, tambor 50div) acrescido de vernier de 10 divisões. Nova resolução:", options: ["0,005 mm", "0,001 mm (1 micra)", "0,0001 mm", "0,05 mm"], answer: 1, explanation: "Menor divisão do tambor (0,01 mm) / 10 divisões do vernier = 0,001 mm." },
+            { difficulty: "Difícil", topic: "Elementos de Máquinas", question: "Montar engrenagens de dentes retos com distância entre centros MENOR que a de projeto gera:", options: ["Aumento de backlash.", "Interferência entre dentes, falta de folga, travamento e quebra.", "Inversão de rotação.", "Redução da taxa."], answer: 1, explanation: "Elimina a folga (backlash) necessária para expansão térmica provocando travamento." },
+            { difficulty: "Difícil", topic: "Lubrificantes Especiais", question: "Graxa recomendada para rolamentos acima de 160°C em ambiente químico agressivo:", options: ["Sabão de cálcio com mineral", "Sintética de Perfluorpoliéter (PFPE) com PTFE", "Sabão de sódio", "Óleo de mamona"], answer: 1, explanation: "PFPE/PTFE suporta quimicamente e termicamente temperaturas contínuas >200°C." },
+            { difficulty: "Difícil", topic: "Mecânica dos Fluidos", question: "Erosão (pitting) no rotor de bomba centrífuga com ruído de 'cascalho':", options: ["Desalinhamento", "Cavitação (colapso de bolhas de vapor)", "Corrosão galvânica", "Oxidação da graxa"], answer: 1, explanation: "Bolhas de vapor colapsam gerando micro-jatos de altíssima pressão que erodem o metal." },
+            { difficulty: "Difícil", topic: "Alinhamento de Máquinas", question: "Método dos Relógios Comparadores Inversos baseia-se em:", options: ["Medir diâmetro interno.", "Leituras radiais simultâneas nos dois cubos girando os eixos juntos.", "Medir temperatura.", "Usar paquímetro."], answer: 1, explanation: "Mede o batimento radial nos dois flanges simultaneamente calculando o desalinhamento." },
+            { difficulty: "Difícil", topic: "Ensaios Não Destrutivos", question: "Ensaio por Líquido Penetrante (LP) em solda destina-se a detectar:", options: ["Dureza interna.", "Descontinuidades superficiais abertas (trincas, porosidades).", "Composição química.", "Tensão elétrica."], answer: 1, explanation: "O líquido penetra por capilaridade revelando defeitos abertos na superfície." },
+            { difficulty: "Difícil", topic: "Segurança em Áreas Ex", question: "Por que se proíbe ferramentas de aço carbono comum em Áreas Classificadas Ex?", options: ["Descalibram torquímetros.", "Podem gerar faíscas mecânicas por impacto; exige-se ligas antifaiscantes (Cu-Be / Al-Bronze).", "Aço evapora.", "Atraem UV."], answer: 1, explanation: "Ligas de Cobre-Berílio evitam ignição de atmosferas inflamáveis por fricção." },
+            { difficulty: "Difícil", topic: "Tribologia", question: "Efeito Stick-Slip em barramentos de máquinas-ferramenta é:", options: ["Congelamento do óleo.", "Movimento intermitente por diferença entre atrito estático e dinâmico.", "Fratura da ferramenta.", "Deslizamento do acoplamento."], answer: 1, explanation: "Evita-se com óleos de barramento com aditivos que igualam atrito estático e dinâmico." },
+            { difficulty: "Difícil", topic: "Metrologia & Cuidados", question: "Apertar o tambor do micrômetro diretamente com os dedos (sem catraca) causa:", options: ["Aumento da resolução.", "Deformação do arco do micrômetro e erro de medição para MENOS.", "Quebra do fuso.", "Travamento do nônio."], answer: 1, explanation: "A força excessiva deforma o arco elaticamente, falseando a leitura da peça." },
+            { difficulty: "Difícil", topic: "Segurança & Normas", question: "Norma Regulamentadora que disciplina segurança em vasos de pressão e caldeiras:", options: ["NR-6", "NR-10", "NR-13", "NR-35"], answer: 2, explanation: "A NR-13 estabelece requisitos legais de inspeção e integridade estrutural." },
+            { difficulty: "Difícil", topic: "Análise Vibracional em Rolamentos", question: "A frequência de falha da pista externa em rolamentos é denominada:", options: ["1xRPM", "BPFO", "FTF", "BPFI"], answer: 1, explanation: "BPFO (Ball Pass Frequency Outer) representa a frequência de impacto na pista externa." },
+            { difficulty: "Difícil", topic: "Lubrificação de Motores", question: "Motor elétrico apresenta superaquecimento nos rolamentos pós-relubrificação. Causa:", options: ["Falta de graxa.", "Superlubrificação (excesso de graxa) causando atrito por cisalhamento.", "Chave errada.", "Fases invertidas."], answer: 1, explanation: "Excesso de graxa obriga o rolamento a 'chfofar' o produto, gerando calor excessivo." },
+            { difficulty: "Difícil", topic: "Elementos de Transmissão", question: "Correia em V sub-tensionada (frouxa) provocará:", options: ["Quebra do eixo.", "Patinação (escorregamento), superaquecimento e perda de rotação.", "Ganho de eficiência.", "Alinhamento automático."], answer: 1, explanation: "Fricção dinâmica por escorregamento gera calor e desgaste abrasivo nas polias." },
+            { difficulty: "Difícil", topic: "Engenharia de Confiabilidade", question: "No RCM, a sigla FMEA significa:", options: ["Failure Mode and Effects Analysis", "Lockout Tagout", "CIPA", "HAZOP"], answer: 0, explanation: "Análise estruturada para mapear modos de falha, causas e efeitos no processo." },
+            { difficulty: "Difícil", topic: "Montagem Mecânica", question: "Cuidado principal na montagem de rolamentos por dilatação térmica:", options: ["Controlar o aquecimento (máx. 110°C a 120°C) para não percar a têmpera do aço.", "Usar maçarico direto.", "Prensar as gaiolas.", "Não há cuidados."], answer: 0, explanation: "Temperaturas acima de 120°C alteram a estrutura metalúrgica de dureza do aço." },
+            { difficulty: "Difícil", topic: "Metrologia Angular", question: "Resolução do goniômetro cujo nônio divide 1° em 12 partes:", options: ["10'", "5' (cinco minutos de arco)", "1'", "0,5°"], answer: 1, explanation: "1° = 60'. Dividindo 60' por 12 partes = 5' de resolução." },
+            { difficulty: "Difícil", topic: "Segurança & Procedimentos", question: "Antes de desativar os bloqueios LOTO e religar a máquina deve-se:", options: ["Ligar em rotação máxima com pessoas na área.", "Recolher ferramentas, checar peças soltas, recolocar proteções NR-12 e realizar startup.", "Descartar a OS.", "Pintar a carcaça."], answer: 1, explanation: "Reorganização e recolocação das proteções físicas evitam acidentes no arranque." }
+        ];
+
+        // Estado do Jogo
+        let totalTiles = 50;
+        let numPlayers = 4;
+        let playerNames = ["Jogador 1", "Jogador 2", "Jogador 3", "Jogador 4"];
+        let currentPlayer = 0;
+        let playerPositions = [1, 1, 1, 1];
+        let playerFinished = [false, false, false, false];
+        let finishRank = [];
+        let currentDiceRoll = 0;
+        let timerInterval = null;
+        let currentQuestion = null;
+
+        // Modos de Jogo: 'local' (Sala de Aula sem rede), 'single' (Treino Solo vs IA), 'online' (PeerJS P2P)
+        let currentGameMode = 'local';
+
+        // Variáveis de Rede Multiplayer
+        let peer = null;
+        let connections = [];
+        let hostConnection = null;
+        let isHost = false;
+        let myPlayerIndex = 0;
+
+        function changeGameMode() {
+            currentGameMode = document.getElementById('game-mode-select').value;
+            const onlineCtrl = document.getElementById('online-controls');
+            const subtitle = document.getElementById('game-mode-subtitle');
+            const playerCountGroup = document.getElementById('player-count-group');
+
+            if (currentGameMode === 'local') {
+                onlineCtrl.style.display = 'none';
+                playerCountGroup.style.display = 'flex';
+                subtitle.innerText = 'Modo: Sala de Aula / Local (Sem Rede) • 1 a 4 Jogadores/Equipes';
+                document.getElementById('connection-status').innerText = 'Modo Sala / Local';
+            } else if (currentGameMode === 'single') {
+                onlineCtrl.style.display = 'none';
+                playerCountGroup.style.display = 'none';
+                document.getElementById('num-players').value = '2';
+                playerNames[0] = document.getElementById('my-name-input').value || "Você";
+                playerNames[1] = "🤖 Robô IA (Mecânico)";
+                subtitle.innerText = 'Modo: Treino Solo • Você vs Robô IA';
+                document.getElementById('connection-status').innerText = 'Modo Treino Solo';
+            } else if (currentGameMode === 'online') {
+                onlineCtrl.style.display = 'flex';
+                playerCountGroup.style.display = 'flex';
+                subtitle.innerText = 'Modo: Multiplayer Online via Rede (Peer-to-Peer)';
+                document.getElementById('connection-status').innerText = 'Desconectado';
+            }
+
+            resetGame();
+        }
+
+        function shuffleArray(array) {
+            let currentIndex = array.length, randomIndex;
+            while (currentIndex != 0) {
+                randomIndex = Math.floor(Math.random() * currentIndex);
+                currentIndex--;
+                [array[currentIndex], array[randomIndex]] = [array[randomIndex], array[currentIndex]];
+            }
+            return array;
+        }
+
+        // --- MULTIPLAYER P2P (PEERJS) ---
+
+        function updateMyName() {
+            const name = document.getElementById('my-name-input').value.trim() || `Jogador ${myPlayerIndex + 1}`;
+            playerNames[myPlayerIndex] = name;
+            renderPlayerInputs();
+            if (currentGameMode === 'online') {
+                if (isHost) {
+                    broadcastGameState();
+                } else if (hostConnection) {
+                    hostConnection.send({ type: 'UPDATE_NAME', index: myPlayerIndex, name: name });
+                }
+            }
+        }
+
+        document.getElementById('my-name-input').addEventListener('change', updateMyName);
+
+        function createRoom() {
+            const roomCode = Math.random().toString(36).substring(2, 7).toUpperCase();
+            peer = new Peer(`MECANICA-${roomCode}`);
+
+            peer.on('open', (id) => {
+                isHost = true;
+                myPlayerIndex = 0;
+                document.getElementById('connection-status').innerText = 'Servidor (Host)';
+                document.getElementById('room-code-display').innerText = `Código: ${roomCode}`;
+                updateMyName();
+                alert(`Sala criada! Compartilhe o código: ${roomCode}`);
+            });
+
+            peer.on('connection', (conn) => {
+                if (connections.length >= 3) {
+                    conn.send({ type: 'ERROR', message: 'Sala cheia (máximo 4 jogadores).' });
+                    conn.close();
+                    return;
+                }
+
+                connections.push(conn);
+                const clientIndex = connections.length;
+
+                conn.on('open', () => {
+                    conn.send({ type: 'INIT_CLIENT', playerIndex: clientIndex });
+                    broadcastGameState();
+                });
+
+                conn.on('data', (data) => {
+                    handleHostData(data, clientIndex);
+                });
+
+                conn.on('close', () => {
+                    connections = connections.filter(c => c !== conn);
+                });
+            });
+
+            peer.on('error', (err) => {
+                alert('Erro na conexão da rede: ' + err.type);
+            });
+        }
+
+        function joinRoom() {
+            const code = document.getElementById('join-room-input').value.trim().toUpperCase();
+            if (!code) {
+                alert('Digite um código de sala válido.');
+                return;
+            }
+
+            peer = new Peer();
+
+            peer.on('open', () => {
+                hostConnection = peer.connect(`MECANICA-${code}`);
+
+                hostConnection.on('open', () => {
+                    isHost = false;
+                    document.getElementById('connection-status').innerText = 'Cliente Conectado';
+                    document.getElementById('num-players').disabled = true;
+                    updateMyName();
+                });
+
+                hostConnection.on('data', (data) => {
+                    handleClientData(data);
+                });
+
+                hostConnection.on('close', () => {
+                    alert('Conexão com o Host foi encerrada.');
+                });
+            });
+
+            peer.on('error', (err) => {
+                alert('Não foi possível conectar à sala. Verifique o código.');
+            });
+        }
+
+        function broadcastGameState() {
+            if (!isHost || currentGameMode !== 'online') return;
+            const state = {
+                type: 'STATE_UPDATE',
+                numPlayers,
+                playerNames,
+                currentPlayer,
+                playerPositions,
+                playerFinished,
+                finishRank,
+                currentDiceRoll
+            };
+
+            connections.forEach(conn => conn.send(state));
+            syncUI();
+        }
+
+        function handleHostData(data, clientIndex) {
+            if (data.type === 'UPDATE_NAME') {
+                playerNames[data.index] = data.name;
+                broadcastGameState();
+            } else if (data.type === 'ROLL_DICE' && currentPlayer === clientIndex) {
+                rollDice();
+            } else if (data.type === 'ANSWER_QUESTION' && currentPlayer === clientIndex) {
+                evaluateAnswer(data.selectedIdx);
+            }
+        }
+
+        function handleClientData(data) {
+            if (data.type === 'INIT_CLIENT') {
+                myPlayerIndex = data.playerIndex;
+                updateMyName();
+            } else if (data.type === 'STATE_UPDATE') {
+                numPlayers = data.numPlayers;
+                playerNames = data.playerNames;
+                currentPlayer = data.currentPlayer;
+                playerPositions = data.playerPositions;
+                playerFinished = data.playerFinished;
+                finishRank = data.finishRank;
+                currentDiceRoll = data.currentDiceRoll;
+                syncUI();
+            } else if (data.type === 'SHOW_QUESTION') {
+                currentQuestion = data.question;
+                renderQuestionModal(data.question);
+            } else if (data.type === 'ANSWER_RESULT') {
+                showExplanation();
+                disableOptions();
+                const feedback = document.getElementById('feedback-msg');
+                feedback.innerText = data.msg;
+                feedback.style.color = data.isCorrect ? '#10b981' : '#ef4444';
+            } else if (data.type === 'CLOSE_QUESTION') {
+                document.getElementById('question-modal').style.display = 'none';
+            } else if (data.type === 'SHOW_WIN') {
+                showWinModalUI();
+            }
+        }
+
+        function syncUI() {
+            document.getElementById('num-players').value = numPlayers;
+            document.getElementById('dice-display').innerText = `Dado: ${currentDiceRoll ? '🎲 ' + currentDiceRoll : '-'}`;
+            updateTurnDisplay();
+            renderPlayerInputs();
+            updatePawns();
+
+            const btnRoll = document.getElementById('btn-roll');
+            if (currentGameMode === 'online') {
+                btnRoll.disabled = (currentPlayer !== myPlayerIndex || playerFinished[myPlayerIndex]);
+            } else {
+                btnRoll.disabled = playerFinished[currentPlayer];
+            }
+        }
+
+        // --- LÓGICA DO JOGO ---
+
+        function openStudyModal() {
+            document.getElementById('study-modal').style.display = 'flex';
+        }
+
+        function closeStudyModal() {
+            document.getElementById('study-modal').style.display = 'none';
+        }
+
+        function renderPlayerInputs() {
+            const container = document.getElementById('players-inputs-container');
+            container.innerHTML = '';
+
+            for (let i = 0; i < numPlayers; i++) {
+                const group = document.createElement('div');
+                group.classList.add('player-input-group');
+
+                const dot = document.createElement('div');
+                dot.classList.add('player-color-dot', `dot-p${i + 1}`);
+
+                const input = document.createElement('input');
+                input.type = 'text';
+                input.value = playerNames[i] || `Jogador ${i + 1}`;
+                
+                if (currentGameMode === 'local') {
+                    input.readOnly = false;
+                    input.onchange = (e) => { playerNames[i] = e.target.value; updateTurnDisplay(); };
+                } else {
+                    input.readOnly = true;
+                }
+
+                group.appendChild(dot);
+                group.appendChild(input);
+                container.appendChild(group);
+            }
+        }
+
+        function getPlayerName(index) {
+            return playerNames[index] || `Jogador ${index + 1}`;
+        }
+
+        function getActivePlayersCount() {
+            return playerFinished.filter(f => !f).length;
+        }
+
+        function updateTurnDisplay() {
+            if (getActivePlayersCount() <= 1 && finishRank.length >= numPlayers - 1 && numPlayers > 1) {
+                document.getElementById('turn-display').innerText = 'Partida Encerrada';
+                return;
+            }
+            document.getElementById('turn-display').innerText = `Vez de: ${getPlayerName(currentPlayer)}`;
+        }
+
+        function initBoard() {
+            const board = document.getElementById('board');
+            board.innerHTML = '';
+
+            for (let i = 1; i <= totalTiles; i++) {
+                const tile = document.createElement('div');
+                tile.classList.add('tile');
+                
+                let tagText = '';
+
+                if (i === 1) {
+                    tile.classList.add('tile-start');
+                    tagText = 'Início';
+                } else if (i === totalTiles) {
+                    tile.classList.add('tile-end');
+                    tagText = 'Chegada';
+                } else if (bonusTiles.includes(i)) {
+                    tile.classList.add('tile-bonus');
+                    tagText = `+${BONUS_VALUE} Bônus`;
+                } else if (penaltyTiles.includes(i)) {
+                    tile.classList.add('tile-penalty');
+                    tagText = `-${PENALTY_VALUE} Ônus`;
+                }
+
+                tile.innerHTML = `
+                    <span class="tile-number">${i}</span>
+                    <span class="tile-tag">${tagText}</span>
+                    <div class="pawns-container" id="tile-${i}"></div>
+                `;
+                board.appendChild(tile);
+            }
+            updatePawns();
+        }
+
+        function updatePawns() {
+            for (let i = 1; i <= totalTiles; i++) {
+                const el = document.getElementById(`tile-${i}`);
+                if (el) el.innerHTML = '';
+            }
+
+            for (let p = 0; p < numPlayers; p++) {
+                const pos = playerPositions[p];
+                const pawn = document.createElement('div');
+                pawn.classList.add('pawn', `p${p + 1}`);
+                pawn.title = getPlayerName(p);
+                
+                if (playerFinished[p]) {
+                    pawn.style.opacity = "0.5";
+                }
+
+                const tileContainer = document.getElementById(`tile-${pos}`);
+                if (tileContainer) {
+                    tileContainer.appendChild(pawn);
+                }
+            }
+        }
+
+        function resetGame() {
+            if (currentGameMode === 'single') {
+                numPlayers = 2;
+                playerNames[0] = document.getElementById('my-name-input').value || "Você";
+                playerNames[1] = "🤖 Robô IA (Mecânico)";
+            } else {
+                numPlayers = parseInt(document.getElementById('num-players').value, 10);
+            }
+
+            currentPlayer = 0;
+            playerPositions = [];
+            playerFinished = [];
+            finishRank = [];
+
+            for (let i = 0; i < numPlayers; i++) {
+                playerPositions.push(1);
+                playerFinished.push(false);
+            }
+
+            currentDiceRoll = 0;
+
+            document.getElementById('dice-display').innerText = 'Dado: -';
+            document.getElementById('btn-roll').disabled = false;
+            document.getElementById('win-modal').style.display = 'none';
+
+            renderPlayerInputs();
+            initBoard();
+
+            if (currentGameMode === 'online' && isHost) {
+                broadcastGameState();
+            } else {
+                syncUI();
+            }
+        }
+
+        function advanceToNextActivePlayer() {
+            if (getActivePlayersCount() === 0 || (getActivePlayersCount() <= 1 && numPlayers > 1 && finishRank.length >= numPlayers - 1)) {
+                for (let i = 0; i < numPlayers; i++) {
+                    if (!playerFinished[i]) {
+                        playerFinished[i] = true;
+                        finishRank.push(i);
+                    }
+                }
+                showWinModal();
+                return;
+            }
+
+            do {
+                currentPlayer = (currentPlayer + 1) % numPlayers;
+            } while (playerFinished[currentPlayer]);
+
+            currentDiceRoll = 0;
+            
+            if (currentGameMode === 'online' && isHost) {
+                broadcastGameState();
+            } else {
+                syncUI();
+                
+                // Se for Modo Treino Solo e for a vez da IA
+                if (currentGameMode === 'single' && currentPlayer === 1 && !playerFinished[1]) {
+                    setTimeout(() => {
+                        playBotTurn();
+                    }, 1000);
+                }
+            }
+        }
+
+        function rollDice() {
+            if (currentGameMode === 'online' && !isHost && hostConnection) {
+                hostConnection.send({ type: 'ROLL_DICE' });
+                return;
+            }
+
+            document.getElementById('btn-roll').disabled = true;
+            currentDiceRoll = Math.floor(Math.random() * 6) + 1;
+            
+            if (currentGameMode === 'online') {
+                broadcastGameState();
+            } else {
+                document.getElementById('dice-display').innerText = `Dado: 🎲 ${currentDiceRoll}`;
+            }
+
+            setTimeout(() => {
+                triggerQuestion();
+            }, 800);
+        }
+
+        function playBotTurn() {
+            document.getElementById('btn-roll').disabled = true;
+            currentDiceRoll = Math.floor(Math.random() * 6) + 1;
+            document.getElementById('dice-display').innerText = `Dado: 🎲 ${currentDiceRoll}`;
+
+            setTimeout(() => {
+                // Simula taxa de acerto de 70% da IA
+                const isCorrect = Math.random() < 0.7;
+                let initialPos = playerPositions[1];
+                let targetPos = initialPos + (isCorrect ? currentDiceRoll : 0);
+
+                if (targetPos >= totalTiles) targetPos = totalTiles;
+
+                playerPositions[1] = targetPos;
+                updatePawns();
+
+                if (targetPos === totalTiles) {
+                    playerFinished[1] = true;
+                    finishRank.push(1);
+                }
+
+                alert(`🤖 Turno da IA: Rolou ${currentDiceRoll} no dado e ${isCorrect ? 'ACERTOU' : 'ERROU'} a pergunta! Avançou para a casa ${targetPos}.`);
+                advanceToNextActivePlayer();
+            }, 1000);
+        }
+
+        function triggerQuestion() {
+            const currentPos = playerPositions[currentPlayer];
+            let targetDifficulty = "Fácil";
+
+            if (currentPos >= 17 && currentPos <= 33) {
+                targetDifficulty = "Médio";
+            } else if (currentPos >= 34) {
+                targetDifficulty = "Difícil";
+            }
+
+            let filteredQuestions = questionsDatabase.filter(q => q.difficulty === targetDifficulty);
+            if (filteredQuestions.length === 0) {
+                filteredQuestions = questionsDatabase;
+            }
+
+            const rawQuestion = filteredQuestions[Math.floor(Math.random() * filteredQuestions.length)];
+            const correctAnswerText = rawQuestion.options[rawQuestion.answer];
+
+            let mappedOptions = rawQuestion.options.map(opt => ({
+                text: opt,
+                isCorrect: opt === correctAnswerText
+            }));
+
+            mappedOptions = shuffleArray(mappedOptions);
+
+            currentQuestion = {
+                difficulty: rawQuestion.difficulty,
+                topic: rawQuestion.topic,
+                question: rawQuestion.question,
+                explanation: rawQuestion.explanation,
+                options: mappedOptions.map(o => o.text),
+                correctIndex: mappedOptions.findIndex(o => o.isCorrect)
+            };
+
+            if (currentGameMode === 'online' && isHost) {
+                connections.forEach(conn => conn.send({ type: 'SHOW_QUESTION', question: currentQuestion }));
+            }
+
+            renderQuestionModal(currentQuestion);
+            startTimer();
+        }
+
+        function renderQuestionModal(q) {
+            document.getElementById('question-topic').innerText = `Tema: ${q.topic}`;
+            
+            const diffEl = document.getElementById('question-difficulty');
+            diffEl.innerText = q.difficulty;
+            diffEl.className = `difficulty-badge diff-${q.difficulty.toLowerCase()}`;
+
+            document.getElementById('question-text').innerText = q.question;
+            document.getElementById('feedback-msg').innerText = '';
+            
+            const expBox = document.getElementById('explanation-box');
+            expBox.style.display = 'none';
+            expBox.innerText = '';
+
+            const optionsContainer = document.getElementById('options-container');
+            optionsContainer.innerHTML = '';
+
+            q.options.forEach((optText, idx) => {
+                const btn = document.createElement('button');
+                btn.classList.add('option-btn');
+                btn.innerText = `${String.fromCharCode(65 + idx)}) ${optText}`;
+                
+                if (currentGameMode === 'online' && currentPlayer !== myPlayerIndex) {
+                    btn.disabled = true;
+                } else {
+                    btn.onclick = () => evaluateAnswer(idx);
+                }
+
+                optionsContainer.appendChild(btn);
+            });
+
+            document.getElementById('question-modal').style.display = 'flex';
+        }
+
+        function startTimer() {
+            let timeRemaining = 45;
+            const timerEl = document.getElementById('timer');
+            timerEl.innerText = `⏱️ ${timeRemaining}s`;
+
+            clearInterval(timerInterval);
+            timerInterval = setInterval(() => {
+                timeRemaining--;
+                timerEl.innerText = `⏱️ ${timeRemaining}s`;
+
+                if (timeRemaining <= 0) {
+                    clearInterval(timerInterval);
+                    if (currentGameMode !== 'online' || isHost) handleTimeOut();
+                }
+            }, 1000);
+        }
+
+        function handleTimeOut() {
+            disableOptions();
+            const msg = '❌ Tempo esgotado! O jogador permanece na mesma casa.';
+            
+            if (currentGameMode === 'online' && isHost) {
+                connections.forEach(conn => conn.send({ type: 'ANSWER_RESULT', isCorrect: false, msg: msg }));
+            }
+
+            const feedback = document.getElementById('feedback-msg');
+            feedback.style.color = '#ef4444';
+            feedback.innerText = msg;
+            showExplanation();
+
+            setTimeout(() => {
+                closeModalAndNext();
+            }, 3500);
+        }
+
+        function showExplanation() {
+            const expBox = document.getElementById('explanation-box');
+            expBox.innerText = `💡 Explicação: ${currentQuestion.explanation}`;
+            expBox.style.display = 'block';
+        }
+
+        function evaluateAnswer(selectedIdx) {
+            if (currentGameMode === 'online' && !isHost && hostConnection) {
+                hostConnection.send({ type: 'ANSWER_QUESTION', selectedIdx: selectedIdx });
+                return;
+            }
+
+            clearInterval(timerInterval);
+            disableOptions();
+
+            const isCorrect = (selectedIdx === currentQuestion.correctIndex);
+            let msg = "";
+
+            if (isCorrect) {
+                let initialPos = playerPositions[currentPlayer];
+                let targetPos = initialPos + currentDiceRoll;
+                
+                if (targetPos >= totalTiles) {
+                    targetPos = totalTiles;
+                }
+
+                let extraMsg = "";
+                if (targetPos < totalTiles) {
+                    if (bonusTiles.includes(targetPos)) {
+                        targetPos = Math.min(totalTiles, targetPos + BONUS_VALUE);
+                        extraMsg = ` 🚀 CAIU EM CASA BÔNUS! Avançou +${BONUS_VALUE} casas!`;
+                    } else if (penaltyTiles.includes(targetPos)) {
+                        targetPos = Math.max(1, targetPos - PENALTY_VALUE);
+                        extraMsg = ` ⚠️ CAIU EM CASA ÔNUS! Recuou -${PENALTY_VALUE} casas!`;
+                    }
+                }
+
+                playerPositions[currentPlayer] = targetPos;
+                updatePawns();
+
+                msg = `✓ Resposta Correta! Avançou para a casa ${targetPos}.${extraMsg}`;
+
+                if (targetPos === totalTiles) {
+                    playerFinished[currentPlayer] = true;
+                    finishRank.push(currentPlayer);
+                }
+
+            } else {
+                msg = `❌ Resposta Incorreta! A alternativa correta era ${String.fromCharCode(65 + currentQuestion.correctIndex)}. Não avança.`;
+            }
+
+            const feedback = document.getElementById('feedback-msg');
+            feedback.style.color = isCorrect ? '#10b981' : '#ef4444';
+            feedback.innerText = msg;
+            showExplanation();
+
+            if (currentGameMode === 'online' && isHost) {
+                connections.forEach(conn => conn.send({ type: 'ANSWER_RESULT', isCorrect, msg }));
+            }
+
+            setTimeout(() => {
+                closeModalAndNext();
+            }, 4000);
+        }
+
+        function disableOptions() {
+            const btns = document.querySelectorAll('.option-btn');
+            btns.forEach(b => b.disabled = true);
+        }
+
+        function closeModalAndNext() {
+            document.getElementById('question-modal').style.display = 'none';
+            if (currentGameMode === 'online' && isHost) {
+                connections.forEach(conn => conn.send({ type: 'CLOSE_QUESTION' }));
+            }
+            advanceToNextActivePlayer();
+        }
+
+        function showWinModal() {
+            if (currentGameMode === 'online' && isHost) {
+                connections.forEach(conn => conn.send({ type: 'SHOW_WIN' }));
+            }
+            showWinModalUI();
+        }
+
+        function showWinModalUI() {
+            document.getElementById('question-modal').style.display = 'none';
+            
+            const leaderboard = document.getElementById('leaderboard');
+            leaderboard.innerHTML = '<h3>Classificação Final:</h3><br>';
+
+            finishRank.forEach((playerIdx, rank) => {
+                const item = document.createElement('div');
+                item.classList.add('leaderboard-item');
+                
+                let medal = `${rank + 1}º Lugar:`;
+                if (rank === 0) medal = '🥇 1º Lugar (Campeão):';
+                else if (rank === 1) medal = '🥈 2º Lugar:';
+                else if (rank === 2) medal = '🥉 3º Lugar:';
+
+                item.innerHTML = `<span><strong>${medal}</strong> ${getPlayerName(playerIdx)}</span>`;
+                leaderboard.appendChild(item);
+            });
+
+            document.getElementById('win-modal').style.display = 'flex';
+        }
+
+        // Suporte a atalhos de teclado para sala de aula no projetor
+        document.addEventListener('keydown', (e) => {
+            if (e.code === 'Space' && !document.getElementById('btn-roll').disabled) {
+                rollDice();
+            }
+        });
+
+        resetGame();
+    </script>
+</body>
+</html>
