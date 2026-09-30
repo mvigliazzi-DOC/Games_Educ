@@ -100,6 +100,30 @@
             width: 100%;
         }
 
+        .stats-dashboard {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            justify-content: center;
+            width: 100%;
+            background: #0f172a;
+            padding: 10px 15px;
+            border-radius: 6px;
+            border: 1px solid #334155;
+            margin-top: 5px;
+        }
+
+        .stat-badge {
+            background: #1e293b;
+            padding: 5px 12px;
+            border-radius: 4px;
+            border: 1px solid #475569;
+            font-size: 0.85rem;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
         .players-inputs {
             display: flex;
             gap: 12px;
@@ -112,12 +136,27 @@
 
         .player-input-group {
             display: flex;
-            align-items: center;
-            gap: 6px;
+            flex-direction: column;
+            gap: 4px;
             background: #0f172a;
-            padding: 4px 10px;
+            padding: 8px 12px;
             border-radius: 6px;
             border: 1px solid #334155;
+            min-width: 180px;
+        }
+
+        .player-header-row {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .player-stats-row {
+            font-size: 0.75rem;
+            color: #cbd5e1;
+            display: flex;
+            justify-content: space-between;
+            margin-top: 2px;
         }
 
         .player-color-dot {
@@ -151,6 +190,16 @@
         button.btn-roll:hover:not(:disabled) {
             background-color: #0284c7;
             color: #fff;
+        }
+
+        button.btn-reset {
+            background-color: #ef4444;
+            color: #fff;
+            border-color: #ef4444;
+        }
+
+        button.btn-reset:hover {
+            background-color: #dc2626;
         }
 
         button.btn-study {
@@ -387,6 +436,7 @@
             font-size: 0.95rem;
             transition: background 0.2s;
             line-height: 1.3;
+            cursor: pointer;
         }
 
         .option-btn:hover:not(:disabled) {
@@ -431,10 +481,11 @@
         }
 
         .leaderboard-item {
-            padding: 6px 0;
+            padding: 8px 0;
             border-bottom: 1px solid #1e293b;
             display: flex;
             justify-content: space-between;
+            align-items: center;
         }
 
         .status-badge {
@@ -491,19 +542,26 @@
     <div class="controls-bar">
         <div class="controls-row">
             <div class="control-group" id="player-count-group">
-                <label for="num-players">Qtd. Jogadores/Equipes:</label>
+                <label for="num-players">Qtd. Jogadores:</label>
                 <select id="num-players" onchange="resetGame()">
-                    <option value="1">1 Jogador (Solo)</option>
-                    <option value="2">2 Jogadores/Equipes</option>
-                    <option value="3">3 Jogadores/Equipes</option>
-                    <option value="4" selected>4 Jogadores/Equipes</option>
+                    <option value="1">1 Jogador (50 Casas)</option>
+                    <option value="2">2 Jogadores (55 Casas)</option>
+                    <option value="3">3 Jogadores (60 Casas)</option>
+                    <option value="4" selected>4 Jogadores (70 Casas)</option>
                 </select>
             </div>
 
             <button class="btn-study" onclick="openStudyModal()">📖 Guia de Estudos</button>
+            <button class="btn-reset" onclick="resetGame()">🔄 Reiniciar Partida</button>
             <div class="turn-display" id="turn-display">Vez de: Jogador 1</div>
             <button class="btn-roll" id="btn-roll" onclick="rollDice()">🎲 Rolar Dado</button>
             <div class="dice-display" id="dice-display">Dado: -</div>
+        </div>
+
+        <!-- Painel de Estatísticas da Partida -->
+        <div class="stats-dashboard">
+            <div class="stat-badge">⏱️ Tempo de Jogo: <strong id="game-timer-display" style="color: #38bdf8;">00:00</strong></div>
+            <div class="stat-badge">🏁 Total de Casas: <strong id="total-tiles-display" style="color: #f59e0b;">70</strong></div>
         </div>
 
         <div class="players-inputs" id="players-inputs-container"></div>
@@ -593,103 +651,102 @@
     </div>
 
     <script>
-        const bonusTiles = [7, 17, 27, 37, 44];
-        const penaltyTiles = [12, 22, 32, 42, 48];
-
-        const BONUS_VALUE = 2;
-        const PENALTY_VALUE = 3;
-
         // BANCO DE DADOS COM AS 80 QUESTÕES
         const questionsDatabase = [
             // --- NÍVEL 1: FÁCIL / BÁSICO (1 a 25) ---
-            { difficulty: "Fácil", topic: "Controle Dimensional", question: "Qual é a unidade base de medida linear utilizada no desenho técnico e nas oficinas de manutenção mecânica industrial no Brasil?", options: ["Centímetro (cm)", "Metro (m)", "Milímetro (mm)", "Polegada fracionária (in)"], answer: 2, explanation: "A mecânica industrial adota o milímetro (mm) como unidade base." },
-            { difficulty: "Fácil", topic: "Controle Dimensional", question: "O que significa o conceito de 'intercambialidade' no sistema de tolerâncias e ajustes mecânicos?", options: ["Capacidade de substituir uma peça por outra do mesmo lote sem ajustes adicionais.", "A necessidade de usinar cada peça na montagem.", "A calibração diária dos instrumentos.", "A troca obrigatória de rolamentos."], answer: 0, explanation: "Intercambialidade permite substituir peças idênticas sem necessidade de adaptação manual." },
-            { difficulty: "Fácil", topic: "Controle Dimensional", question: "No Sistema ISO, qual letra indica a posição do campo de tolerância de FUROS?", options: ["Minúsculas (a, b, c, h)", "Maiúsculas (A, B, C, H)", "Símbolos gregos", "Números romanos"], answer: 1, explanation: "Letras maiúsculas indicam tolerância de furos e minúsculas de eixos." },
-            { difficulty: "Fácil", topic: "Controle Dimensional", question: "Qual instrumento dimensional utiliza um nônio ou vernier para subdividir a escala fixa?", options: ["Relógio apalpador", "Paquímetro", "Micrômetro digital", "Súbito"], answer: 1, explanation: "O paquímetro possui nônio ou vernier acoplado à sua escala móvel." },
-            { difficulty: "Fácil", topic: "Controle Dimensional", question: "Qual a função do tambor graduado no micrômetro convencional?", options: ["Fixar a haste de encosto.", "Dar o aperto final.", "Permitir a leitura das frações da rosca (centésimos de mm).", "Medir ângulos."], answer: 2, explanation: "O tambor subdivide o avanço do fuso micrométrico em centésimos de milímetro (0,01 mm)." },
-            { difficulty: "Fácil", topic: "Controle Dimensional", question: "O goniômetro é destinado à verificação de:", options: ["Diâmetros internos.", "Rugosidade.", "Ângulos em peças e ferramentas.", "Excentricidade."], answer: 2, explanation: "Goniômetros medem e verificam ângulos em graus e minutos." },
-            { difficulty: "Fácil", topic: "Elementos de Máquinas", question: "Qual elemento transmite torque entre um eixo e o cubo de uma polia?", options: ["Arruela de pressão", "Anel Seeger", "Chaveta", "Retentor"], answer: 2, explanation: "A chaveta evita o escorregamento relativo e transmite momento de rotação." },
-            { difficulty: "Fácil", topic: "Elementos de Máquinas", question: "Parafusos com cabeça sextavada interna são acionados por qual chave?", options: ["Chave de fenda", "Chave Allen", "Chave inglesa", "Torquímetro"], answer: 1, explanation: "Parafusos sextavados internos (Allen) exigem chaves Allen L ou T." },
-            { difficulty: "Fácil", topic: "Elementos de Máquinas", question: "Elemento de vedação composto por lábio de borracha, carcaça metálica e mola helicoidal:", options: ["Junta hidráulica", "Gaxeta de teflon", "Retentor", "Anel O-ring"], answer: 2, explanation: "O retentor é um elemento de vedação dinâmica para eixos giratórios." },
-            { difficulty: "Fácil", topic: "Elementos de Máquinas", question: "Rolamentos de esferas são recomendados para:", options: ["Cargas elevadas e baixas rotações.", "Cargas radiais baixas/moderadas e altas rotações.", "Impactos severos.", "Cargas axiais puras."], answer: 1, explanation: "Rolamentos de esferas têm menor atrito, ideais para rotações elevadas com cargas leves." },
-            { difficulty: "Fácil", topic: "Elementos de Máquinas", question: "Qual a função da gaiola no rolamento?", options: ["Transmitir carga radial.", "Manter os elementos rolantes espaçados de forma equidistante.", "Vedar contra poeira.", "Fixar o anel externo."], answer: 1, explanation: "A gaiola separa e guia as esferas/rolos evitando atrito direto entre eles." },
-            { difficulty: "Fácil", topic: "Técnicas de Manutenção", question: "Intervenção emergencial realizada logo após a quebra do equipamento:", options: ["Manutenção preventiva", "Manutenção preditiva", "Manutenção corretiva não planejada", "Manutenção autônoma"], answer: 2, explanation: "Realizada imediatamente pós-falha sem agendamento prévio." },
-            { difficulty: "Fácil", topic: "Técnicas de Manutenção", question: "Substituição regular de óleos e filtros em intervalos fixos de tempo:", options: ["Manutenção preditiva", "Manutenção preventiva", "Manutenção corretiva", "Engenharia RCM"], answer: 1, explanation: "Ação realizada em intervalos pré-determinados para evitar falhas." },
-            { difficulty: "Fácil", topic: "Técnicas de Manutenção", question: "Manutenção que utiliza monitoramento contínuo (ex: vibrações) para definir a intervenção:", options: ["Manutenção preditiva", "Corretiva emergencial", "Preventiva por oportunidade", "Reativa"], answer: 0, explanation: "A preditiva monitora parâmetros físicos para atuar antes da quebra." },
-            { difficulty: "Fácil", topic: "Técnicas de Manutenção", question: "Documento formal que orienta e autoriza o serviço de manutenção:", options: ["Relatório de Ensaio", "Ordem de Serviço (OS)", "Manual", "Nota Fiscal"], answer: 1, explanation: "A OS controla e registra todas as etapas e recursos do reparo." },
-            { difficulty: "Fácil", topic: "Técnicas de Manutenção", question: "Jogo de ferramentas para aperto rápido de sextavados em locais profundos:", options: ["Alicates de pressão", "Chaves soquete com catraca", "Chaves de fenda", "Sacadores"], answer: 1, explanation: "Extensores e catracas em soquetes garantem agilidade e alcance." },
-            { difficulty: "Fácil", topic: "Segurança na Manutenção", question: "Procedimento de segurança com cadeados e etiquetas para impedir o religamento acidental:", options: ["RCM", "Bloqueio e Etiquetagem (LOTO)", "ISO 9001", "TPM"], answer: 1, explanation: "O LOTO (Lockout/Tagout) desenergiza e sinaliza a máquina com segurança." },
-            { difficulty: "Fácil", topic: "Técnicas de Manutenção", question: "Marcas com puncionador antes da desmontagem mecânica servem para:", options: ["Alterar tolerância.", "Identificar fabricante.", "Garantir o alinhamento e posição original na remontagem.", "Testar dureza."], answer: 2, explanation: "Evita inversão de lados e desbalanceamento na montagem." },
-            { difficulty: "Fácil", topic: "Lubrificação Industrial", question: "Função principal do lubrificante entre superfícies em movimento:", options: ["Aumentar o atrito.", "Interpor película para reduzir atrito, desgaste e dissipar calor.", "Dilatar peças.", "Soldar imperfeições."], answer: 1, explanation: "Separa as superfícies metálicas reduzindo a atrição e a temperatura." },
-            { difficulty: "Fácil", topic: "Lubrificação Industrial", question: "Composição química básica da graxa lubrificante:", options: ["Óleo base, espessante (sabão metálico) e aditivos.", "Água e detergente.", "Solvente e resina.", "Vaselina e grafite."], answer: 0, explanation: "O espessante retém o óleo base como uma esponja sólida." },
-            { difficulty: "Fácil", topic: "Lubrificação Industrial", question: "Graxas à base de sabão de Lítio caracterizam-se por:", options: ["Baixa resistência térmica.", "Multiaplicabilidade, resistência à água e estabilidade térmica.", "Serem puramente sólidas.", "Uso exclusivo em papelão."], answer: 1, explanation: "Graxas de lítio são multiuso (multipurpose) por sua alta versatilidade." },
-            { difficulty: "Fácil", topic: "Segurança na Manutenção", question: "Sigla para Equipamentos de Proteção Individual:", options: ["EPC", "EPI", "CIPA", "ABNT"], answer: 1, explanation: "EPIs são equipamentos individuais regulamentados pela NR-6." },
-            { difficulty: "Fácil", topic: "Segurança na Manutenção", question: "Hierarquia de segurança entre EPC e EPI:", options: ["Priorizar EPI.", "Priorizar EPC (proteção coletiva) antes dos EPIs.", "Eliminar EPCs.", "Usar EPIs apenas em auditoria."], answer: 1, explanation: "A legislação exige a implementação de proteção coletiva prioritariamente." },
-            { difficulty: "Fácil", topic: "Segurança na Manutenção", question: "Cintas para elevação de cargas mecânicas pesadas são feitas de:", options: ["Arame galvanizado.", "Fibras sintéticas de poliéster de alta tenacidade.", "Ferro fundido.", "Algodão trançado."], answer: 1, explanation: "O poliéster oferece alta resistência sem danificar superfícies usinadas." },
-            { difficulty: "Fácil", topic: "Segurança na Manutenção", question: "O que deve ser EVITADO ao utilizar ar comprimido?", options: ["Acionar ferramentas pneumáticas.", "Limpar poeira e cavacos do próprio corpo/roupa.", "Usar filtros de pressão.", "Armazenar segundo NR-13."], answer: 1, explanation: "O jato de ar pode introduzir cavacos nos olhos ou provocar embolias sob a pele." },
+            { id: 1, difficulty: "Fácil", topic: "Controle Dimensional", question: "Qual é a unidade base de medida linear utilizada no desenho técnico e nas oficinas de manutenção mecânica industrial no Brasil?", options: ["Centímetro (cm)", "Metro (m)", "Milímetro (mm)", "Polegada fracionária (in)"], answer: 2, explanation: "A mecânica industrial adota o milímetro (mm) como unidade base." },
+            { id: 2, difficulty: "Fácil", topic: "Controle Dimensional", question: "O que significa o conceito de 'intercambialidade' no sistema de tolerâncias e ajustes mecânicos?", options: ["Capacidade de substituir uma peça por outra do mesmo lote sem ajustes adicionais.", "A necessidade de usinar cada peça na montagem.", "A calibração diária dos instrumentos.", "A troca obrigatória de rolamentos."], answer: 0, explanation: "Intercambialidade permite substituir peças idênticas sem necessidade de adaptação manual." },
+            { id: 3, difficulty: "Fácil", topic: "Controle Dimensional", question: "No Sistema ISO, qual letra indica a posição do campo de tolerância de FUROS?", options: ["Minúsculas (a, b, c, h)", "Maiúsculas (A, B, C, H)", "Símbolos gregos", "Números romanos"], answer: 1, explanation: "Letras maiúsculas indicam tolerância de furos e minúsculas de eixos." },
+            { id: 4, difficulty: "Fácil", topic: "Controle Dimensional", question: "Qual instrumento dimensional utiliza um nônio ou vernier para subdividir a escala fixa?", options: ["Relógio apalpador", "Paquímetro", "Micrômetro digital", "Súbito"], answer: 1, explanation: "O paquímetro possui nônio ou vernier acoplado à sua escala móvel." },
+            { id: 5, difficulty: "Fácil", topic: "Controle Dimensional", question: "Qual a função do tambor graduado no micrômetro convencional?", options: ["Fixar a haste de encosto.", "Dar o aperto final.", "Permitir a leitura das frações da rosca (centésimos de mm).", "Medir ângulos."], answer: 2, explanation: "O tambor subdivide o avanço do fuso micrométrico em centésimos de milímetro (0,01 mm)." },
+            { id: 6, difficulty: "Fácil", topic: "Controle Dimensional", question: "O goniômetro é destinado à verificação de:", options: ["Diâmetros internos.", "Rugosidade.", "Ângulos em peças e ferramentas.", "Excentricidade."], answer: 2, explanation: "Goniômetros medem e verificam ângulos em graus e minutos." },
+            { id: 7, difficulty: "Fácil", topic: "Elementos de Máquinas", question: "Qual elemento transmite torque entre um eixo e o cubo de uma polia?", options: ["Arruela de pressão", "Anel Seeger", "Chaveta", "Retentor"], answer: 2, explanation: "A chaveta evita o escorregamento relativo e transmite momento de rotação." },
+            { id: 8, difficulty: "Fácil", topic: "Elementos de Máquinas", question: "Parafusos com cabeça sextavada interna são acionados por qual chave?", options: ["Chave de fenda", "Chave Allen", "Chave inglesa", "Torquímetro"], answer: 1, explanation: "Parafusos sextavados internos (Allen) exigem chaves Allen L ou T." },
+            { id: 9, difficulty: "Fácil", topic: "Elementos de Máquinas", question: "Elemento de vedação composto por lábio de borracha, carcaça metálica e mola helicoidal:", options: ["Junta hidráulica", "Gaxeta de teflon", "Retentor", "Anel O-ring"], answer: 2, explanation: "O retentor é um elemento de vedação dinâmica para eixos giratórios." },
+            { id: 10, difficulty: "Fácil", topic: "Elementos de Máquinas", question: "Rolamentos de esferas são recomendados para:", options: ["Cargas elevadas e baixas rotações.", "Cargas radiais baixas/moderadas e altas rotações.", "Impactos severos.", "Cargas axiais puras."], answer: 1, explanation: "Rolamentos de esferas têm menor atrito, ideais para rotações elevadas com cargas leves." },
+            { id: 11, difficulty: "Fácil", topic: "Elementos de Máquinas", question: "Qual a função da gaiola no rolamento?", options: ["Transmitir carga radial.", "Manter os elementos rolantes espaçados de forma equidistante.", "Vedar contra poeira.", "Fixar o anel externo."], answer: 1, explanation: "A gaiola separa e guia as esferas/rolos evitando atrito direto entre eles." },
+            { id: 12, difficulty: "Fácil", topic: "Técnicas de Manutenção", question: "Intervenção emergencial realizada logo após a quebra do equipamento:", options: ["Manutenção preventiva", "Manutenção preditiva", "Manutenção corretiva não planejada", "Manutenção autônoma"], answer: 2, explanation: "Realizada imediatamente pós-falha sem agendamento prévio." },
+            { id: 13, difficulty: "Fácil", topic: "Técnicas de Manutenção", question: "Substituição regular de óleos e filtros em intervalos fixos de tempo:", options: ["Manutenção preditiva", "Manutenção preventiva", "Manutenção corretiva", "Engenharia RCM"], answer: 1, explanation: "Ação realizada em intervalos pré-determinados para evitar falhas." },
+            { id: 14, difficulty: "Fácil", topic: "Técnicas de Manutenção", question: "Manutenção que utiliza monitoramento contínuo (ex: vibrações) para definir a intervenção:", options: ["Manutenção preditiva", "Corretiva emergencial", "Preventiva por oportunidade", "Reativa"], answer: 0, explanation: "A preditiva monitora parâmetros físicos para atuar antes da quebra." },
+            { id: 15, difficulty: "Fácil", topic: "Técnicas de Manutenção", question: "Documento formal que orienta e autoriza o serviço de manutenção:", options: ["Relatório de Ensaio", "Ordem de Serviço (OS)", "Manual", "Nota Fiscal"], answer: 1, explanation: "A OS controla e registra todas as etapas e recursos do reparo." },
+            { id: 16, difficulty: "Fácil", topic: "Técnicas de Manutenção", question: "Jogo de ferramentas para aperto rápido de sextavados em locais profundos:", options: ["Alicates de pressão", "Chaves soquete com catraca", "Chaves de fenda", "Sacadores"], answer: 1, explanation: "Extensores e catracas em soquetes garantem agilidade e alcance." },
+            { id: 17, difficulty: "Fácil", topic: "Segurança na Manutenção", question: "Procedimento de segurança com cadeados e etiquetas para impedir o religamento acidental:", options: ["RCM", "Bloqueio e Etiquetagem (LOTO)", "ISO 9001", "TPM"], answer: 1, explanation: "O LOTO (Lockout/Tagout) desenergiza e sinaliza a máquina com segurança." },
+            { id: 18, difficulty: "Fácil", topic: "Técnicas de Manutenção", question: "Marcas com puncionador antes da desmontagem mecânica servem para:", options: ["Alterar tolerância.", "Identificar fabricante.", "Garantir o alinhamento e posição original na remontagem.", "Testar dureza."], answer: 2, explanation: "Evita inversão de lados e desbalanceamento na montagem." },
+            { id: 19, difficulty: "Fácil", topic: "Lubrificação Industrial", question: "Função principal do lubrificante entre superfícies em movimento:", options: ["Aumentar o atrito.", "Interpor película para reduzir atrito, desgaste e dissipar calor.", "Dilatar peças.", "Soldar imperfeições."], answer: 1, explanation: "Separa as superfícies metálicas reduzindo a atrição e a temperatura." },
+            { id: 20, difficulty: "Fácil", topic: "Lubrificação Industrial", question: "Composição química básica da graxa lubrificante:", options: ["Óleo base, espessante (sabão metálico) e aditivos.", "Água e detergente.", "Solvente e resina.", "Vaselina e grafite."], answer: 0, explanation: "O espessante retém o óleo base como uma esponja sólida." },
+            { id: 21, difficulty: "Fácil", topic: "Lubrificação Industrial", question: "Graxas à base de sabão de Lítio caracterizam-se por:", options: ["Baixa resistência térmica.", "Multiaplicabilidade, resistência à água e estabilidade térmica.", "Serem puramente sólidas.", "Uso exclusivo em papelão."], answer: 1, explanation: "Graxas de lítio são multiuso (multipurpose) por sua alta versatilidade." },
+            { id: 22, difficulty: "Fácil", topic: "Segurança na Manutenção", question: "Sigla para Equipamentos de Proteção Individual:", options: ["EPC", "EPI", "CIPA", "ABNT"], answer: 1, explanation: "EPIs são equipamentos individuais regulamentados pela NR-6." },
+            { id: 23, difficulty: "Fácil", topic: "Segurança na Manutenção", question: "Hierarquia de segurança entre EPC e EPI:", options: ["Priorizar EPI.", "Priorizar EPC (proteção coletiva) antes dos EPIs.", "Eliminar EPCs.", "Usar EPIs apenas em auditoria."], answer: 1, explanation: "A legislação exige a implementação de proteção coletiva prioritariamente." },
+            { id: 24, difficulty: "Fácil", topic: "Segurança na Manutenção", question: "Cintas para elevação de cargas mecânicas pesadas são feitas de:", options: ["Arame galvanizado.", "Fibras sintéticas de poliéster de alta tenacidade.", "Ferro fundido.", "Algodão trançado."], answer: 1, explanation: "O poliéster oferece alta resistência sem danificar superfícies usinadas." },
+            { id: 25, difficulty: "Fácil", topic: "Segurança na Manutenção", question: "O que deve ser EVITADO ao utilizar ar comprimido?", options: ["Acionar ferramentas pneumáticas.", "Limpar poeira e cavacos do próprio corpo/roupa.", "Usar filtros de pressão.", "Armazenar segundo NR-13."], answer: 1, explanation: "O jato de ar pode introduzir cavacos nos olhos ou provocar embolias sob a pele." },
 
             // --- NÍVEL 2: INTERMEDIÁRIO (26 a 55) ---
-            { difficulty: "Médio", topic: "Controle Dimensional", question: "Resolução do paquímetro com escala fixa em mm e nônio de 20 divisões:", options: ["0,1 mm", "0,05 mm", "0,02 mm", "0,001 mm"], answer: 1, explanation: "Resolução = 1 mm / 20 divisões = 0,05 mm." },
-            { difficulty: "Médio", topic: "Controle Dimensional", question: "Leitura no micrômetro (25-50mm): bainha indica 32,5 mm e tambor marca 18:", options: ["18,32 mm", "32,68 mm", "32,50 mm", "32,18 mm"], answer: 1, explanation: "32,50 mm + (18 x 0,01 mm) = 32,68 mm." },
-            { difficulty: "Médio", topic: "Controle Dimensional", question: "O 'Súbito' é utilizado em cilindros para verificar:", options: ["Rugosidade.", "Ovalização e conicidade interna.", "Alinhamento de polias.", "Passo de rosca."], answer: 1, explanation: "Instrumento por comparação para diagnóstico de cilindros internos." },
-            { difficulty: "Médio", topic: "Controle Dimensional", question: "O ajuste H7/g6 é classificado como:", options: ["Forçado com interferência.", "Deslizante com folga precisa.", "Prensado a quente.", "Rotativo de grande folga."], answer: 1, explanation: "Permite deslizamento suave manual com lubrificação." },
-            { difficulty: "Médio", topic: "Elementos de Máquinas", question: "Na rosca M12 x 1.75, o valor 1,75 representa:", options: ["Diâmetro do furo.", "Comprimento roscado.", "Passo da rosca em mm.", "Classe de tolerância."], answer: 2, explanation: "Na norma ISO, o valor após o 'x' indica a distância entre filetes (passo)." },
-            { difficulty: "Médio", topic: "Elementos de Máquinas", question: "Diferença entre rolamento ZZ (blindado) e 2RS (vedado):", options: ["ZZ usa chapa sem atrito; 2RS usa borracha com contato direto.", "2RS não tem graxa.", "ZZ é axial e 2RS é radial.", "São sinônimos."], answer: 0, explanation: "ZZ evita poeiras grossas sem atrito; 2RS veda com borracha contra umidade." },
-            { difficulty: "Médio", topic: "Técnicas de Manutenção", question: "A verificação de 'pé manco' (soft foot) no alinhamento serve para:", options: ["Tensionar correias.", "Corrigir a falta de apoio plano dos pés na base antes do aperto.", "Lubrificar rolamentos.", "Medir rotação."], answer: 1, explanation: "Evita deformações na carcaça que causam vibração e falha prematura." },
-            { difficulty: "Médio", topic: "Elementos de Máquinas", question: "Chaveta em formato de meia-lua aplicada em eixos cônicos:", options: ["Paralela", "Inclinada", "Woodruff (disco)", "Tangencial"], answer: 2, explanation: "A chaveta Woodruff ajusta-se automaticamente ao rasgo do eixo cônicos." },
-            { difficulty: "Médio", topic: "Elementos de Máquinas", question: "Arruelas Belleville (molas prato) servem para:", options: ["Vedar combustível.", "Manter pré-carga e absorver dilatações/choques.", "Substituir porcas.", "Isolar eletricidade."], answer: 1, explanation: "Atuam como molas rígidas mantendo a força de aperto constante." },
-            { difficulty: "Médio", topic: "Elementos de Máquinas", question: "Acoplamento elástico flexível difere do rígido pois:", options: ["Exige alinhamento 100% perfeito.", "Absorve pequenos desalinhamentos e amortecimentos de choque.", "Não transmite torque reverso.", "É puramente metálico."], answer: 1, explanation: "Elastômeros internos acomodam imperfeições dinâmicas e dilatações." },
-            { difficulty: "Médio", topic: "Técnicas de Manutenção", question: "Ferramenta para extrair rolamento montado com interferência no eixo:", options: ["Alicate de pressão", "Sacador aplicando força no anel interno", "Martelo de aço nas esferas", "Torquês"], answer: 1, explanation: "A força de extração deve ser aplicada diretamente sobre o anel prensado." },
-            { difficulty: "Médio", topic: "Técnicas de Manutenção", question: "Vantagem do aquecedor por indução na montagem de rolamentos:", options: ["Resfriar o anel.", "Aquecer uniforme e controladamente dilatando o anel interno sem martelar.", "Magnetizar peças.", "Queimar graxa."], answer: 1, explanation: "A dilatação térmica homogênea (até 110°C) permite o encaixe suave no eixo." },
-            { difficulty: "Médio", topic: "Técnicas de Manutenção", question: "O 'Registro de Sintoma de Falha' na OS serve para:", options: ["Pagar hora extra.", "Descrever a evidência observada pelo operador (ruído, vazamento).", "Listar CNPJs.", "Arquivar calibrações."], answer: 1, explanation: "Descreve o problema perceptível que motivou a chamada da manutenção." },
-            { difficulty: "Médio", topic: "Técnicas de Manutenção", question: "A 'Manutenção Corretiva Planejada' ocorre quando:", options: ["A máquina é reparada em 2 minutos.", "Detecta-se a falha e programa-se o reparo para data futura conveniente.", "Usa-se robôs de graxa.", "Trocam-se filtros anualmente."], answer: 1, explanation: "O defeito é identificado, mas a parada é agendada para aguardar peças/recursos." },
-            { difficulty: "Médio", topic: "Segurança na Manutenção", question: "Como várias equipes fazem o bloqueio elétrico LOTO no mesmo painel?", options: ["Usa-se só o cadeado do chefe.", "Usa-se garra de bloqueio múltiplo com cadeados/etiquetas individuais.", "Amarra-se fita zebrada.", "Deixa-se a chave com o operador."], answer: 1, explanation: "A garra multifuros exige a liberação individual de cada técnico para religar." },
-            { difficulty: "Médio", topic: "Técnicas de Manutenção", question: "Sequência correta de aperto para flanges circulares de tubulação:", options: ["Sequência circular (1,2,3,4...)", "Aperto cruzado em estrela progressivo", "Aperto total do primeiro parafuso", "Aperto aleatório"], answer: 1, explanation: "O aperto cruzado distribui a pressão uniformemente sobre a junta de vedação." },
-            { difficulty: "Médio", topic: "Lubrificação Industrial", question: "Vantagem do óleo sintético (PAO) sobre o óleo mineral:", options: ["Oxida mais rápido.", "Maior estabilidade térmica, resistência à oxidação e vida útil superior.", "É feito de água e sabão.", "Não aceita aditivos."], answer: 1, explanation: "Moléculas homogêneas garantem alto desempenho sob condições extremas." },
-            { difficulty: "Médio", topic: "Lubrificação Industrial", question: "O Ponto de Gota de uma graxa é:", options: ["A temperatura de congelamento.", "A temperatura em que o espessante perde o óleo e a graxa se liquefaz.", "O número de gotas aplicadas.", "Contaminação por água."], answer: 1, explanation: "Mede o limite superior de temperatura operacional da graxa." },
-            { difficulty: "Médio", topic: "Lubrificação Industrial", question: "O processo de 'Rerrefino' do óleo usado (OLUC) consiste em:", options: ["Queimar óleo em caldeiras.", "Processo industrial para remover contaminantes e gerar óleo básico limpo.", "Misturar com diesel.", "Aterro sanitário."], answer: 1, explanation: "Regeneração sustentável do óleo lubrificante transformando-o em matéria-prima." },
-            { difficulty: "Médio", topic: "Elementos de Máquinas", question: "Cuidado essencial no ajuste do prensa-gaxeta em bombas de água:", options: ["Apertar até bloquear vazamentos totalmente.", "Deixar um gotejamento mínimo controlado para lubrificação/resfriamento.", "Usar ácido sulfúrico.", "Usar gaxeta de madeira."], answer: 1, explanation: "O gotejamento impede o superaquecimento do engaxetamento e do eixo." },
-            { difficulty: "Médio", topic: "Controle Dimensional", question: "Relógio comparador centesimal: ponteiro menor em 2 mm e maior no 45. Medida:", options: ["0,45 mm", "2,45 mm", "24,5 mm", "2,045 mm"], answer: 1, explanation: "2 mm inteiros + 0,45 mm centesimais = 2,45 mm." },
-            { difficulty: "Médio", topic: "Técnicas de Manutenção", question: "O torquímetro (chave dinamométrica) é utilizado para:", options: ["Medir rotação.", "Aplicar valor exato e controlado de torque no aperto.", "Extrair parafusos.", "Medir a cabeça da porca."], answer: 1, explanation: "Garante a tensão exata no parafuso sem deformar a rosca." },
-            { difficulty: "Médio", topic: "Elementos de Máquinas", question: "Engrenagem indicada para altas velocidades com baixo ruído em eixos paralelos:", options: ["Dentes retos", "Cilíndrica de dentes helicoidais", "Cônica reta", "Sem-fim e coroa"], answer: 1, explanation: "Dentes helicoidais engrenam gradualmente, reduzindo ruídos e impactos." },
-            { difficulty: "Médio", topic: "Segurança na Manutenção", question: "Prática considerada INSEGURA no uso de ferramentas manuais:", options: ["Usar martelos com cabo de madeira trincado ou solto.", "Usar óculos de proteção.", "Manter cabos limpos de graxa.", "Usar chave do tamanho exato."], answer: 0, explanation: "Ferramentas trincadas podem desprender a cabeça metálica e causar ferimentos graves." },
-            { difficulty: "Médio", topic: "Segurança na Manutenção", question: "A etiqueta presa ao cadeado no bloqueio LOTO DEVE conter:", options: ["Preço das ferramentas.", "Nome do responsável, data, hora, departamento e motivo.", "Esquema do inversor.", "Logo do fabricante."], answer: 1, explanation: "Identifica o responsável direto para prevenir liberação não autorizada." },
-            { difficulty: "Médio", topic: "Elementos de Máquinas", question: "Mancal de deslizamento difere do mancal de rolamento pois:", options: ["Deslizamento é por atrito de escorregamento; rolamento usa elementos rolantes.", "Deslizamento aceita apenas carga axial.", "Deslizamento não usa óleo.", "Rolamento é de náilon."], answer: 0, explanation: "Rolamentos substituem o escorregamento por elementos rolantes, reduzindo o atrito." },
-            { difficulty: "Médio", topic: "Controle Dimensional", question: "Relógio apalpador difere do comparador convencional por ter:", options: ["Nônio de 50 divisões.", "Ponta de contato articulada de alavanca para locais difíceis.", "Curso de 500 mm.", "Display microprocessado."], answer: 1, explanation: "Ideal para centragem e superfícies pequenas com haste articulada." },
-            { difficulty: "Médio", topic: "Controle Dimensional", question: "A calibração periódica dos instrumentos garante:", options: ["Garantia eterna.", "Rastreabilidade metrológica e confiabilidade das medições.", "Evitar desgastes físicos.", "Eliminar o uso de vernier."], answer: 1, explanation: "Compara as leituras com padrões oficiais (RBC) identificando erros." },
-            { difficulty: "Médio", topic: "Técnicas de Manutenção", question: "Função principal dos filtros de óleo em sistemas hidráulicos:", options: ["Resfriar óleo.", "Aumentar pressão das tubulações.", "Reter partículas sólidas abrasivas para proteger bombas e válvulas.", "Aumentar densidade."], answer: 2, explanation: "Previne desgastes premudaturos causados por partículas contaminantes." },
-            { difficulty: "Médio", topic: "Lubrificação Industrial", question: "Cuidado principal na lubrificação por Banho de Óleo em redutores:", options: ["Encher o reservatório até a tampa.", "Manter o nível estritamente dentro da faixa do visor.", "Trocar o óleo diariamente.", "Usar graxa líquida."], answer: 1, explanation: "Excesso gera espuma e aquecimento por atrito fluido; falta gera desgate." },
+            { id: 26, difficulty: "Médio", topic: "Controle Dimensional", question: "Resolução do paquímetro com escala fixa em mm e nônio de 20 divisões:", options: ["0,1 mm", "0,05 mm", "0,02 mm", "0,001 mm"], answer: 1, explanation: "Resolução = 1 mm / 20 divisões = 0,05 mm." },
+            { id: 27, difficulty: "Médio", topic: "Controle Dimensional", question: "Leitura no micrômetro (25-50mm): bainha indica 32,5 mm e tambor marca 18:", options: ["18,32 mm", "32,68 mm", "32,50 mm", "32,18 mm"], answer: 1, explanation: "32,50 mm + (18 x 0,01 mm) = 32,68 mm." },
+            { id: 28, difficulty: "Médio", topic: "Controle Dimensional", question: "O 'Súbito' é utilizado em cilindros para verificar:", options: ["Rugosidade.", "Ovalização e conicidade interna.", "Alinhamento de polias.", "Passo de rosca."], answer: 1, explanation: "Instrumento por comparação para diagnóstico de cilindros internos." },
+            { id: 29, difficulty: "Médio", topic: "Controle Dimensional", question: "O ajuste H7/g6 é classificado como:", options: ["Forçado com interferência.", "Deslizante com folga precisa.", "Prensado a quente.", "Rotativo de grande folga."], answer: 1, explanation: "Permite deslizamento suave manual com lubrificação." },
+            { id: 30, difficulty: "Médio", topic: "Elementos de Máquinas", question: "Na rosca M12 x 1.75, o valor 1,75 representa:", options: ["Diâmetro do furo.", "Comprimento roscado.", "Passo da rosca em mm.", "Classe de tolerância."], answer: 2, explanation: "Na norma ISO, o valor após o 'x' indica a distância entre filetes (passo)." },
+            { id: 31, difficulty: "Médio", topic: "Elementos de Máquinas", question: "Diferença entre rolamento ZZ (blindado) e 2RS (vedado):", options: ["ZZ usa chapa sem atrito; 2RS usa borracha com contato direto.", "2RS não tem graxa.", "ZZ é axial e 2RS é radial.", "São sinônimos."], answer: 0, explanation: "ZZ evita poeiras grossas sem atrito; 2RS veda com borracha contra umidade." },
+            { id: 32, difficulty: "Médio", topic: "Técnicas de Manutenção", question: "A verificação de 'pé manco' (soft foot) no alinhamento serve para:", options: ["Tensionar correias.", "Corrigir a falta de apoio plano dos pés na base antes do aperto.", "Lubrificar rolamentos.", "Medir rotação."], answer: 1, explanation: "Evita deformações na carcaça que causam vibração e falha prematura." },
+            { id: 33, difficulty: "Médio", topic: "Elementos de Máquinas", question: "Chaveta em formato de meia-lua aplicada em eixos cônicos:", options: ["Paralela", "Inclinada", "Woodruff (disco)", "Tangencial"], answer: 2, explanation: "A chaveta Woodruff ajusta-se automaticamente ao rasgo do eixo cônicos." },
+            { id: 34, difficulty: "Médio", topic: "Elementos de Máquinas", question: "Arruelas Belleville (molas prato) servem para:", options: ["Vedar combustível.", "Manter pré-carga e absorver dilatações/choques.", "Substituir porcas.", "Isolar eletricidade."], answer: 1, explanation: "Atuam como molas rígidas mantendo a força de aperto constante." },
+            { id: 35, difficulty: "Médio", topic: "Elementos de Máquinas", question: "Acoplamento elástico flexível difere do rígido pois:", options: ["Exige alinhamento 100% perfeito.", "Absorve pequenos desalinhamentos e amortecimentos de choque.", "Não transmite torque reverso.", "É puramente metálico."], answer: 1, explanation: "Elastômeros internos acomodam imperfeições dinâmicas e dilatações." },
+            { id: 36, difficulty: "Médio", topic: "Técnicas de Manutenção", question: "Ferramenta para extrair rolamento montado com interferência no eixo:", options: ["Alicate de pressão", "Sacador aplicando força no anel interno", "Martelo de aço nas esferas", "Torquês"], answer: 1, explanation: "A força de extração deve ser aplicada diretamente sobre o anel prensado." },
+            { id: 37, difficulty: "Médio", topic: "Técnicas de Manutenção", question: "Vantagem do aquecedor por indução na montagem de rolamentos:", options: ["Resfriar o anel.", "Aquecer uniforme e controladamente dilatando o anel interno sem martelar.", "Magnetizar peças.", "Queimar graxa."], answer: 1, explanation: "A dilatação térmica homogênea (até 110°C) permite o encaixe suave no eixo." },
+            { id: 38, difficulty: "Médio", topic: "Técnicas de Manutenção", question: "O 'Registro de Sintoma de Falha' na OS serve para:", options: ["Pagar hora extra.", "Descrever a evidência observada pelo operador (ruído, vazamento).", "Listar CNPJs.", "Arquivar calibrações."], answer: 1, explanation: "Descreve o problema perceptível que motivou a chamada da manutenção." },
+            { id: 39, difficulty: "Médio", topic: "Técnicas de Manutenção", question: "A 'Manutenção Corretiva Planejada' ocorre quando:", options: ["A máquina é reparada em 2 minutos.", "Detecta-se a falha e programa-se o reparo para data futura conveniente.", "Usa-se robôs de graxa.", "Trocam-se filtros anualmente."], answer: 1, explanation: "O defeito é identificado, mas a parada é agendada para aguardar peças/recursos." },
+            { id: 40, difficulty: "Médio", topic: "Segurança na Manutenção", question: "Como várias equipes fazem o bloqueio elétrico LOTO no mesmo painel?", options: ["Usa-se só o cadeado do chefe.", "Usa-se garra de bloqueio múltiplo com cadeados/etiquetas individuais.", "Amarra-se fita zebrada.", "Deixa-se a chave com o operador."], answer: 1, explanation: "A garra multifuros exige a liberação individual de cada técnico para religar." },
+            { id: 41, difficulty: "Médio", topic: "Técnicas de Manutenção", question: "Sequência correta de aperto para flanges circulares de tubulação:", options: ["Sequência circular (1,2,3,4...)", "Aperto cruzado em estrela progressivo", "Aperto total do primeiro parafuso", "Aperto aleatório"], answer: 1, explanation: "O aperto cruzado distribui a pressão uniformemente sobre a junta de vedação." },
+            { id: 42, difficulty: "Médio", topic: "Lubrificação Industrial", question: "Vantagem do óleo sintético (PAO) sobre o óleo mineral:", options: ["Oxida mais rápido.", "Maior estabilidade térmica, resistência à oxidação e vida útil superior.", "É feito de água e sabão.", "Não aceita aditivos."], answer: 1, explanation: "Moléculas homogêneas garantem alto desempenho sob condições extremas." },
+            { id: 43, difficulty: "Médio", topic: "Lubrificação Industrial", question: "O Ponto de Gota de uma graxa é:", options: ["A temperatura de congelamento.", "A temperatura em que o espessante perde o óleo e a graxa se liquefaz.", "O número de gotas aplicadas.", "Contaminação por água."], answer: 1, explanation: "Mede o limite superior de temperatura operacional da graxa." },
+            { id: 44, difficulty: "Médio", topic: "Lubrificação Industrial", question: "O processo de 'Rerrefino' do óleo usado (OLUC) consiste em:", options: ["Queimar óleo em caldeiras.", "Processo industrial para remover contaminantes e gerar óleo básico limpo.", "Misturar com diesel.", "Aterro sanitário."], answer: 1, explanation: "Regeneração sustentável do óleo lubrificante transformando-o em matéria-prima." },
+            { id: 45, difficulty: "Médio", topic: "Elementos de Máquinas", question: "Cuidado essencial no ajuste do prensa-gaxeta em bombas de água:", options: ["Apertar até bloquear vazamentos totalmente.", "Deixar um gotejamento mínimo controlado para lubrificação/resfriamento.", "Usar ácido sulfúrico.", "Usar gaxeta de madeira."], answer: 1, explanation: "O gotejamento impede o superaquecimento do engaxetamento e do eixo." },
+            { id: 46, difficulty: "Médio", topic: "Controle Dimensional", question: "Relógio comparador centesimal: ponteiro menor em 2 mm e maior no 45. Medida:", options: ["0,45 mm", "2,45 mm", "24,5 mm", "2,045 mm"], answer: 1, explanation: "2 mm inteiros + 0,45 mm centesimais = 2,45 mm." },
+            { id: 47, difficulty: "Médio", topic: "Técnicas de Manutenção", question: "O torquímetro (chave dinamométrica) é utilizado para:", options: ["Medir rotação.", "Aplicar valor exato e controlado de torque no aperto.", "Extrair parafusos.", "Medir a cabeça da porca."], answer: 1, explanation: "Garante a tensão exata no parafuso sem deformar a rosca." },
+            { id: 48, difficulty: "Médio", topic: "Elementos de Máquinas", question: "Engrenagem indicada para altas velocidades com baixo ruído em eixos paralelos:", options: ["Dentes retos", "Cilíndrica de dentes helicoidais", "Cônica reta", "Sem-fim e coroa"], answer: 1, explanation: "Dentes helicoidais engrenam gradualmente, reduzindo ruídos e impactos." },
+            { id: 49, difficulty: "Médio", topic: "Segurança na Manutenção", question: "Prática considerada INSEGURA no uso de ferramentas manuais:", options: ["Usar martelos com cabo de madeira trincado ou solto.", "Usar óculos de proteção.", "Manter cabos limpos de graxa.", "Usar chave do tamanho exato."], answer: 0, explanation: "Ferramentas trincadas podem desprender a cabeça metálica e causar ferimentos graves." },
+            { id: 50, difficulty: "Médio", topic: "Segurança na Manutenção", question: "A etiqueta presa ao cadeado no bloqueio LOTO DEVE conter:", options: ["Preço das ferramentas.", "Nome do responsável, data, hora, departamento e motivo.", "Esquema do inversor.", "Logo do fabricante."], answer: 1, explanation: "Identifica o responsável direto para prevenir liberação não autorizada." },
+            { id: 51, difficulty: "Médio", topic: "Elementos de Máquinas", question: "Mancal de deslizamento difere do mancal de rolamento pois:", options: ["Deslizamento é por atrito de escorregamento; rolamento usa elementos rolantes.", "Deslizamento aceita apenas carga axial.", "Deslizamento não usa óleo.", "Rolamento é de náilon."], answer: 0, explanation: "Rolamentos substituem o escorregamento por elementos rolantes, reduzindo o atrito." },
+            { id: 52, difficulty: "Médio", topic: "Controle Dimensional", question: "Relógio apalpador difere do comparador convencional por ter:", options: ["Nônio de 50 divisões.", "Ponta de contato articulada de alavanca para locais difíceis.", "Curso de 500 mm.", "Display microprocessado."], answer: 1, explanation: "Ideal para centragem e superfícies pequenas com haste articulada." },
+            { id: 53, difficulty: "Médio", topic: "Controle Dimensional", question: "A calibração periódica dos instrumentos garante:", options: ["Garantia eterna.", "Rastreabilidade metrológica e confiabilidade das medições.", "Evitar desgastes físicos.", "Eliminar o uso de vernier."], answer: 1, explanation: "Compara as leituras com padrões oficiais (RBC) identificando erros." },
+            { id: 54, difficulty: "Médio", topic: "Técnicas de Manutenção", question: "Função principal dos filtros de óleo em sistemas hidráulicos:", options: ["Resfriar óleo.", "Aumentar pressão das tubulações.", "Reter partículas sólidas abrasivas para proteger bombas e válvulas.", "Aumentar densidade."], answer: 2, explanation: "Previne desgastes premudaturos causados por partículas contaminantes." },
+            { id: 55, difficulty: "Médio", topic: "Lubrificação Industrial", question: "Cuidado principal na lubrificação por Banho de Óleo em redutores:", options: ["Encher o reservatório até a tampa.", "Manter o nível estritamente dentro da faixa do visor.", "Trocar o óleo diariamente.", "Usar graxa líquida."], answer: 1, explanation: "Excesso gera espuma e aquecimento por atrito fluido; falta gera desgate." },
 
             // --- NÍVEL 3: AVANÇADO (56 a 80) ---
-            { difficulty: "Difícil", topic: "Controle Dimensional", question: "Eixo Ø 40 mm g6 (es = -9 µm, ei = -25 µm). Diâmetros máximo e mínimo:", options: ["40,009 mm e 40,025 mm", "39,991 mm e 39,975 mm", "40,000 mm e 39,984 mm", "39,900 mm e 39,750 mm"], answer: 1, explanation: "Dmáx = 40,000 - 0,009 = 39,991 mm. Dmín = 40,000 - 0,025 = 39,975 mm." },
-            { difficulty: "Difícil", topic: "Controle Dimensional", question: "Furo Ø 50 H7 (+25/0 µm) e Eixo Ø 50 p6 (+42/+26 µm). O ajuste resultante é:", options: ["Ajuste com folga garantida.", "Ajuste incerto de transição.", "Ajuste com interferência garantida (prensado).", "Ajuste deslizante."], answer: 2, explanation: "Mínimo do eixo (50,026 mm) é maior que máximo do furo (50,025 mm)." },
-            { difficulty: "Difícil", topic: "Metrologia & Diagnóstico", question: "Excentricidade no torno: agulha oscila de -0,12 mm a +0,18 mm. TIR e Excentricidade:", options: ["TIR 0,06 mm; Excentricidade 0,03 mm", "TIR 0,30 mm; Excentricidade 0,15 mm", "TIR 0,18 mm; Excentricidade 0,09 mm", "TIR 0,12 mm; Excentricidade 0,06 mm"], answer: 1, explanation: "TIR = +0,18 - (-0,12) = 0,30 mm. Excentricidade = TIR / 2 = 0,15 mm." },
-            { difficulty: "Difícil", topic: "Análise de Vibração", question: "Teste a 1780 RPM mostra pico elevado em 1xRPM radial. Causa mais provável:", options: ["Falha de rolamento (BPFO)", "Desbalanceamento de massa no rotor", "Desalinhamento angular", "Cavitação"], answer: 1, explanation: "Desbalanceamento gera força centrífuga na frequência fundamental (1xRPM)." },
-            { difficulty: "Difícil", topic: "Análise de Vibração", question: "Vibração com picos em 2xRPM e 3xRPM acompanhada de alta vibração AXIAL indica:", options: ["Desalinhamento entre eixos", "Correia frouxa", "Rotor desbalanceado", "Sucção excessiva"], answer: 0, explanation: "Desalinhamentos geram esforços axiais e harmônicos característicos em 2xRPM." },
-            { difficulty: "Difícil", topic: "Engenharia de Manutenção", question: "Quando se justifica o investimento em Manutenção Preditiva em uma fábrica?", options: ["Equipamento reserva sem impacto.", "Ativos gargalos 24/7 onde a quebra causa grandes prejuízos e riscos.", "Ferramentas manuais.", "Equipamentos sucateados."], answer: 1, explanation: "Alto custo de instrumentos preditivos é amortizado em equipamentos críticos." },
-            { difficulty: "Difícil", topic: "Análise de Falhas", topic: "Causa primária de descascamento (spalling) na pista externa de rolamentos:", options: ["Passagem de corrente elétrica.", "Fadiga de contato por rolamento (L10) após ciclos de carga.", "Vazamento de graxa.", "Folga no paquímetro."], answer: 1, explanation: "Spalling é o modo clássico de falha por fadiga superficial por ciclagem de carga." },
-            { difficulty: "Difícil", topic: "Análise de Óleo", question: "Óleo com partículas de ferro altas (PQ Index) e QUEDA na viscosidade a 40°C:", options: ["Óleo perfeito.", "Contaminação por combustível/solvente e desgaste abrasivo severo.", "Filtro invertido.", "Graxa no reservatório."], answer: 1, explanation: "Queda da viscosidade rompe a película gerando desgaste metal-metal." },
-            { difficulty: "Difícil", topic: "Metrologia de Precisão", question: "Micrômetro (fuso 0,5mm, tambor 50div) acrescido de vernier de 10 divisões. Nova resolução:", options: ["0,005 mm", "0,001 mm (1 micra)", "0,0001 mm", "0,05 mm"], answer: 1, explanation: "Menor divisão do tambor (0,01 mm) / 10 divisões do vernier = 0,001 mm." },
-            { difficulty: "Difícil", topic: "Elementos de Máquinas", question: "Montar engrenagens de dentes retos com distância entre centros MENOR que a de projeto gera:", options: ["Aumento de backlash.", "Interferência entre dentes, falta de folga, travamento e quebra.", "Inversão de rotação.", "Redução da taxa."], answer: 1, explanation: "Elimina a folga (backlash) necessária para expansão térmica provocando travamento." },
-            { difficulty: "Difícil", topic: "Lubrificantes Especiais", question: "Graxa recomendada para rolamentos acima de 160°C em ambiente químico agressivo:", options: ["Sabão de cálcio com mineral", "Sintética de Perfluorpoliéter (PFPE) com PTFE", "Sabão de sódio", "Óleo de mamona"], answer: 1, explanation: "PFPE/PTFE suporta quimicamente e termicamente temperaturas contínuas >200°C." },
-            { difficulty: "Difícil", topic: "Mecânica dos Fluidos", question: "Erosão (pitting) no rotor de bomba centrífuga com ruído de 'cascalho':", options: ["Desalinhamento", "Cavitação (colapso de bolhas de vapor)", "Corrosão galvânica", "Oxidação da graxa"], answer: 1, explanation: "Bolhas de vapor colapsam gerando micro-jatos de altíssima pressão que erodem o metal." },
-            { difficulty: "Difícil", topic: "Alinhamento de Máquinas", question: "Método dos Relógios Comparadores Inversos baseia-se em:", options: ["Medir diâmetro interno.", "Leituras radiais simultâneas nos dois cubos girando os eixos juntos.", "Medir temperatura.", "Usar paquímetro."], answer: 1, explanation: "Mede o batimento radial nos dois flanges simultaneamente calculando o desalinhamento." },
-            { difficulty: "Difícil", topic: "Ensaios Não Destrutivos", question: "Ensaio por Líquido Penetrante (LP) em solda destina-se a detectar:", options: ["Dureza interna.", "Descontinuidades superficiais abertas (trincas, porosidades).", "Composição química.", "Tensão elétrica."], answer: 1, explanation: "O líquido penetra por capilaridade revelando defeitos abertos na superfície." },
-            { difficulty: "Difícil", topic: "Segurança em Áreas Ex", question: "Por que se proíbe ferramentas de aço carbono comum em Áreas Classificadas Ex?", options: ["Descalibram torquímetros.", "Podem gerar faíscas mecânicas por impacto; exige-se ligas antifaiscantes (Cu-Be / Al-Bronze).", "Aço evapora.", "Atraem UV."], answer: 1, explanation: "Ligas de Cobre-Berílio evitam ignição de atmosferas inflamáveis por fricção." },
-            { difficulty: "Difícil", topic: "Tribologia", question: "Efeito Stick-Slip em barramentos de máquinas-ferramenta é:", options: ["Congelamento do óleo.", "Movimento intermitente por diferença entre atrito estático e dinâmico.", "Fratura da ferramenta.", "Deslizamento do acoplamento."], answer: 1, explanation: "Evita-se com óleos de barramento com aditivos que igualam atrito estático e dinâmico." },
-            { difficulty: "Difícil", topic: "Metrologia & Cuidados", question: "Apertar o tambor do micrômetro diretamente com os dedos (sem catraca) causa:", options: ["Aumento da resolução.", "Deformação do arco do micrômetro e erro de medição para MENOS.", "Quebra do fuso.", "Travamento do nônio."], answer: 1, explanation: "A força excessiva deforma o arco elaticamente, falseando a leitura da peça." },
-            { difficulty: "Difícil", topic: "Segurança & Normas", question: "Norma Regulamentadora que disciplina segurança em vasos de pressão e caldeiras:", options: ["NR-6", "NR-10", "NR-13", "NR-35"], answer: 2, explanation: "A NR-13 estabelece requisitos legais de inspeção e integridade estrutural." },
-            { difficulty: "Difícil", topic: "Análise Vibracional em Rolamentos", question: "A frequência de falha da pista externa em rolamentos é denominada:", options: ["1xRPM", "BPFO", "FTF", "BPFI"], answer: 1, explanation: "BPFO (Ball Pass Frequency Outer) representa a frequência de impacto na pista externa." },
-            { difficulty: "Difícil", topic: "Lubrificação de Motores", question: "Motor elétrico apresenta superaquecimento nos rolamentos pós-relubrificação. Causa:", options: ["Falta de graxa.", "Superlubrificação (excesso de graxa) causando atrito por cisalhamento.", "Chave errada.", "Fases invertidas."], answer: 1, explanation: "Excesso de graxa obriga o rolamento a 'chfofar' o produto, gerando calor excessivo." },
-            { difficulty: "Difícil", topic: "Elementos de Transmissão", question: "Correia em V sub-tensionada (frouxa) provocará:", options: ["Quebra do eixo.", "Patinação (escorregamento), superaquecimento e perda de rotação.", "Ganho de eficiência.", "Alinhamento automático."], answer: 1, explanation: "Fricção dinâmica por escorregamento gera calor e desgaste abrasivo nas polias." },
-            { difficulty: "Difícil", topic: "Engenharia de Confiabilidade", question: "No RCM, a sigla FMEA significa:", options: ["Failure Mode and Effects Analysis", "Lockout Tagout", "CIPA", "HAZOP"], answer: 0, explanation: "Análise estruturada para mapear modos de falha, causas e efeitos no processo." },
-            { difficulty: "Difícil", topic: "Montagem Mecânica", question: "Cuidado principal na montagem de rolamentos por dilatação térmica:", options: ["Controlar o aquecimento (máx. 110°C a 120°C) para não percar a têmpera do aço.", "Usar maçarico direto.", "Prensar as gaiolas.", "Não há cuidados."], answer: 0, explanation: "Temperaturas acima de 120°C alteram a estrutura metalúrgica de dureza do aço." },
-            { difficulty: "Difícil", topic: "Metrologia Angular", question: "Resolução do goniômetro cujo nônio divide 1° em 12 partes:", options: ["10'", "5' (cinco minutos de arco)", "1'", "0,5°"], answer: 1, explanation: "1° = 60'. Dividindo 60' por 12 partes = 5' de resolução." },
-            { difficulty: "Difícil", topic: "Segurança & Procedimentos", question: "Antes de desativar os bloqueios LOTO e religar a máquina deve-se:", options: ["Ligar em rotação máxima com pessoas na área.", "Recolher ferramentas, checar peças soltas, recolocar proteções NR-12 e realizar startup.", "Descartar a OS.", "Pintar a carcaça."], answer: 1, explanation: "Reorganização e recolocação das proteções físicas evitam acidentes no arranque." }
+            { id: 56, difficulty: "Difícil", topic: "Controle Dimensional", question: "Eixo Ø 40 mm g6 (es = -9 µm, ei = -25 µm). Diâmetros máximo e mínimo:", options: ["40,009 mm e 40,025 mm", "39,991 mm e 39,975 mm", "40,000 mm e 39,984 mm", "39,900 mm e 39,750 mm"], answer: 1, explanation: "Dmáx = 40,000 - 0,009 = 39,991 mm. Dmín = 40,000 - 0,025 = 39,975 mm." },
+            { id: 57, difficulty: "Difícil", topic: "Controle Dimensional", question: "Furo Ø 50 H7 (+25/0 µm) e Eixo Ø 50 p6 (+42/+26 µm). O ajuste resultante é:", options: ["Ajuste com folga garantida.", "Ajuste incerto de transição.", "Ajuste com interferência garantida (prensado).", "Ajuste deslizante."], answer: 2, explanation: "Mínimo do eixo (50,026 mm) é maior que máximo do furo (50,025 mm)." },
+            { id: 58, difficulty: "Difícil", topic: "Metrologia & Diagnóstico", question: "Excentricidade no torno: agulha oscila de -0,12 mm a +0,18 mm. TIR e Excentricidade:", options: ["TIR 0,06 mm; Excentricidade 0,03 mm", "TIR 0,30 mm; Excentricidade 0,15 mm", "TIR 0,18 mm; Excentricidade 0,09 mm", "TIR 0,12 mm; Excentricidade 0,06 mm"], answer: 1, explanation: "TIR = +0,18 - (-0,12) = 0,30 mm. Excentricidade = TIR / 2 = 0,15 mm." },
+            { id: 59, difficulty: "Difícil", topic: "Análise de Vibração", question: "Teste a 1780 RPM mostra pico elevado em 1xRPM radial. Causa mais provável:", options: ["Falha de rolamento (BPFO)", "Desbalanceamento de massa no rotor", "Desalinhamento angular", "Cavitação"], answer: 1, explanation: "Desbalanceamento gera força centrífuga na frequência fundamental (1xRPM)." },
+            { id: 60, difficulty: "Difícil", topic: "Análise de Vibração", question: "Vibração com picos em 2xRPM e 3xRPM acompanhada de alta vibração AXIAL indica:", options: ["Desalinhamento entre eixos", "Correia frouxa", "Rotor desbalanceado", "Sucção excessiva"], answer: 0, explanation: "Desalinhamentos geram esforços axiais e harmônicos característicos em 2xRPM." },
+            { id: 61, difficulty: "Difícil", topic: "Engenharia de Manutenção", question: "Quando se justifica o investimento em Manutenção Preditiva em uma fábrica?", options: ["Equipamento reserva sem impacto.", "Ativos gargalos 24/7 onde a quebra causa grandes prejuízos e riscos.", "Ferramentas manuais.", "Equipamentos sucateados."], answer: 1, explanation: "Alto custo de instrumentos preditivos é amortizado em equipamentos críticos." },
+            { id: 62, difficulty: "Difícil", topic: "Análise de Falhas", question: "Causa primária de descascamento (spalling) na pista externa de rolamentos:", options: ["Passagem de corrente elétrica.", "Fadiga de contato por rolamento (L10) após ciclos de carga.", "Vazamento de graxa.", "Folga no paquímetro."], answer: 1, explanation: "Spalling é o modo clássico de falha por fadiga superficial por ciclagem de carga." },
+            { id: 63, difficulty: "Difícil", topic: "Análise de Óleo", question: "Óleo com partículas de ferro altas (PQ Index) e QUEDA na viscosidade a 40°C:", options: ["Óleo perfeito.", "Contaminação por combustível/solvente e desgaste abrasivo severo.", "Filtro invertido.", "Graxa no reservatório."], answer: 1, explanation: "Queda da viscosidade rompe a película gerando desgaste metal-metal." },
+            { id: 64, difficulty: "Difícil", topic: "Metrologia de Precisão", question: "Micrômetro (fuso 0,5mm, tambor 50div) acrescido de vernier de 10 divisões. Nova resolução:", options: ["0,005 mm", "0,001 mm (1 micra)", "0,0001 mm", "0,05 mm"], answer: 1, explanation: "Menor divisão do tambor (0,01 mm) / 10 divisões do vernier = 0,001 mm." },
+            { id: 65, difficulty: "Difícil", topic: "Elementos de Máquinas", question: "Montar engrenagens de dentes retos com distância entre centros MENOR que a de projeto gera:", options: ["Aumento de backlash.", "Interferência entre dentes, falta de folga, travamento e quebra.", "Inversão de rotação.", "Redução da taxa."], answer: 1, explanation: "Elimina a folga (backlash) necessária para expansão térmica provocando travamento." },
+            { id: 66, difficulty: "Difícil", topic: "Lubrificantes Especiais", question: "Graxa recomendada para rolamentos acima de 160°C em ambiente químico agressivo:", options: ["Sabão de cálcio com mineral", "Sintética de Perfluorpoliéter (PFPE) com PTFE", "Sabão de sódio", "Óleo de mamona"], answer: 1, explanation: "PFPE/PTFE suporta quimicamente e termicamente temperaturas contínuas >200°C." },
+            { id: 67, difficulty: "Difícil", topic: "Mecânica dos Fluidos", question: "Erosão (pitting) no rotor de bomba centrífuga com ruído de 'cascalho':", options: ["Desalinhamento", "Cavitação (colapso de bolhas de vapor)", "Corrosão galvânica", "Oxidação da graxa"], answer: 1, explanation: "Bolhas de vapor colapsam gerando micro-jatos de altíssima pressão que erodem o metal." },
+            { id: 68, difficulty: "Difícil", topic: "Alinhamento de Máquinas", question: "Método dos Relógios Comparadores Inversos baseia-se em:", options: ["Medir diâmetro interno.", "Leituras radiais simultâneas nos dois cubos girando os eixos juntos.", "Medir temperatura.", "Usar paquímetro."], answer: 1, explanation: "Mede o batimento radial nos dois flanges simultaneamente calculando o desalinhamento." },
+            { id: 69, difficulty: "Difícil", topic: "Ensaios Não Destrutivos", question: "Ensaio por Líquido Penetrante (LP) em solda destina-se a detectar:", options: ["Dureza interna.", "Descontinuidades superficiais abertas (trincas, porosidades).", "Composição química.", "Tensão elétrica."], answer: 1, explanation: "O líquido penetra por capilaridade revelando defeitos abertos na superfície." },
+            { id: 70, difficulty: "Difícil", topic: "Segurança em Áreas Ex", question: "Por que se proíbe ferramentas de aço carbono comum em Áreas Classificadas Ex?", options: ["Descalibram torquímetros.", "Podem gerar faíscas mecânicas por impacto; exige-se ligas antifaiscantes (Cu-Be / Al-Bronze).", "Aço evapora.", "Atraem UV."], answer: 1, explanation: "Ligas de Cobre-Berílio evitam ignição de atmosferas inflamáveis por fricção." },
+            { id: 71, difficulty: "Difícil", topic: "Tribologia", question: "Efeito Stick-Slip em barramentos de máquinas-ferramenta é:", options: ["Congelamento do óleo.", "Movimento intermitente por diferença entre atrito estático e dinâmico.", "Fratura da ferramenta.", "Deslizamento do acoplamento."], answer: 1, explanation: "Evita-se com óleos de barramento com aditivos que igualam atrito estático e dinâmico." },
+            { id: 72, difficulty: "Difícil", topic: "Metrologia & Cuidados", question: "Apertar o tambor do micrômetro diretamente com os dedos (sem catraca) causa:", options: ["Aumento da resolução.", "Deformação do arco do micrômetro e erro de medição para MENOS.", "Quebra do fuso.", "Travamento do nônio."], answer: 1, explanation: "A força excessiva deforma o arco elaticamente, falseando a leitura da peça." },
+            { id: 73, difficulty: "Difícil", topic: "Segurança & Normas", question: "Norma Regulamentadora que disciplina segurança em vasos de pressão e caldeiras:", options: ["NR-6", "NR-10", "NR-13", "NR-35"], answer: 2, explanation: "A NR-13 estabelece requisitos legais de inspeção e integridade estrutural." },
+            { id: 74, difficulty: "Difícil", topic: "Análise Vibracional em Rolamentos", question: "A frequência de falha da pista externa em rolamentos é denominada:", options: ["1xRPM", "BPFO", "FTF", "BPFI"], answer: 1, explanation: "BPFO (Ball Pass Frequency Outer) representa a frequência de impacto na pista externa." },
+            { id: 75, difficulty: "Difícil", topic: "Lubrificação de Motores", question: "Motor elétrico apresenta superaquecimento nos rolamentos pós-relubrificação. Causa:", options: ["Falta de graxa.", "Superlubrificação (excesso de graxa) causando atrito por cisalhamento.", "Chave errada.", "Fases invertidas."], answer: 1, explanation: "Excesso de graxa obriga o rolamento a 'chfofar' o produto, gerando calor excessivo." },
+            { id: 76, difficulty: "Difícil", topic: "Elementos de Transmissão", question: "Correia em V sub-tensionada (frouxa) provocará:", options: ["Quebra do eixo.", "Patinação (escorregamento), superaquecimento e perda de rotação.", "Ganho de eficiência.", "Alinhamento automático."], answer: 1, explanation: "Fricção dinâmica por escorregamento gera calor e desgaste abrasivo nas polias." },
+            { id: 77, difficulty: "Difícil", topic: "Engenharia de Confiabilidade", question: "No RCM, a sigla FMEA significa:", options: ["Failure Mode and Effects Analysis", "Lockout Tagout", "CIPA", "HAZOP"], answer: 0, explanation: "Análise estruturada para mapear modos de falha, causas e efeitos no processo." },
+            { id: 78, difficulty: "Difícil", topic: "Montagem Mecânica", question: "Cuidado principal na montagem de rolamentos por dilatação térmica:", options: ["Controlar o aquecimento (máx. 110°C a 120°C) para não percar a têmpera do aço.", "Usar maçarico direto.", "Prensar as gaiolas.", "Não há cuidados."], answer: 0, explanation: "Temperaturas acima de 120°C alteram a estrutura metalúrgica de dureza do aço." },
+            { id: 79, difficulty: "Difícil", topic: "Metrologia Angular", question: "Resolução do goniômetro cujo nônio divide 1° em 12 partes:", options: ["10'", "5' (cinco minutos de arco)", "1'", "0,5°"], answer: 1, explanation: "1° = 60'. Dividindo 60' por 12 partes = 5' de resolução." },
+            { id: 80, difficulty: "Difícil", topic: "Segurança & Procedimentos", question: "Antes de desativar os bloqueios LOTO e religar a máquina deve-se:", options: ["Ligar em rotação máxima com pessoas na área.", "Recolher ferramentas, checar peças soltas, recolocar proteções NR-12 e realizar startup.", "Descartar a OS.", "Pintar a carcaça."], answer: 1, explanation: "Reorganização e recolocação das proteções físicas evitam acidentes no arranque." }
         ];
 
+        // Mapeamento de Casas por Qtd de Jogadores
+        const boardTilesByPlayers = { 1: 50, 2: 55, 3: 60, 4: 70 };
+        const BONUS_VALUE = 2;
+        const PENALTY_VALUE = 3;
+
         // Estado do Jogo
-        let totalTiles = 50;
+        let totalTiles = 70;
         let numPlayers = 4;
         let playerNames = ["Jogador 1", "Jogador 2", "Jogador 3", "Jogador 4"];
         let currentPlayer = 0;
@@ -697,11 +754,26 @@
         let playerFinished = [false, false, false, false];
         let finishRank = [];
         let currentDiceRoll = 0;
-        let timerInterval = null;
-        let currentQuestion = null;
 
-        // Modos de Jogo: 'local' (Sala de Aula sem rede), 'single' (Treino Solo vs IA), 'online' (PeerJS P2P)
+        // Controle de Execução e Trava de Segurança
+        let isAnswering = false;
+
+        // Métricas e Estatísticas
+        let playerCorrectAnswers = [0, 0, 0, 0];
+        let playerTotalAnswers = [0, 0, 0, 0];
+        let gameSecondsElapsed = 0;
+        let gameClockInterval = null;
+        let timerInterval = null;
+
+        // Controle de Questões Usadas
+        let usedQuestionIds = [];
+
+        // Modos de Jogo: 'local', 'single', 'online'
         let currentGameMode = 'local';
+
+        // Casas Bônus e Ônus
+        let bonusTiles = [];
+        let penaltyTiles = [];
 
         // Variáveis de Rede Multiplayer
         let peer = null;
@@ -709,6 +781,33 @@
         let hostConnection = null;
         let isHost = false;
         let myPlayerIndex = 0;
+
+        function generateSpecialTiles(numTiles) {
+            bonusTiles = [
+                Math.floor(numTiles * 0.14),
+                Math.floor(numTiles * 0.34),
+                Math.floor(numTiles * 0.54),
+                Math.floor(numTiles * 0.74),
+                Math.floor(numTiles * 0.88)
+            ];
+            penaltyTiles = [
+                Math.floor(numTiles * 0.24),
+                Math.floor(numTiles * 0.44),
+                Math.floor(numTiles * 0.64),
+                Math.floor(numTiles * 0.84),
+                Math.floor(numTiles * 0.96)
+            ];
+        }
+
+        function startGameClock() {
+            clearInterval(gameClockInterval);
+            gameClockInterval = setInterval(() => {
+                gameSecondsElapsed++;
+                const mins = String(Math.floor(gameSecondsElapsed / 60)).padStart(2, '0');
+                const secs = String(gameSecondsElapsed % 60).padStart(2, '0');
+                document.getElementById('game-timer-display').innerText = `${mins}:${secs}`;
+            }, 1000);
+        }
 
         function changeGameMode() {
             currentGameMode = document.getElementById('game-mode-select').value;
@@ -726,7 +825,7 @@
                 playerCountGroup.style.display = 'none';
                 document.getElementById('num-players').value = '2';
                 playerNames[0] = document.getElementById('my-name-input').value || "Você";
-                playerNames[1] = "🤖 Robô IA (Mecânico)";
+                playerNames[1] = "🤖 Robô IA";
                 subtitle.innerText = 'Modo: Treino Solo • Você vs Robô IA';
                 document.getElementById('connection-status').innerText = 'Modo Treino Solo';
             } else if (currentGameMode === 'online') {
@@ -846,12 +945,16 @@
             const state = {
                 type: 'STATE_UPDATE',
                 numPlayers,
+                totalTiles,
                 playerNames,
                 currentPlayer,
                 playerPositions,
                 playerFinished,
                 finishRank,
-                currentDiceRoll
+                currentDiceRoll,
+                playerCorrectAnswers,
+                playerTotalAnswers,
+                gameSecondsElapsed
             };
 
             connections.forEach(conn => conn.send(state));
@@ -875,12 +978,16 @@
                 updateMyName();
             } else if (data.type === 'STATE_UPDATE') {
                 numPlayers = data.numPlayers;
+                totalTiles = data.totalTiles;
                 playerNames = data.playerNames;
                 currentPlayer = data.currentPlayer;
                 playerPositions = data.playerPositions;
                 playerFinished = data.playerFinished;
                 finishRank = data.finishRank;
                 currentDiceRoll = data.currentDiceRoll;
+                playerCorrectAnswers = data.playerCorrectAnswers;
+                playerTotalAnswers = data.playerTotalAnswers;
+                gameSecondsElapsed = data.gameSecondsElapsed;
                 syncUI();
             } else if (data.type === 'SHOW_QUESTION') {
                 currentQuestion = data.question;
@@ -901,6 +1008,7 @@
         function syncUI() {
             document.getElementById('num-players').value = numPlayers;
             document.getElementById('dice-display').innerText = `Dado: ${currentDiceRoll ? '🎲 ' + currentDiceRoll : '-'}`;
+            document.getElementById('total-tiles-display').innerText = totalTiles;
             updateTurnDisplay();
             renderPlayerInputs();
             updatePawns();
@@ -931,11 +1039,16 @@
                 const group = document.createElement('div');
                 group.classList.add('player-input-group');
 
+                const headerRow = document.createElement('div');
+                headerRow.classList.add('player-header-row');
+
                 const dot = document.createElement('div');
                 dot.classList.add('player-color-dot', `dot-p${i + 1}`);
 
                 const input = document.createElement('input');
                 input.type = 'text';
+                input.classList.add('net-input');
+                input.style.width = '100%';
                 input.value = playerNames[i] || `Jogador ${i + 1}`;
                 
                 if (currentGameMode === 'local') {
@@ -945,8 +1058,20 @@
                     input.readOnly = true;
                 }
 
-                group.appendChild(dot);
-                group.appendChild(input);
+                headerRow.appendChild(dot);
+                headerRow.appendChild(input);
+
+                const statsRow = document.createElement('div');
+                statsRow.classList.add('player-stats-row');
+
+                const correct = playerCorrectAnswers[i] || 0;
+                const total = playerTotalAnswers[i] || 0;
+                const pct = total > 0 ? Math.round((correct / total) * 100) : 0;
+
+                statsRow.innerHTML = `<span>🎯 Acertos: <strong>${correct}/${total}</strong></span><span>📊 Prec: <strong>${pct}%</strong></span>`;
+
+                group.appendChild(headerRow);
+                group.appendChild(statsRow);
                 container.appendChild(group);
             }
         }
@@ -960,7 +1085,7 @@
         }
 
         function updateTurnDisplay() {
-            if (getActivePlayersCount() <= 1 && finishRank.length >= numPlayers - 1 && numPlayers > 1) {
+            if (getActivePlayersCount() === 0 || (getActivePlayersCount() <= 1 && numPlayers > 1 && finishRank.length >= numPlayers - 1)) {
                 document.getElementById('turn-display').innerText = 'Partida Encerrada';
                 return;
             }
@@ -1025,18 +1150,30 @@
         }
 
         function resetGame() {
+            clearInterval(timerInterval);
+            clearInterval(gameClockInterval);
+
             if (currentGameMode === 'single') {
                 numPlayers = 2;
                 playerNames[0] = document.getElementById('my-name-input').value || "Você";
-                playerNames[1] = "🤖 Robô IA (Mecânico)";
+                playerNames[1] = "🤖 Robô IA";
             } else {
                 numPlayers = parseInt(document.getElementById('num-players').value, 10);
             }
 
+            totalTiles = boardTilesByPlayers[numPlayers] || 70;
+            document.getElementById('total-tiles-display').innerText = totalTiles;
+            generateSpecialTiles(totalTiles);
+
             currentPlayer = 0;
+            isAnswering = false;
             playerPositions = [];
             playerFinished = [];
             finishRank = [];
+            playerCorrectAnswers = [0, 0, 0, 0];
+            playerTotalAnswers = [0, 0, 0, 0];
+            usedQuestionIds = [];
+            gameSecondsElapsed = 0;
 
             for (let i = 0; i < numPlayers; i++) {
                 playerPositions.push(1);
@@ -1047,8 +1184,10 @@
 
             document.getElementById('dice-display').innerText = 'Dado: -';
             document.getElementById('btn-roll').disabled = false;
+            document.getElementById('question-modal').style.display = 'none';
             document.getElementById('win-modal').style.display = 'none';
 
+            startGameClock();
             renderPlayerInputs();
             initBoard();
 
@@ -1076,13 +1215,13 @@
             } while (playerFinished[currentPlayer]);
 
             currentDiceRoll = 0;
+            isAnswering = false;
             
             if (currentGameMode === 'online' && isHost) {
                 broadcastGameState();
             } else {
                 syncUI();
                 
-                // Se for Modo Treino Solo e for a vez da IA
                 if (currentGameMode === 'single' && currentPlayer === 1 && !playerFinished[1]) {
                     setTimeout(() => {
                         playBotTurn();
@@ -1092,6 +1231,8 @@
         }
 
         function rollDice() {
+            if (isAnswering) return;
+
             if (currentGameMode === 'online' && !isHost && hostConnection) {
                 hostConnection.send({ type: 'ROLL_DICE' });
                 return;
@@ -1117,8 +1258,10 @@
             document.getElementById('dice-display').innerText = `Dado: 🎲 ${currentDiceRoll}`;
 
             setTimeout(() => {
-                // Simula taxa de acerto de 70% da IA
                 const isCorrect = Math.random() < 0.7;
+                playerTotalAnswers[1]++;
+                if (isCorrect) playerCorrectAnswers[1]++;
+
                 let initialPos = playerPositions[1];
                 let targetPos = initialPos + (isCorrect ? currentDiceRoll : 0);
 
@@ -1126,6 +1269,7 @@
 
                 playerPositions[1] = targetPos;
                 updatePawns();
+                renderPlayerInputs();
 
                 if (targetPos === totalTiles) {
                     playerFinished[1] = true;
@@ -1141,18 +1285,28 @@
             const currentPos = playerPositions[currentPlayer];
             let targetDifficulty = "Fácil";
 
-            if (currentPos >= 17 && currentPos <= 33) {
+            const p1Cut = Math.floor(totalTiles * 0.33);
+            const p2Cut = Math.floor(totalTiles * 0.66);
+
+            if (currentPos > p1Cut && currentPos <= p2Cut) {
                 targetDifficulty = "Médio";
-            } else if (currentPos >= 34) {
+            } else if (currentPos > p2Cut) {
                 targetDifficulty = "Difícil";
             }
 
-            let filteredQuestions = questionsDatabase.filter(q => q.difficulty === targetDifficulty);
-            if (filteredQuestions.length === 0) {
-                filteredQuestions = questionsDatabase;
+            let availableQuestions = questionsDatabase.filter(q => q.difficulty === targetDifficulty && !usedQuestionIds.includes(q.id));
+
+            if (availableQuestions.length === 0) {
+                usedQuestionIds = usedQuestionIds.filter(id => {
+                    const q = questionsDatabase.find(item => item.id === id);
+                    return q && q.difficulty !== targetDifficulty;
+                });
+                availableQuestions = questionsDatabase.filter(q => q.difficulty === targetDifficulty);
             }
 
-            const rawQuestion = filteredQuestions[Math.floor(Math.random() * filteredQuestions.length)];
+            const rawQuestion = availableQuestions[Math.floor(Math.random() * availableQuestions.length)];
+            usedQuestionIds.push(rawQuestion.id);
+
             const correctAnswerText = rawQuestion.options[rawQuestion.answer];
 
             let mappedOptions = rawQuestion.options.map(opt => ({
@@ -1163,6 +1317,7 @@
             mappedOptions = shuffleArray(mappedOptions);
 
             currentQuestion = {
+                id: rawQuestion.id,
                 difficulty: rawQuestion.difficulty,
                 topic: rawQuestion.topic,
                 question: rawQuestion.question,
@@ -1180,6 +1335,8 @@
         }
 
         function renderQuestionModal(q) {
+            isAnswering = false;
+
             document.getElementById('question-topic').innerText = `Tema: ${q.topic}`;
             
             const diffEl = document.getElementById('question-difficulty');
@@ -1198,13 +1355,21 @@
 
             q.options.forEach((optText, idx) => {
                 const btn = document.createElement('button');
+                btn.type = 'button';
                 btn.classList.add('option-btn');
                 btn.innerText = `${String.fromCharCode(65 + idx)}) ${optText}`;
+                btn.disabled = false;
+                btn.style.pointerEvents = 'auto';
                 
+                // Bloqueia clique no multiplayer se não for a vez do cliente
                 if (currentGameMode === 'online' && currentPlayer !== myPlayerIndex) {
                     btn.disabled = true;
+                    btn.style.pointerEvents = 'none';
                 } else {
-                    btn.onclick = () => evaluateAnswer(idx);
+                    btn.onclick = (e) => {
+                        e.preventDefault();
+                        evaluateAnswer(idx);
+                    };
                 }
 
                 optionsContainer.appendChild(btn);
@@ -1214,11 +1379,11 @@
         }
 
         function startTimer() {
+            clearInterval(timerInterval);
             let timeRemaining = 45;
             const timerEl = document.getElementById('timer');
             timerEl.innerText = `⏱️ ${timeRemaining}s`;
 
-            clearInterval(timerInterval);
             timerInterval = setInterval(() => {
                 timeRemaining--;
                 timerEl.innerText = `⏱️ ${timeRemaining}s`;
@@ -1231,7 +1396,13 @@
         }
 
         function handleTimeOut() {
+            if (isAnswering) return;
+            isAnswering = true;
+
             disableOptions();
+            playerTotalAnswers[currentPlayer]++;
+            renderPlayerInputs();
+
             const msg = '❌ Tempo esgotado! O jogador permanece na mesma casa.';
             
             if (currentGameMode === 'online' && isHost) {
@@ -1255,15 +1426,24 @@
         }
 
         function evaluateAnswer(selectedIdx) {
+            if (isAnswering) return;
+            isAnswering = true;
+
+            clearInterval(timerInterval);
+
             if (currentGameMode === 'online' && !isHost && hostConnection) {
                 hostConnection.send({ type: 'ANSWER_QUESTION', selectedIdx: selectedIdx });
                 return;
             }
 
-            clearInterval(timerInterval);
             disableOptions();
 
             const isCorrect = (selectedIdx === currentQuestion.correctIndex);
+            playerTotalAnswers[currentPlayer]++;
+            if (isCorrect) playerCorrectAnswers[currentPlayer]++;
+
+            renderPlayerInputs();
+
             let msg = "";
 
             if (isCorrect) {
@@ -1281,7 +1461,7 @@
                         extraMsg = ` 🚀 CAIU EM CASA BÔNUS! Avançou +${BONUS_VALUE} casas!`;
                     } else if (penaltyTiles.includes(targetPos)) {
                         targetPos = Math.max(1, targetPos - PENALTY_VALUE);
-                        extraMsg = ` ⚠️ CAIU EM CASA ÔNUS! Recuou -${PENALTY_VALUE} casas!`;
+                        extraMsg = ` ⚠️️ CAIU EM CASA ÔNUS! Recuou -${PENALTY_VALUE} casas!`;
                     }
                 }
 
@@ -1315,10 +1495,14 @@
 
         function disableOptions() {
             const btns = document.querySelectorAll('.option-btn');
-            btns.forEach(b => b.disabled = true);
+            btns.forEach(b => {
+                b.disabled = true;
+                b.style.pointerEvents = 'none';
+            });
         }
 
         function closeModalAndNext() {
+            clearInterval(timerInterval);
             document.getElementById('question-modal').style.display = 'none';
             if (currentGameMode === 'online' && isHost) {
                 connections.forEach(conn => conn.send({ type: 'CLOSE_QUESTION' }));
@@ -1327,6 +1511,8 @@
         }
 
         function showWinModal() {
+            clearInterval(gameClockInterval);
+            clearInterval(timerInterval);
             if (currentGameMode === 'online' && isHost) {
                 connections.forEach(conn => conn.send({ type: 'SHOW_WIN' }));
             }
@@ -1337,7 +1523,10 @@
             document.getElementById('question-modal').style.display = 'none';
             
             const leaderboard = document.getElementById('leaderboard');
-            leaderboard.innerHTML = '<h3>Classificação Final:</h3><br>';
+            const mins = String(Math.floor(gameSecondsElapsed / 60)).padStart(2, '0');
+            const secs = String(gameSecondsElapsed % 60).padStart(2, '0');
+
+            leaderboard.innerHTML = `<h3>Classificação Final (Tempo Total: ${mins}:${secs}):</h3><br>`;
 
             finishRank.forEach((playerIdx, rank) => {
                 const item = document.createElement('div');
@@ -1348,7 +1537,14 @@
                 else if (rank === 1) medal = '🥈 2º Lugar:';
                 else if (rank === 2) medal = '🥉 3º Lugar:';
 
-                item.innerHTML = `<span><strong>${medal}</strong> ${getPlayerName(playerIdx)}</span>`;
+                const correct = playerCorrectAnswers[playerIdx] || 0;
+                const total = playerTotalAnswers[playerIdx] || 0;
+                const pct = total > 0 ? Math.round((correct / total) * 100) : 0;
+
+                item.innerHTML = `
+                    <span><strong>${medal}</strong> ${getPlayerName(playerIdx)}</span>
+                    <span style="font-size: 0.9rem; color: #38bdf8;">🎯 ${correct}/${total} acertos (${pct}%)</span>
+                `;
                 leaderboard.appendChild(item);
             });
 
@@ -1357,7 +1553,7 @@
 
         // Suporte a atalhos de teclado para sala de aula no projetor
         document.addEventListener('keydown', (e) => {
-            if (e.code === 'Space' && !document.getElementById('btn-roll').disabled) {
+            if (e.code === 'Space' && !document.getElementById('btn-roll').disabled && !isAnswering) {
                 rollDice();
             }
         });
