@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Desafio SENAI: Automação Hidráulica Industrial (P2P)</title>
+
+<!-- Importação da Biblioteca PeerJS para Conexão P2P -->
+<script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+
+<style>
+:root {
+  --senai-blue: #0046ad;
+  --senai-red: #e30613;
+  --bg-color: #eef5ff;
+  --card-bg: #ffffff;
+  --text-color: #17233c;
+  --border-color: #d7e4f8;
+  --accent-green: #2e7d32;
+  --accent-green-bg: #edf7ed;
+  --hydraulic-blue: #0284c7;
+  --hydraulic-cyan: #0891b2;
+}
+
+*{box-sizing:border-box}
+body{margin:0;font-family:Arial,Helvetica,sans-serif;background:var(--bg-color);color:var(--text-color)}
+header{background:var(--senai-blue);color:#fff;padding:18px 24px;display:flex;align-items:center;justify-content:center;gap:18px;text-align:center}
+.logo{background:var(--senai-red);color:#fff;font-weight:900;font-style:italic;font-size:26px;padding:4px 12px;border-radius:4px}
+h1{margin:0 0 4px;font-size:24px;color:#fff}
+header p{margin:0;font-size:14px;opacity:0.9}
+
+main{max-width:1200px;margin:auto;padding:18px}
+
+/* Painel do Lobby Multiplayer */
+.network-panel {
+  background: var(--card-bg);
+  padding: 16px 20px;
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  margin-bottom: 16px;
+  border: 2px solid var(--hydraulic-blue);
+}
+.network-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+  justify-content: space-between;
+}
+.network-inputs { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.network-inputs input {
+  padding: 8px 12px;
+  border: 2px solid #cbd5e1;
+  border-radius: 6px;
+  font-size: 14px;
+}
+
+/* Painel de Navegação do Jogo */
+.controls-container{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;background:var(--card-bg);padding:12px 18px;border-radius:10px;box-shadow:0 2px 8px rgba(0,0,0,0.08);margin-bottom:14px;gap:12px}
+.nav-controls{display:flex;align-items:center;gap:10px}
+.mode-selector{display:flex;align-items:center;gap:8px;font-weight:bold;color:var(--senai-blue);font-size:14px}
+.mode-selector select{padding:8px 12px;border-radius:6px;border:2px solid var(--senai-blue);background:#fff;color:var(--text-color);font-weight:bold;cursor:pointer;font-size:14px}
+
+/* HUD do Tempo e Score */
+.hud-panel {
+  display: flex;
+  gap: 16px;
+  background: #f1f5f9;
+  padding: 8px 16px;
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+  font-weight: bold;
+}
+.hud-item { display: flex; align-items: center; gap: 6px; font-size: 15px; }
+.hud-item.timer { color: var(--senai-red); }
+.hud-item.score { color: var(--accent-green); }
+
+button{background:var(--senai-red);color:#fff;border:0;border-radius:8px;padding:10px 18px;font-weight:bold;font-size:14px;cursor:pointer;transition:transform 0.1s}
+button:disabled{background:#ccc;cursor:not-allowed;opacity:0.6}
+button:hover:not(:disabled){filter:brightness(1.1);transform:scale(1.02)}
+.btn-green{background:var(--accent-green)}
+.btn-blue{background:var(--senai-blue)}
+
+.page-info{font-size:16px;font-weight:bold;color:var(--senai-blue)}
+
+/* Tabela de Classificação Multiplayer */
+.leaderboard-panel {
+  display: none;
+  background: var(--card-bg);
+  border-radius: 10px;
+  padding: 12px 16px;
+  margin-bottom: 16px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+.leaderboard-panel h3 { margin: 0 0 10px; color: var(--senai-blue); font-size: 16px; }
+.player-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px; }
+.player-card {
+  background: #f8fafc;
+  border: 1px solid var(--border-color);
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 13px;
+}
+.player-card.is-me { border-color: var(--senai-blue); background: #eff6ff; }
+
+.instructions{background:var(--card-bg);border-radius:10px;padding:12px 16px;margin-bottom:16px;box-shadow:0 2px 8px rgba(0,0,0,0.08);font-size:14px}
+.instructions b{color:var(--senai-blue)}
+
+.quiz-container{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+.questions-panel, .answers-panel{background:var(--card-bg);border-radius:12px;padding:16px;box-shadow:0 3px 10px rgba(0,0,0,0.1);min-height:400px}
+.questions-panel h2, .answers-panel h2{margin:0 0 10px;color:var(--senai-blue);font-size:18px}
+
+.slots{display:grid;gap:12px}
+.slot{min-height:75px;border:2px dashed #9eb2c2;border-radius:8px;padding:12px;background:#f7fafc;display:flex;flex-direction:column;justify-content:center;transition:all 0.3s ease}
+.slot.over{background:#e9f4fb;border-color:var(--hydraulic-blue)}
+
+.slot.filled{border:2px solid var(--accent-green);background:var(--accent-green-bg);box-shadow:0 2px 6px rgba(0,0,0,0.05)}
+.slot .q-title{font-size:12px;font-weight:bold;color:var(--hydraulic-blue);margin-bottom:4px}
+.slot .q-text{font-size:13.5px;color:var(--text-color);line-height:1.35}
+
+.slot .answered-box{margin-top:10px;padding:10px;background:#ffffff;border-left:4px solid var(--accent-green);border-radius:4px}
+.slot .answered-title{font-weight:bold;color:#1b5e20;font-size:13px;margin-bottom:3px;display:flex;align-items:center;gap:5px}
+.slot .answered-text{font-size:13px;color:#2c3e50;line-height:1.35}
+
+.cards{display:grid;grid-template-columns:1fr;gap:10px}
+.card{background:#f8fafc;border:2px solid var(--border-color);border-radius:9px;padding:11px;cursor:grab;display:flex;flex-direction:column;justify-content:center}
+.card:active{cursor:grabbing}
+.card.used{display:none}
+.card b{display:block;margin-bottom:4px;font-size:13px;color:var(--hydraulic-blue)}
+.card p{margin:0;font-size:13px;color:#333;line-height:1.35}
+
+#feedback{display:none;margin:15px 0;padding:12px;border-radius:9px;text-align:center;font-weight:bold;font-size:14px}
+.success{background:#e8f7ed;color:#23653a;border:1px solid #38a65a}
+.error{background:#fff0ed;color:#9b3425;border:1px solid #e30613}
+#scoreBar{display:flex;justify-content:space-around;font-weight:bold;margin-top:14px;font-size:16px;color:var(--senai-blue);background:var(--card-bg);padding:12px;border-radius:8px;box-shadow:0 2px 6px rgba(0,0,0,0.05)}
+
+@media(max-width:800px){
+  .quiz-container{grid-template-columns:1fr}
+  .controls-container{justify-content:center}
+  header{flex-direction:column;gap:8px}
+  .hud-panel{width:100%;justify-content:space-around}
+}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">SENAI</div>
+  <div>
+    <h1>💧 Desafio: Automação Hidráulica Industrial</h1>
+    <p>Resolução de Problemas e Leis de Hidráulica (Solo ou Multiplayer P2P)</p>
+  </div>
+</header>
+<main>
+
+  <!-- LOBBY MULTIPLAYER P2P -->
+  <section class="network-panel">
+    <div class="network-controls">
+      <div class="network-inputs">
+        <label><b>Seu Nome:</b></label>
+        <input type="text" id="playerName" value="Técnico 1" style="width:130px">
+        
+        <button class="btn-blue" onclick="createRoom()">🌐 Criar Sala Multiplayer</button>
+        
+        <span style="opacity:0.5">|</span>
+        
+        <input type="text" id="roomCodeInput" placeholder="Código da Sala" style="width:120px; text-transform:uppercase;">
+        <button class="btn-green" onclick="joinRoom()">🔗 Entrar na Sala</button>
+      </div>
+
+      <div id="roomInfo" style="font-size:14px; font-weight:bold; color:var(--senai-blue);">
+        Modo Solo Ativo (Offline)
+      </div>
+    </div>
+  </section>
+
+  <!-- PAINEL DE POSIÇÃO DOS JOGADORES (Ao Vivo) -->
+  <section class="leaderboard-panel" id="leaderboardPanel">
+    <h3>🌐 Placar da Corrida em Tempo Real (Até 4 Jogadores)</h3>
+    <div class="player-list" id="playerList"></div>
+  </section>
+
+  <!-- CONTROLES DO JOGO -->
+  <div class="controls-container">
+    <div class="nav-controls">
+      <button id="btnPrev" onclick="changePage(-1)">◀ Anterior</button>
+      <span class="page-info" id="pageIndicator">Página 1 / 4</span>
+      <button id="btnNext" onclick="changePage(1)">Próxima ▶</button>
+    </div>
+
+    <div class="hud-panel">
+      <div class="hud-item timer">⏱️ Tempo: <span id="timeDisplay">00:00</span></div>
+      <div class="hud-item score">🏆 Pontos: <span id="scoreDisplay">0</span></div>
+    </div>
+
+    <div class="mode-selector">
+      <label for="difficultySelect">🎯 Modo de Jogo:</label>
+      <select id="difficultySelect" onchange="toggleDifficulty()">
+        <option value="normal">🟢 Normal (Livre + Nome)</option>
+        <option value="advanced">🔥 Avançado (Apenas Conceito)</option>
+        <option value="timed">⚡ Desafio Takt Time (3 Minutos)</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="instructions" id="instructionsText">
+    <b>Como jogar:</b> Arraste o cartão da coluna de <b>Respostas / Soluções Hidráulicas</b> até o quadro do <b>Desafio Técnico</b> correspondente.
+  </div>
+
+  <div id="feedback"></div>
+
+  <section class="quiz-container">
+    <div class="questions-panel">
+      <h2 id="moduleTitle">Cenários e Questões Técnicas</h2>
+      <div class="slots" id="questionSlots"></div>
+    </div>
+
+    <div class="answers-panel">
+      <h2>Conceitos e Soluções Hidráulicas</h2>
+      <div class="cards" id="answerCards"></div>
+    </div>
+  </section>
+
+  <div id="scoreBar">
+    <span id="score">Acertos na página: 0 / 10</span>
+    <span id="combo">Combo: x1</span>
+  </div>
+</main>
+
+<script>
+const allQuestions = [
+  // MÓDULO 1: FUNDAMENTOS, LEIS FÍSICAS E VARIÁVEIS OPERACIONAIS (PÁGINA 1)
+  { id: 1, page: 1, title: "Questão 01 - Transmissão de Pressão", q: "De acordo com o Princípio de Pascal, como a pressão aplicada a um líquido confinado se comporta em um sistema hidráulico fechado?", rTitle: "Princípio de Pascal", r: "Transmite-se integralmente e com a mesma intensidade em todos os sentidos e paredes do recipiente." },
+  { id: 2, page: 1, title: "Questão 02 - Cálculo de Pressão", q: "Se aplicarmos uma força de 10 kgf num pistão com área de 1 cm², qual será a pressão gerada na parede do recipiente hidráulico?", rTitle: "Pressão de 10 kgf/cm²", r: "Pela fórmula P = F / A, dividindo a força aplicada (10 kgf) pela área do pistão (1 cm²), obtém-se exatamente 10 kgf/cm²." },
+  { id: 3, page: 1, title: "Questão 03 - Prensa Hidráulica", q: "Em uma prensa de Pascal, um pistão de entrada de 1 cm² recebe 10 kgf e alimenta um pistão de saída de 10 cm². Qual a força resultante na saída?", rTitle: "Força de 100 kgf", r: "A pressão interna é 10 kgf/cm². Multiplicando essa pressão pela área do pistão de saída (10 cm²), gera-se F = 100 kgf." },
+  { id: 4, page: 1, title: "Questão 04 - Conservação de Energia", q: "Relembrando o Princípio de Conservação de Energia aplicado à hidráulica, o que ocorre ao se multiplicar a força em um atuador?", rTitle: "Redução do Deslocamento/Velocidade", r: "Sacrifica-se o deslocamento (distância) ou a velocidade do pistão maior, mantendo o Trabalho (F x d) constante." },
+  { id: 5, page: 1, title: "Questão 05 - Efeito da Temperatura", q: "Como a variação de temperatura afeta diretamente a viscosidade do fluido hidráulico num circuito industrial?", rTitle: "Redução da Viscosidade pelo Calor", r: "O aumento da temperatura reduz a viscosidade, pois a coesão intermolecular diminui, fazendo o óleo fluir mais facilmente." },
+  { id: 6, page: 1, title: "Questão 06 - Relação Vazão e Velocidade", q: "Qual a relação entre a vazão (Q) fornecida pela bomba e a velocidade (v) de avanço de um cilindro hidráulico de área (A)?", rTitle: "Fórmula v = Q / A", r: "A velocidade é diretamente proporcional à vazão volumétrica (Q) e inversamente proporcional à área da seção transversal (A)." },
+  { id: 7, page: 1, title: "Questão 07 - Perda de Carga em Curvas", q: "O que ocorre fisicamente quando o fluido hidráulico encontra uma curva de 90° (cotovelo) em uma tubulação industrial?", rTitle: "Geração de Calor e Turbulência", r: "Ocorre geração de calor por atrito e choque das moléculas com o obstáculo, gerando turbulência e perda de carga." },
+  { id: 8, page: 1, title: "Questão 08 - Propriedade dos Líquidos", q: "Qual propriedade dos líquidos permite a transmissão eficiente de energia na hidráulica quando comparados aos gases?", rTitle: "Incompressibilidade Prática", r: "Incompressibilidade prática e retenção de volume constante, permitindo transmissão imediata de força sem perda por compressão." },
+  { id: 9, page: 1, title: "Questão 09 - Velocidades em Cilindro Dupla Ação", q: "Em um cilindro de dupla ação com área A1 = 20 cm² e retorno A2 = 10 cm², alimentado pela mesma vazão Q, como se comparam as velocidades?", rTitle: "Velocidade de Retorno o Dobro da de Avanço", r: "Como a área de retorno A2 é a metade da área de avanço A1, pela fórmula v = Q/A, a velocidade de retorno será o dobro." },
+  { id: 10, page: 1, title: "Questão 10 - Potência Hidráulica", q: "A potência hidráulica de um sistema é determinada essencialmente pela combinação de quais duas variáveis operacionais?", rTitle: "Pressão de Trabalho e Vazão", r: "Pressão de trabalho (determina a capacidade de força) e vazão do fluido (determina a velocidade de execução do trabalho)." },
+
+  // MÓDULO 2: FLUIDOS, RESERVATÓRIOS E FILTRAGEM (PÁGINA 2)
+  { id: 11, page: 2, title: "Questão 11 - Funções do Fluido", q: "Quais são as três funções primárias fundamentais de um fluido hidráulico num circuito industrial?", rTitle: "Transmitir Energia, Lubrificar e Resfriar", r: "Transmitir energia como meio físico, lubrificar superfícies em atrito e transferir calor para dissipação no reservatório." },
+  { id: 12, page: 2, title: "Questão 12 - Placa Defletora (Chicana)", q: "Qual é a principal função da placa defletora (chicana) localizada no interior do reservatório hidráulico?", rTitle: "Separar Linha de Retorno da Sucção", r: "Separar o óleo de retorno da linha de sucção, permitindo repouso, decantação de impurezas e liberação de bolhas de ar." },
+  { id: 13, page: 2, title: "Questão 13 - Instalação da Linha de Retorno", q: "Por que todas as linhas de retorno de óleo devem ser instaladas abaixo do nível mínimo de fluido no reservatório?", rTitle: "Prevenção de Aeração e Espuma", r: "Para impedir a turbulência e a formação de espuma/aeração por queda livre do óleo, evitando cavitação na bomba." },
+  { id: 14, page: 2, title: "Questão 14 - Aditivos Antiespumantes", q: "Como atuam os aditivos antiespumantes adicionados aos óleos hidráulicos minerais?", rTitle: "Aglutinação de Microbolhas de Ar", r: "Combinam pequenas bolhas de ar dispersas em bolhas maiores que sobem rapidamente à superfície e estouram." },
+  { id: 15, page: 2, title: "Questão 15 - Fluidos Sintéticos Resistentes ao Fogo", q: "Qual das opções apresenta a composição típica dos fluidos hidráulicos sintéticos resistentes ao fogo de alto custo?", rTitle: "Ésteres de Fosfato / Hidrocarbonetos Clorados", r: "Formulados com ésteres de fosfato ou hidrocarbonetos clorados para oferecer alta resistência à ignição em áreas críticas." },
+  { id: 16, page: 2, title: "Questão 16 - Sedimentação no Tanque", q: "De que forma a presença de sedimentos e contaminantes no fundo do reservatório prejudica o resfriamento do sistema?", rTitle: "Formação de Camada Isolante Térmica", r: "Formam uma camada isolante nas paredes metálicas, dificultando a transferência de calor do óleo para o ambiente externo." },
+  { id: 17, page: 2, title: "Questão 17 - Limitação do Filtro de Sucção", q: "Qual é a principal limitação dos filtros de sucção instalados no tubo de aspiração dentro do reservatório?", rTitle: "Risco de Cavitação na Bomba", r: "Se forem muito finos ou ficarem obstruídos, causam depressão excessiva na entrada da bomba, gerando cavitação destrutiva." },
+  { id: 18, page: 2, title: "Questão 18 - Válvula de Bypass no Filtro", q: "Como opera a válvula de bypass (desvio) integrada em um conjunto de filtragem hidráulica?", rTitle: "Abertura por Pressão Diferencial (ΔP)", r: "Abre por pressão diferencial quando o elemento filtrante colmata, garantindo o fluxo contínuo sem interromper o circuito." },
+  { id: 19, page: 1, page: 2, title: "Questão 19 - Filtro de Linha de Pressão", q: "Onde deve ser instalado um filtro de linha (pressão) e qual é sua principal exigência construtiva?", rTitle: "Saída da Bomba com Carcaça Robusta", r: "Instalado na saída da bomba antes de componentes sensíveis; sua carcaça precisa suportar a alta pressão total do sistema." },
+  { id: 20, page: 2, title: "Questão 20 - Indicador de Colmatagem", q: "Para que serve o indicador mecânico/elétrico de colmatagem instalado num filtro hidráulico?", rTitle: "Sinalização de Troca do Elemento", r: "Alertar visualmente ou eletricamente o operador quando o elemento filtrante necessita de troca/limpeza por saturação." },
+
+  // MÓDULO 3: BOMBAS, MOTORES, CONEXÕES E TUBULAÇÃO (PÁGINA 3)
+  { id: 21, page: 3, title: "Questão 21 - Princípio de Sucção da Bomba", q: "Qual é o princípio físico fundamental de funcionamento de uma bomba hidráulica de deslocamento positivo?", rTitle: "Criação de Vácuo Parcial na Entrada", r: "Criar vácuo parcial na entrada para que a pressão atmosférica no tanque empurre o fluido para o interior da carcaça." },
+  { id: 22, page: 3, title: "Questão 22 - Especificação de Bombas", q: "Como são essencialmente especificadas as bombas hidráulicas industriais pelos fabricantes?", rTitle: "Pressão Máxima e Deslocamento Volumétrico", r: "Pela capacidade máxima de pressão de operação (bar) e pelo deslocamento volumétrico (litros por minuto em dada rotação)." },
+  { id: 23, page: 3, title: "Questão 23 - Bomba de Engrenagens Externas", q: "Numa bomba de engrenagens externas, o que ocorre do lado da entrada (sucção) durante a rotação?", rTitle: "Desengrenamento dos Dentes", r: "Os dentes das engrenagens se desengrenam, aumentando o volume interno da câmara e criando vácuo parcial para sucção." },
+  { id: 24, page: 3, title: "Questão 24 - Cargas Radiais em Engrenagens", q: "Qual é a causa das cargas radiais não-balanceadas nos eixos e rolamentos de uma bomba de engrenagens simples?", rTitle: "Alta Pressão na Janela de Saída", r: "A ação da alta pressão do lado de recalque atuando continuamente contra os dentes, empurrando os eixos contra a sucção." },
+  { id: 25, page: 3, title: "Questão 25 - Bomba de Palhetas", q: "Em uma bomba de palhetas de deslocamento fixo, como as palhetas são mantidas em contato contínuo com o anel estator?", rTitle: "Força Centrífuga e Pressão na Base", r: "Pela ação da força centrífuga (inércia) da rotação combinada com a pressão hidráulica direcionada à base das ranhuras." },
+  { id: 26, page: 3, title: "Questão 26 - Motor Hidráulico vs Bomba", q: "Qual a principal diferença operacional entre uma bomba hidráulica e um motor hidráulico?", rTitle: "Conversão de Fluxo em Rotação", r: "O motor opera no princípio inverso da bomba: recebe o fluido pressurizado e converte o fluxo e pressão em rotação e torque." },
+  { id: 27, page: 3, title: "Questão 27 - Conexões Reusáveis", q: "Qual a grande vantagem operacional do uso de conexões reusáveis em instalações de mangueiras hidráulicas?", rTitle: "Reaproveitamento do Terminal de Campo", r: "Possibilitam reaproveitar o terminal metálico trocando apenas a mangueira danificada sem máquinas especiais de prensagem." },
+  { id: 28, page: 3, title: "Questão 28 - Armadura de Aço em Mangueiras", q: "Qual a função da armadura interna de arame de aço trançado ou espiralado nas mangueiras de alta pressão?", rTitle: "Resistência Estrutural contra Expansão", r: "Conferir resistência estrutural para conter picos de alta pressão interna sem que a mangueira rompa ou deforme." },
+  { id: 29, page: 3, title: "Questão 29 - Capa de Proteção Partek", q: "Para que serve a capa de proteção têxtil do tipo Partek instalada sobre mangueiras hidráulicas?", rTitle: "Proteção contra Abrasão Mecânica", r: "Proporcionar extrema resistência ao desgaste por abrasão e fricção contínua da mangueira contra estruturas metálicas." },
+  { id: 30, page: 3, title: "Questão 30 - Proteção Firesleeve", q: "Em quais ambientes operacionais é obrigatória a aplicação da capa de proteção do tipo Firesleeve?", rTitle: "Ambientes com Altas Temperaturas/Chamas", r: "Em áreas expostas a altas temperaturas, chamas diretas, respingos de metal fundido e fagulhas de solda (ex: fundições)." },
+
+  // MÓDULO 4: VÁLVULAS E ESTUDOS DE CASO (PÁGINA 4)
+  { id: 31, page: 4, title: "Questão 31 - Válvula Limitadora de Pressão", q: "Qual é a função primária de uma válvula limitadora de pressão (válvula de segurança) num sistema hidráulico?", rTitle: "Proteção do Circuito contra Sobrepressão", r: "Proteger o circuito contra sobrepressão, abrindo para o tanque ao atingir a pressão máxima calibrada na mola de alívio." },
+  { id: 32, page: 4, title: "Questão 32 - Válvula Redutora de Pressão", q: "Como atua uma válvula reguladora/redutora de pressão em um ramal específico de um circuito industrial?", rTitle: "Pressão Secundária Reduzida e Constante", r: "Mantém a pressão secundária constante no ramal a um valor inferior à pressão principal do circuito (válvula N.A.)." },
+  { id: 33, page: 4, title: "Questão 33 - Controle Meter-In", q: "Em qual situação industrial o circuito de controle de fluxo do tipo Meter-In (controle na entrada) é indicado?", rTitle: "Controle de Cargas Resistivas", r: "Para controle de velocidade em cargas puramente resistivas, onde a força opõe-se sempre ao sentido do movimento do cilindro." },
+  { id: 34, page: 4, title: "Questão 34 - Controle Meter-Out", q: "Por que o controle Meter-Out (na saída) é indispensável em atuadores sujeitos a cargas negativas ou gravitacionais?", rTitle: "Criação de Contrapressão de Retenção", r: "Cria uma contrapressão no lado de retorno do pistão, impedindo que a carga 'puxe' o cilindro livremente e gere cavitação." },
+  { id: 35, page: 4, title: "Questão 35 - Válvula de Retenção Pilotada", q: "Qual a função da válvula de retenção pilotada no circuito de uma plataforma elevatória de cargas?", rTitle: "Bloqueio Estanque sem Vazamento Interno", r: "Permite fluxo livre num sentido e bloqueio estanque no inverso, abrindo a retenção apenas mediante sinal de pilotagem externa." },
+  { id: 36, page: 4, title: "Questão 36 - Estudo de Caso 1: Injetora", q: "No circuito da Injetora, como um atuador diferencial é empregado como multiplicador de pressão de 40 bar para 80 bar?", rTitle: "Multiplicação por Razão de Áreas (P1.A1=P2.A2)", r: "Aplica-se a pressão P1 na área maior do embolo (A1), gerando força que pressuriza uma câmara secundária de menor área (A2)." },
+  { id: 37, page: 4, title: "Questão 37 - Estudo de Caso 2: Porta de Forno", q: "Na Porta do Forno Térmico, qual foi a solução técnica adotada para evitar o fechamento brusco e impacto da porta gravitacional?", rTitle: "Almofada Hidráulica em Meter-Out", r: "Montagem de reguladora de fluxo unidirecional na linha de saída do cilindro (Meter-Out), sustentando o peso suavemente." },
+  { id: 38, page: 4, title: "Questão 38 - Estudo de Caso 3: Morsa Hidráulica", q: "Na Morsa Hidráulica, como o operador ajusta a força para peças delicadas de Alumínio sem alterar a pressão da prensa?", rTitle: "Redutora de Pressão no Ramal da Morsa", r: "Regulando a abertura de uma válvula redutora de pressão instalada exclusivamente no subcircuito/ramal da morsa." },
+  { id: 39, page: 4, title: "Questão 39 - Estudo de Caso 4: Plataforma", q: "Na Plataforma Elevatória, o que ocorreria se o travamento do cilindro dependesse apenas do centro fechado da direcional?", rTitle: "Queda Lenta por Folga do Carretel", r: "A plataforma desceria lentamente devido aos vazamentos internos normais das folgas micrométricas da válvula direcional." },
+  { id: 40, page: 4, title: "Questão 40 - Sintomas da Cavitação", q: "Quais os principais sintomas operacionais e danos causados pelo fenômeno da Cavitação em bombas hidráulicas?", rTitle: "Ruído Severo, Vibração e Erosão", r: "Ruído característico de 'molares triturando pedras', vibração, erosão por implosão no metal interno e perda de pressão/vazão." }
+];
+
+let currentPage = 1;
+const totalPages = 4;
+let placedCount = 0;
+let currentMode = "normal";
+
+let timerInterval = null;
+let secondsElapsed = 0;
+let timeRemaining = 180;
+let totalScore = 0;
+let comboStreak = 1;
+
+// --- ESTRUTURA REDE P2P (PEERJS) ---
+let peer = null;
+let connections = []; // Conexões ativas (para o Host)
+let hostConn = null;  // Conexão do Guest com o Host
+let isHost = false;
+let myPlayerId = Math.random().toString(36).substring(2, 7).toUpperCase();
+let playersData = {}; 
+
+function initMyPlayerData() {
+  const name = document.getElementById("playerName").value || "Técnico";
+  playersData[myPlayerId] = {
+    name: name,
+    score: 0,
+    progress: "0/10",
+    timeSec: 0,
+    isDone: false
+  };
+}
+
+function createRoom() {
+  initMyPlayerData();
+  isHost = true;
+  const roomCode = "HIDRA-" + Math.floor(1000 + Math.random() * 9000);
+  
+  peer = new Peer(roomCode);
+  
+  peer.on('open', id => {
+    document.getElementById("roomInfo").innerHTML = `🔑 Código da Sala: <b style="color:var(--senai-red); font-size:16px;">${id}</b> (Aguardando até 3 jogadores)`;
+    document.getElementById("leaderboardPanel").style.display = "block";
+    updateLeaderboardUI();
+  });
+
+  peer.on('connection', conn => {
+    if (connections.length >= 3) {
+      conn.send({ type: 'FULL' });
+      conn.close();
+      return;
+    }
+    connections.push(conn);
+    
+    conn.on('data', data => handleIncomingData(data, conn));
+    conn.on('close', () => {
+      connections = connections.filter(c => c !== conn);
+    });
+  });
+}
+
+function joinRoom() {
+  initMyPlayerData();
+  isHost = false;
+  const roomCode = document.getElementById("roomCodeInput").value.trim().toUpperCase();
+  if (!roomCode) { alert("Digite o código da sala!"); return; }
+
+  peer = new Peer();
+  peer.on('open', () => {
+    hostConn = peer.connect(roomCode);
+    
+    hostConn.on('open', () => {
+      document.getElementById("roomInfo").innerHTML = `✅ Conectado à Sala: <b>${roomCode}</b>`;
+      document.getElementById("leaderboardPanel").style.display = "block";
+      
+      hostConn.send({
+        type: 'JOIN',
+        playerId: myPlayerId,
+        playerData: playersData[myPlayerId]
+      });
+    });
+
+    hostConn.on('data', data => handleIncomingData(data, hostConn));
+  });
+}
+
+function handleIncomingData(data, conn) {
+  if (data.type === 'JOIN' && isHost) {
+    playersData[data.playerId] = data.playerData;
+    broadcastGameState();
+  } else if (data.type === 'UPDATE_STATE') {
+    playersData = data.players;
+    updateLeaderboardUI();
+  } else if (data.type === 'PLAYER_PROGRESS' && isHost) {
+    playersData[data.playerId] = data.playerData;
+    broadcastGameState();
+  }
+}
+
+function broadcastGameState() {
+  if (!isHost) return;
+  updateLeaderboardUI();
+  connections.forEach(conn => {
+    conn.send({ type: 'UPDATE_STATE', players: playersData });
+  });
+}
+
+function sendMyProgress() {
+  const currentSec = (currentMode === "timed") ? (180 - timeRemaining) : secondsElapsed;
+  playersData[myPlayerId] = {
+    name: document.getElementById("playerName").value || "Técnico",
+    score: totalScore,
+    progress: `${placedCount}/10`,
+    timeSec: currentSec,
+    isDone: (placedCount === 10)
+  };
+
+  if (isHost) {
+    broadcastGameState();
+  } else if (hostConn && hostConn.open) {
+    hostConn.send({
+      type: 'PLAYER_PROGRESS',
+      playerId: myPlayerId,
+      playerData: playersData[myPlayerId]
+    });
+  } else {
+    updateLeaderboardUI();
+  }
+}
+
+function updateLeaderboardUI() {
+  const listEl = document.getElementById("playerList");
+  listEl.innerHTML = "";
+
+  const sortedPlayers = Object.keys(playersData).map(id => ({
+    id, ...playersData[id]
+  })).sort((a, b) => b.score - a.score || a.timeSec - b.timeSec);
+
+  sortedPlayers.forEach((p, idx) => {
+    const card = document.createElement("div");
+    card.className = "player-card" + (p.id === myPlayerId ? " is-me" : "");
+    const m = String(Math.floor(p.timeSec / 60)).padStart(2, '0');
+    const s = String(p.timeSec % 60).padStart(2, '0');
+    
+    card.innerHTML = `
+      <b>#${idx + 1} ${p.name} ${p.id === myPlayerId ? "(Você)" : ""}</b><br>
+      🎯 Acertos: <b>${p.progress}</b> | 🏆 Pts: <b>${p.score}</b><br>
+      ⏱️ Tempo: ${m}:${s} ${p.isDone ? "✅ Concluído" : "⏳ Jogando"}
+    `;
+    listEl.appendChild(card);
+  });
+}
+
+// --- CRONÔMETRO E ENGINE DO JOGO ---
+function startTimer() {
+  stopTimer();
+  secondsElapsed = 0;
+  timeRemaining = 180;
+
+  timerInterval = setInterval(() => {
+    if (currentMode === "timed") {
+      timeRemaining--;
+      updateTimerDisplay(timeRemaining);
+      if (timeRemaining <= 0) {
+        stopTimer();
+        showFeedback("⏰ TEMPO ESGOTADO! O circuito hidráulico parou por sobrecarga.", "error");
+        disableAllCards();
+      }
+    } else {
+      secondsElapsed++;
+      updateTimerDisplay(secondsElapsed);
+    }
+  }, 1000);
+}
+
+function stopTimer() {
+  if (timerInterval) clearInterval(timerInterval);
+}
+
+function updateTimerDisplay(sec) {
+  const m = String(Math.floor(Math.abs(sec) / 60)).padStart(2, '0');
+  const s = String(Math.abs(sec) % 60).padStart(2, '0');
+  document.getElementById("timeDisplay").textContent = `${m}:${s}`;
+}
+
+function loadPage(page) {
+  currentPage = page;
+  placedCount = 0;
+  comboStreak = 1;
+  updateScoreBar();
+  
+  document.getElementById("pageIndicator").textContent = `Página ${currentPage} / ${totalPages}`;
+  document.getElementById("btnPrev").disabled = (currentPage === 1);
+  document.getElementById("btnNext").disabled = (currentPage === totalPages);
+  
+  const currentQuestions = allQuestions.filter(item => item.page === currentPage);
+  
+  const modulos = [
+    "Módulo 1: Fundamentos, Leis Físicas e Variáveis Operacionais (Q01 a Q10)",
+    "Módulo 2: Fluidos Hidráulicos, Reservatórios e Filtragem (Q11 a Q20)",
+    "Módulo 3: Bombas, Motores, Conexões e Tubulação (Q21 a Q30)",
+    "Módulo 4: Válvulas de Controle e Estudos de Caso Industriais (Q31 a Q40)"
+  ];
+  document.getElementById("moduleTitle").textContent = modulos[currentPage - 1];
+
+  const qSlots = document.getElementById("questionSlots");
+  qSlots.innerHTML = "";
+  currentQuestions.forEach(item => {
+    const s = document.createElement("div");
+    s.className = "slot";
+    s.dataset.id = item.id;
+    s.innerHTML = `<div class="q-title">${item.title}</div><div class="q-text">${item.q}</div>`;
+    s.addEventListener("dragover", e => { e.preventDefault(); s.classList.add("over"); });
+    s.addEventListener("dragleave", () => s.classList.remove("over"));
+    s.addEventListener("drop", e => dropItem(e, s));
+    qSlots.appendChild(s);
+  });
+
+  const aCards = document.getElementById("answerCards");
+  aCards.innerHTML = "";
+  
+  const shuffledCards = [...currentQuestions].sort(() => Math.random() - 0.5);
+  
+  shuffledCards.forEach(item => {
+    const c = document.createElement("div");
+    c.className = "card";
+    c.draggable = true;
+    c.id = "card-" + item.id;
+    
+    if (currentMode === "advanced" || currentMode === "timed") {
+      c.innerHTML = `<p>${item.r}</p>`;
+    } else {
+      c.innerHTML = `<b>${item.rTitle}</b><p>${item.r}</p>`;
+    }
+
+    c.addEventListener("dragstart", e => {
+      e.dataTransfer.setData("text/plain", item.id);
+    });
+    aCards.appendChild(c);
+  });
+
+  startTimer();
+  sendMyProgress();
+}
+
+function dropItem(e, slot) {
+  e.preventDefault();
+  slot.classList.remove("over");
+  
+  const id = +e.dataTransfer.getData("text/plain");
+  if (!id || slot.classList.contains("filled")) return;
+
+  if (slot.dataset.id == id) {
+    const item = allQuestions.find(x => x.id === id);
+    slot.classList.add("filled");
+    
+    slot.innerHTML += `
+      <div class="answered-box">
+        <div class="answered-title">✓ ${item.rTitle}</div>
+        <div class="answered-text">${item.r}</div>
+      </div>
+    `;
+
+    document.getElementById("card-" + id).classList.add("used");
+    placedCount++;
+
+    const pointsGained = 100 * comboStreak;
+    totalScore += pointsGained;
+    comboStreak++;
+
+    showFeedback(`✅ Resposta Correta! +${pointsGained} pts (Combo x${comboStreak-1})`, "success");
+    updateScoreBar();
+    sendMyProgress();
+    
+    if (placedCount === 10) {
+      stopTimer();
+      sendMyProgress();
+      if(currentPage < totalPages) {
+        showFeedback("🎉 Módulo concluído! Clique em 'Próxima' para avançar no questionário.", "success");
+      } else {
+        showFeedback(`🏆 PARABÉNS! Você concluiu a avaliação de Automação Hidráulica com ${totalScore} pontos!`, "success");
+      }
+    }
+  } else {
+    comboStreak = 1;
+    totalScore = Math.max(0, totalScore - 20);
+    
+    if (currentMode === "timed") {
+      timeRemaining = Math.max(0, timeRemaining - 10);
+      showFeedback("❌ Incorreto! -20 pts e -10s de Tempo!", "error");
+    } else {
+      showFeedback("❌ Incorreto! -20 pts e Combo resetado.", "error");
+    }
+    updateScoreBar();
+    sendMyProgress();
+  }
+}
+
+function disableAllCards() {
+  document.querySelectorAll(".card").forEach(c => c.draggable = false);
+}
+
+function toggleDifficulty() {
+  currentMode = document.getElementById("difficultySelect").value;
+  const instText = document.getElementById("instructionsText");
+
+  if (currentMode === "advanced") {
+    instText.innerHTML = "🔥 <b>Modo Avançado:</b> Exibe apenas a justificativa técnica. Títulos dos conceitos e componentes são revelados ao acertar!";
+  } else if (currentMode === "timed") {
+    instText.innerHTML = "⚡ <b>Modo Takt Time:</b> Você tem 3 minutos para concluir a página! Erros custam 10 segundos!";
+  } else {
+    instText.innerHTML = "🟢 <b>Modo Normal:</b> Cartões exibem o nome do componente/lei e a justificativa desde o início.";
+  }
+
+  totalScore = 0;
+  loadPage(currentPage);
+}
+
+function changePage(delta) {
+  const newPage = currentPage + delta;
+  if (newPage >= 1 && newPage <= totalPages) {
+    loadPage(newPage);
+  }
+}
+
+function showFeedback(text, type) {
+  const f = document.getElementById("feedback");
+  f.textContent = text;
+  f.className = type;
+  f.style.display = "block";
+  clearTimeout(window.ft);
+  window.ft = setTimeout(() => f.style.display = "none", 3500);
+}
+
+function updateScoreBar() {
+  document.getElementById("score").textContent = `Acertos na página: ${placedCount} / 10`;
+  document.getElementById("combo").textContent = `Combo: x${comboStreak}`;
+  document.getElementById("scoreDisplay").textContent = totalScore;
+}
+
+// Inicialização
+loadPage(1);
+</script>
+</body>
+</html>
