@@ -1,0 +1,759 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Jogo da Memória — Hidráulica Industrial (Solo & Multiplayer)</title>
+<!-- PeerJS CDN para conexão P2P por token -->
+<script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+<style>
+*{box-sizing:border-box}
+body{margin:0;font-family:Arial,Helvetica,sans-serif;background:#eef5ff;color:#17233c}
+header{background:#0046ad;color:#fff;padding:18px 24px;display:flex;align-items:center;justify-content:space-between;gap:18px}
+.header-brand{display:flex;align-items:center;gap:18px}
+.logo{background:#e30613;color:#fff;font-weight:900;font-style:italic;font-size:26px;padding:4px 12px}
+h1{font-size:24px;margin:0}
+main{max-width:1200px;margin:auto;padding:24px 18px 40px}
+.intro,.stat,.board-wrap,.mode-selection{background:#fff;border-radius:16px;box-shadow:0 5px 20px rgba(0,40,100,.10)}
+.intro{padding:20px;margin-bottom:18px}
+.intro h2{margin:0 0 7px;color:#0046ad;font-size:22px}
+.intro p{margin:0;font-size:15px;color:#34415b}
+
+/* Painel de Modos de Jogo */
+.mode-selection{padding:20px;margin-bottom:18px;display:flex;flex-direction:column;gap:15px}
+.mode-options{display:flex;gap:12px;flex-wrap:wrap}
+.mode-btn{flex:1;min-width:150px;padding:12px;border:2px solid #0046ad;background:#fff;color:#0046ad;font-weight:800;border-radius:10px;cursor:pointer;font-size:15px;transition:all .2s}
+.mode-btn.active{background:#0046ad;color:#fff}
+
+.multiplayer-setup{display:none;flex-direction:column;gap:12px;background:#f0f5ff;padding:15px;border-radius:12px;border:1px solid #c0d4f5}
+.multiplayer-setup.show{display:flex}
+.input-group{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.input-group label{font-weight:700;font-size:14px}
+.input-group input{padding:8px 12px;border-radius:8px;border:1px solid #a0bce8;font-size:15px}
+.token-display{font-size:18px;font-weight:900;color:#e30613;letter-spacing:2px;background:#fff;padding:6px 12px;border-radius:8px;border:1px dashed #e30613;user-select:all}
+
+.controls{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:12px}
+button.btn-action{border:0;background:#075ed7;color:white;font-size:16px;font-weight:800;border-radius:10px;padding:12px 22px;cursor:pointer}
+button.btn-action:disabled{background:#a0bce8;cursor:not-allowed}
+
+/* Botão do Tutorial */
+button.btn-tutorial{border:2px solid #fff;background:#e30613;color:white;font-size:15px;font-weight:800;border-radius:8px;padding:8px 16px;cursor:pointer;transition:transform 0.2s}
+button.btn-tutorial:hover{transform:scale(1.05)}
+
+/* Modal do Tutorial */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:1000;align-items:center;justify-content:center;padding:15px}
+.modal-overlay.show{display:flex}
+.modal-content{background:#fff;border-radius:16px;max-width:600px;width:100%;max-height:90vh;overflow-y:auto;padding:24px;box-shadow:0 10px 30px rgba(0,0,0,0.3);position:relative}
+.modal-header{display:flex;justify-content:space-between;align-items:center;border-bottom:2px solid #eef5ff;padding-bottom:12px;margin-bottom:16px}
+.modal-header h3{margin:0;color:#0046ad;font-size:22px}
+.modal-close{background:transparent;border:0;font-size:24px;font-weight:900;color:#888;cursor:pointer}
+.modal-body h4{color:#e30613;margin:16px 0 6px 0;font-size:16px}
+.modal-body p, .modal-body ul{margin:0 0 10px 0;font-size:14px;line-height:1.5;color:#34415b}
+.modal-body ul{padding-left:20px}
+
+.stats{display:flex;gap:10px;flex-wrap:wrap}
+.stat{padding:11px 16px;font-weight:800}
+
+/* Lista de Jogadores Multiplayer */
+.players-panel{display:none;gap:10px;margin-bottom:16px;flex-wrap:wrap}
+.players-panel.show{display:flex}
+.player-card{background:#fff;border:2px solid #d7e4f8;padding:10px 16px;border-radius:10px;font-weight:800;font-size:14px;display:flex;align-items:center;gap:8px}
+.player-card.active-turn{border-color:#e30613;background:#fff0f1;box-shadow:0 0 8px rgba(227,6,19,.3)}
+.player-card .score{background:#0046ad;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px}
+
+.message{text-align:center;min-height:28px;color:#0046ad;font-weight:800;margin:10px 0;font-size:16px}
+.success{display:none;text-align:center;background:#e9f7ee;border:2px solid #38a65a;color:#16733a;font-weight:900;border-radius:12px;padding:12px;margin:10px 0}
+.success.show{display:block}
+
+/* Abas de Navegação entre as 4 Páginas */
+.tabs{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:16px}
+.tab-btn{padding:12px 8px;background:#d7e4f8;border:0;border-radius:10px;font-size:13px;font-weight:800;color:#0046ad;cursor:pointer;transition:all .3s;text-align:center}
+.tab-btn.active{background:#0046ad;color:#fff;box-shadow:0 4px 12px rgba(0,70,173,.25)}
+
+/* Grade de cartas */
+.board{display:grid;grid-template-columns:repeat(5,1fr);gap:12px}
+
+.card{border:0;background:transparent;padding:0;height:220px;cursor:pointer;perspective:900px}
+.card:disabled{cursor:not-allowed}
+.card-inner{height:100%;width:100%;position:relative;transform-style:preserve-3d;transition:transform .45s}
+.card.flipped .card-inner{transform:rotateY(180deg)}
+.face{position:absolute;inset:0;backface-visibility:hidden;border-radius:12px;overflow:hidden}
+.back{background:#0046ad;border:4px solid #fff;display:flex;flex-direction:column;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(0,40,100,.18);color:white;text-align:center;padding:10px}
+.back span.logo-tag{background:#e30613;color:white;font-weight:900;font-style:italic;font-size:20px;padding:2px 10px;border-radius:4px;margin-bottom:6px}
+.back span.sub-tag{font-size:10px;font-weight:bold;letter-spacing:1px;opacity:0.9}
+
+.front{transform:rotateY(180deg);background:#fff;border:2px solid #d7e4f8;padding:10px 8px;display:flex;flex-direction:column;justify-content:flex-start;align-items:center;text-align:center;box-shadow:0 4px 12px rgba(0,40,100,.10)}
+.icon{height:32px;display:flex;align-items:center;justify-content:center;font-size:24px;margin-bottom:2px;flex-shrink:0}
+.title{font-size:11px;letter-spacing:0.5px;font-weight:900;color:#0046ad;text-align:center;margin:0 0 4px;text-transform:uppercase;flex-shrink:0;line-height:1.2}
+.info{font-size:11px;line-height:1.25;color:#34415b;word-wrap:break-word;width:100%;flex-grow:1;display:flex;align-items:center;justify-content:center}
+
+/* Estilos Específicos dos Módulos */
+.card-front-m1{border-top:5px solid #0046ad}
+.card-front-m2{border-top:5px solid #2e7d32}
+.card-front-m3{border-top:5px solid #d97706}
+.card-front-m4{border-top:5px solid #c2410c}
+
+/* Cartas combinadas mantêm-se visíveis e fixas */
+.card.matched{cursor:default;pointer-events:none}
+.card.matched .front{border:2px solid #38a65a;background:#f0faf3}
+.card.matched .title{color:#16733a}
+
+.finish{display:none;text-align:center;background:#0046ad;color:#fff;border-radius:16px;padding:20px;margin-top:18px;font-size:22px;font-weight:900}
+.finish.show{display:block}
+
+@media(max-width:1000px){.board{grid-template-columns:repeat(4,1fr)}.card{height:210px}.tabs{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:700px){.board{grid-template-columns:repeat(3,1fr)}.card{height:200px}}
+@media(max-width:500px){
+  header{padding:14px;flex-direction:column;align-items:flex-start}.logo{font-size:20px}h1{font-size:18px}
+  main{padding:15px 10px}
+  .board{grid-template-columns:repeat(2,1fr);gap:8px}
+  .card{height:185px}
+  .front{padding:8px 6px}
+  .icon{height:26px;font-size:20px}
+  .title{font-size:10px;margin-bottom:3px}
+  .info{font-size:10px;line-height:1.2}
+  .tabs{grid-template-columns:1fr}
+  .tab-btn{font-size:12px;padding:8px}
+}
+</style>
+</head>
+<body>
+<header>
+  <div class="header-brand">
+    <div class="logo">SENAI</div>
+    <h1>Jogo da Memória — Hidráulica Industrial</h1>
+  </div>
+  <button id="tutorialBtn" class="btn-tutorial" type="button">❓ Como Jogar</button>
+</header>
+
+<main>
+  <section class="intro">
+    <h2>Automação, Leis Físicas e Componentes Hidráulicos</h2>
+    <p>Encontre os pares entre a <b>Questão Técnica / Desafio</b> e a respetiva <b>Solução / Conceito Hidráulico</b>. Jogue sozinho ou em rede P2P para até 4 jogadores!</p>
+  </section>
+
+  <!-- Seleção de Modo de Jogo -->
+  <section class="mode-selection">
+    <div class="mode-options">
+      <button id="modeSoloBtn" class="mode-btn active" type="button">Jogador Solo</button>
+      <button id="modeMultiBtn" class="mode-btn" type="button">Rede (Até 4 Jogadores)</button>
+    </div>
+
+    <div id="multiplayerSetup" class="multiplayer-setup">
+      <div class="input-group">
+        <label for="playerNameInput">Seu Nome:</label>
+        <input type="text" id="playerNameInput" placeholder="Ex: João" value="Técnico 1">
+      </div>
+      
+      <div class="input-group">
+        <button id="createRoomBtn" class="btn-action" type="button">Criar Nova Sala</button>
+        <span id="roomTokenWrapper" style="display:none; align-items:center; gap:8px;">
+          Token da Sala: <span id="displayToken" class="token-display">------</span>
+        </span>
+      </div>
+
+      <div class="input-group" style="margin-top: 5px;">
+        <input type="text" id="joinTokenInput" placeholder="Digite o Token da Sala" style="text-transform:uppercase;">
+        <button id="joinRoomBtn" class="btn-action" style="background:#0046ad;" type="button">Entrar em Sala</button>
+      </div>
+    </div>
+  </section>
+
+  <div id="playersPanel" class="players-panel"></div>
+
+  <div class="controls">
+    <button id="start" class="btn-action" type="button">Iniciar jogo</button>
+    <div class="stats">
+      <div class="stat">Tempo: <span id="timer">00:00</span></div>
+      <div class="stat">Tentativas: <span id="attempts">0</span></div>
+      <div class="stat">Pares encontrados: <span id="pairs">0</span> / 40</div>
+    </div>
+  </div>
+
+  <!-- NAVEGAÇÃO POR 4 PÁGINAS (MÓDULOS) -->
+  <div class="tabs">
+    <button id="tab1" class="tab-btn active" type="button">Pág 1: Fundamentos (10 pares)</button>
+    <button id="tab2" class="tab-btn" type="button">Pág 2: Fluidos/Filtros (10 pares)</button>
+    <button id="tab3" class="tab-btn" type="button">Pág 3: Bombas/Conexões (10 pares)</button>
+    <button id="tab4" class="tab-btn" type="button">Pág 4: Válvulas/Casos (10 pares)</button>
+  </div>
+
+  <div id="message" class="message">Clique em “Iniciar jogo” para começar.</div>
+  <div id="success" class="success">Você achou um par, parabéns!</div>
+  
+  <div id="board" class="board"></div>
+  
+  <div id="finish" class="finish">Parabéns! Todos os 40 pares de Hidráulica foram concluídos!</div>
+</main>
+
+<!-- Modal de Tutorial -->
+<div id="tutorialModal" class="modal-overlay">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h3>📖 Como Jogar</h3>
+      <button id="closeTutorialBtn" class="modal-close" type="button">&times;</button>
+    </div>
+    <div class="modal-body">
+      <h4>🎯 Objetivo</h4>
+      <p>Associar cada <b>Questão / Desafio Hidráulico</b> à sua respetiva <b>Solução / Conceito Técnico</b>. O jogo possui 40 pares divididos em 4 Módulos/Páginas.</p>
+
+      <h4>🃏 Como Funciona</h4>
+      <ul>
+        <li>Clique em duas cartas da mesma página para revelá-las.</li>
+        <li>Se as duas cartas formarem um par (Questão + Resposta correspondente), elas ficarão fixas e destacadas em verde.</li>
+        <li>Se não combinarem, as cartas voltarão a virar para baixo.</li>
+      </ul>
+
+      <h4>🎮 Modo Solo</h4>
+      <p>Desafie-se a encontrar todos os 40 pares através das 4 páginas no menor tempo e com o menor número de tentativas.</p>
+
+      <h4>🌐 Modo Rede (Multiplayer)</h4>
+      <ul>
+        <li><b>Criar Sala:</b> Clique em "Criar Nova Sala" e compartilhe o <b>Token</b> gerado com até 3 colegas.</li>
+        <li><b>Entrar em Sala:</b> Cole o Token fornecido pelo Host e clique em "Entrar em Sala".</li>
+        <li><b>Regras de Turno:</b> Os jogadores jogam à vez. Ao acertar um par, ganha +1 ponto e joga novamente!</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  // BANCO DE DADOS DE 40 QUESTÕES DIVIDIDO EM 4 MÓDULOS
+  var page1Concepts = [
+    {id: 1, modClass: "card-front-m1", name:"Q01 - Transmissão de Pressão", icon:"⚙️", q:"De acordo com o Princípio de Pascal, como a pressão aplicada a um líquido confinado se comporta em um sistema hidráulico fechado?", rTitle:"Princípio de Pascal", r:"Transmite-se integralmente e com a mesma intensidade em todos os sentidos e paredes do recipiente."},
+    {id: 2, modClass: "card-front-m1", name:"Q02 - Cálculo de Pressão", icon:"⚙️", q:"Se aplicarmos uma força de 10 kgf num pistão com área de 1 cm², qual será a pressão gerada na parede do recipiente hidráulico?", rTitle:"Pressão de 10 kgf/cm²", r:"Pela fórmula P = F / A, dividindo a força aplicada (10 kgf) pela área do pistão (1 cm²), obtém-se exatamente 10 kgf/cm²."},
+    {id: 3, modClass: "card-front-m1", name:"Q03 - Prensa Hidráulica", icon:"⚙️", q:"Em uma prensa de Pascal, um pistão de entrada de 1 cm² recebe 10 kgf e alimenta um pistão de saída de 10 cm². Qual a força resultante na saída?", rTitle:"Força de 100 kgf", r:"A pressão interna é 10 kgf/cm². Multiplicando essa pressão pela área do pistão de saída (10 cm²), gera-se F = 100 kgf."},
+    {id: 4, modClass: "card-front-m1", name:"Q04 - Conservação de Energia", icon:"⚙️", q:"Relembrando o Princípio de Conservação de Energia aplicado à hidráulica, o que ocorre ao se multiplicar a força em um atuador?", rTitle:"Redução de Deslocamento", r:"Sacrifica-se o deslocamento (distância) ou a velocidade do pistão maior, mantendo o Trabalho (F x d) constante."},
+    {id: 5, modClass: "card-front-m1", name:"Q05 - Efeito da Temperatura", icon:"⚙️", q:"Como a variação de temperatura afeta diretamente a viscosidade do fluido hidráulico num circuito industrial?", rTitle:"Redução da Viscosidade", r:"O aumento da temperatura reduz a viscosidade, pois a coesão intermolecular diminui, fazendo o óleo fluir mais facilmente."},
+    {id: 6, modClass: "card-front-m1", name:"Q06 - Vazão e Velocidade", icon:"⚙️", q:"Qual a relação entre a vazão (Q) fornecida pela bomba e a velocidade (v) de avanço de um cilindro hidráulico de área (A)?", rTitle:"Fórmula v = Q / A", r:"A velocidade é diretamente proporcional à vazão volumétrica (Q) e inversamente proporcional à área da seção transversal (A)."},
+    {id: 7, modClass: "card-front-m1", name:"Q07 - Perda de Carga em Curvas", icon:"⚙️", q:"O que ocorre fisicamente quando o fluido hidráulico encontra uma curva de 90° (cotovelo) em uma tubulação industrial?", rTitle:"Calor e Turbulência", r:"Ocorre geração de calor por atrito e choque das moléculas com o obstáculo, gerando turbulência e perda de carga."},
+    {id: 8, modClass: "card-front-m1", name:"Q08 - Propriedade dos Líquidos", icon:"⚙️", q:"Qual propriedade dos líquidos permite a transmissão eficiente de energia na hidráulica quando comparados aos gases?", rTitle:"Incompressibilidade Prática", r:"Incompressibilidade prática e retenção de volume constante, permitindo transmissão imediata de força sem perda por compressão."},
+    {id: 9, modClass: "card-front-m1", name:"Q09 - Cilindro Dupla Ação", icon:"⚙️", q:"Em um cilindro de dupla ação com área A1 = 20 cm² e retorno A2 = 10 cm², alimentado pela mesma vazão Q, como se comparam as velocidades?", rTitle:"Velocidade Dobrada no Retorno", r:"Como a área de retorno A2 é a metade da área de avanço A1, pela fórmula v = Q/A, a velocidade de retorno será o dobro."},
+    {id: 10, modClass: "card-front-m1", name:"Q10 - Potência Hidráulica", icon:"⚙️", q:"A potência hidráulica de um sistema é determinada essencialmente pela combinação de quais duas variáveis operacionais?", rTitle:"Pressão de Trabalho e Vazão", r:"Pressão de trabalho (determina a capacidade de força) e vazão do fluido (determina a velocidade de execução do trabalho)."}
+  ];
+
+  var page2Concepts = [
+    {id: 11, modClass: "card-front-m2", name:"Q11 - Funções do Fluido", icon:"🧪", q:"Quais são as três funções primárias fundamentais de um fluido hidráulico num circuito industrial?", rTitle:"Energia, Lubrificação e Calor", r:"Transmitir energia como meio físico, lubrificar superfícies em atrito e transferir calor para dissipação no reservatório."},
+    {id: 12, modClass: "card-front-m2", name:"Q12 - Placa Defletora (Chicana)", icon:"🧪", q:"Qual é a principal função da placa defletora (chicana) localizada no interior do reservatório hidráulico?", rTitle:"Separar Retorno da Sucção", r:"Separar o óleo de retorno da linha de sucção, permitindo repouso, decantação de impurezas e liberação de bolhas de ar."},
+    {id: 13, modClass: "card-front-m2", name:"Q13 - Linha de Retorno", icon:"🧪", q:"Por que todas as linhas de retorno de óleo devem ser instaladas abaixo do nível mínimo de fluido no reservatório?", rTitle:"Prevenção de Aeração", r:"Para impedir a turbulência e a formação de espuma/aeração por queda livre do óleo, evitando cavitação na bomba."},
+    {id: 14, modClass: "card-front-m2", name:"Q14 - Aditivos Antiespumantes", icon:"🧪", q:"Como atuam os aditivos antiespumantes adicionados aos óleos hidráulicos minerais?", rTitle:"Aglutinação de Bolhas", r:"Combinam pequenas bolhas de ar dispersas em bolhas maiores que sobem rapidamente à superfície e estouram."},
+    {id: 15, modClass: "card-front-m2", name:"Q15 - Fluidos Sintéticos", icon:"🧪", q:"Qual das opções apresenta a composição típica dos fluidos hidráulicos sintéticos resistentes ao fogo de alto custo?", rTitle:"Ésteres de Fosfato / Clorados", r:"Formulados com ésteres de fosfato ou hidrocarbonetos clorados para oferecer alta resistência à ignição em áreas críticas."},
+    {id: 16, modClass: "card-front-m2", name:"Q16 - Sedimentação no Tanque", icon:"🧪", q:"De que forma a presença de sedimentos e contaminantes no fundo do reservatório prejudica o resfriamento do sistema?", rTitle:"Camada Isolante Térmica", r:"Formam uma camada isolante nas paredes metálicas, dificultando a transferência de calor do óleo para o ambiente externo."},
+    {id: 17, modClass: "card-front-m2", name:"Q17 - Filtro de Sucção", icon:"🧪", q:"Qual é a principal limitação dos filtros de sucção instalados no tubo de aspiração dentro do reservatório?", rTitle:"Risco de Cavitação na Bomba", r:"Se forem muito finos ou ficarem obstruídos, causam depressão excessiva na entrada da bomba, gerando cavitação destrutiva."},
+    {id: 18, modClass: "card-front-m2", name:"Q18 - Válvula de Bypass", icon:"🧪", q:"Como opera a válvula de bypass (desvio) integrada em um conjunto de filtragem hidráulica?", rTitle:"Abertura por Pressão ΔP", r:"Abre por pressão diferencial quando o elemento filtrante colmata, garantindo o fluxo contínuo sem interromper o circuito."},
+    {id: 19, modClass: "card-front-m2", name:"Q19 - Filtro de Pressão", icon:"🧪", q:"Onde deve ser instalado um filtro de linha (pressão) e qual é sua principal exigência construtiva?", rTitle:"Saída da Bomba (Alta Pressão)", r:"Instalado na saída da bomba antes de componentes sensíveis; sua carcaça precisa suportar a alta pressão total do sistema."},
+    {id: 20, modClass: "card-front-m2", name:"Q20 - Indicador de Colmatagem", icon:"🧪", q:"Para que serve o indicador mecânico/elétrico de colmatagem instalado num filtro hidráulico?", rTitle:"Sinalização de Troca", r:"Alertar visualmente ou eletricamente o operador quando o elemento filtrante necessita de troca/limpeza por saturação."}
+  ];
+
+  var page3Concepts = [
+    {id: 21, modClass: "card-front-m3", name:"Q21 - Princípio de Sucção", icon:"🔄", q:"Qual é o princípio físico fundamental de funcionamento de uma bomba hidráulica de deslocamento positivo?", rTitle:"Vácuo Parcial na Entrada", r:"Criar vácuo parcial na entrada para que a pressão atmosférica no tanque empurre o fluido para o interior da carcaça."},
+    {id: 22, modClass: "card-front-m3", name:"Q22 - Especificação de Bombas", icon:"🔄", q:"Como são essencialmente especificadas as bombas hidráulicas industriais pelos fabricantes?", rTitle:"Pressão Máxima e Deslocamento", r:"Pela capacidade máxima de pressão de operação (bar) e pelo deslocamento volumétrico (litros por minuto em dada rotação)."},
+    {id: 23, modClass: "card-front-m3", name:"Q23 - Bomba de Engrenagens", icon:"🔄", q:"Numa bomba de engrenagens externas, o que ocorre do lado da entrada (sucção) durante a rotação?", rTitle:"Desengrenamento dos Dentes", r:"Os dentes das engrenagens se desengrenam, aumentando o volume interno da câmara e criando vácuo parcial para sucção."},
+    {id: 24, modClass: "card-front-m3", name:"Q24 - Cargas Radiais", icon:"🔄", q:"Qual é a causa das cargas radiais não-balanceadas nos eixos e rolamentos de uma bomba de engrenagens simples?", rTitle:"Alta Pressão na Saída", r:"A ação da alta pressão do lado de recalque atuando continuamente contra os dentes, empurrando os eixos contra a sucção."},
+    {id: 25, modClass: "card-front-m3", name:"Q25 - Bomba de Palhetas", icon:"🔄", q:"Em uma bomba de palhetas de deslocamento fixo, como as palhetas são mantidas em contato contínuo com o anel estator?", rTitle:"Força Centrífuga e Pressão", r:"Pela ação da força centrífuga (inércia) da rotação combinada com a pressão hidráulica direcionada à base das ranhuras."},
+    {id: 26, modClass: "card-front-m3", name:"Q26 - Motor Hidráulico", icon:"🔄", q:"Qual a principal diferença operacional entre uma bomba hidráulica e um motor hidráulico?", rTitle:"Conversão em Rotação", r:"O motor opera no princípio inverso da bomba: recebe o fluido pressurizado e converte o fluxo e pressão em rotação e torque."},
+    {id: 27, modClass: "card-front-m3", name:"Q27 - Conexões Reusáveis", icon:"🔄", q:"Qual a grande vantagem operacional do uso de conexões reusáveis em instalações de mangueiras hidráulicas?", rTitle:"Reaproveitamento de Terminal", r:"Possibilitam reaproveitar o terminal metálico trocando apenas a mangueira danificada sem máquinas especiais de prensagem."},
+    {id: 28, modClass: "card-front-m3", name:"Q28 - Armadura em Mangueiras", icon:"🔄", q:"Qual a função da armadura interna de arame de aço trançado ou espiralado nas mangueiras de alta pressão?", rTitle:"Resistência Estrutural", r:"Conferir resistência estrutural para conter picos de alta pressão interna sem que a mangueira rompa ou deforme."},
+    {id: 29, modClass: "card-front-m3", name:"Q29 - Capa Partek", icon:"🔄", q:"Para que serve a capa de proteção têxtil do tipo Partek instalada sobre mangueiras hidráulicas?", rTitle:"Proteção contra Abrasão", r:"Proporcionar extrema resistência ao desgaste por abrasão e fricção contínua da mangueira contra estruturas metálicas."},
+    {id: 30, modClass: "card-front-m3", name:"Q30 - Proteção Firesleeve", icon:"🔄", q:"Em quais ambientes operacionais é obrigatória a aplicação da capa de proteção do tipo Firesleeve?", rTitle:"Ambientes de Alta Temperatura", r:"Em áreas expostas a altas temperaturas, chamas diretas, respingos de metal fundido e fagulhas de solda (ex: fundições)."}
+  ];
+
+  var page4Concepts = [
+    {id: 31, modClass: "card-front-m4", name:"Q31 - Válvula Limitadora", icon:"🔀", q:"Qual é a função primária de uma válvula limitadora de pressão (válvula de segurança) num sistema hidráulico?", rTitle:"Proteção do Circuito", r:"Proteger o circuito contra sobrepressão, abrindo para o tanque ao atingir a pressão máxima calibrada na mola de alívio."},
+    {id: 32, modClass: "card-front-m4", name:"Q32 - Válvula Redutora", icon:"🔀", q:"Como atua uma válvula reguladora/redutora de pressão em um ramal específico de um circuito industrial?", rTitle:"Pressão Secundária Reduzida", r:"Mantém a pressão secundária constante no ramal a um valor inferior à pressão principal do circuito (válvula N.A.)."},
+    {id: 33, modClass: "card-front-m4", name:"Q33 - Controle Meter-In", icon:"🔀", q:"Em qual situação industrial o circuito de controle de fluxo do tipo Meter-In (controle na entrada) é indicado?", rTitle:"Controle em Cargas Resistivas", r:"Para controle de velocidade em cargas puramente resistivas, onde a força opõe-se sempre ao sentido do movimento do cilindro."},
+    {id: 34, modClass: "card-front-m4", name:"Q34 - Controle Meter-Out", icon:"🔀", q:"Por que o controle Meter-Out (na saída) é indispensável em atuadores sujeitos a cargas negativas ou gravitacionais?", rTitle:"Contrapressão de Retenção", r:"Cria uma contrapressão no lado de retorno do pistão, impedindo que a carga 'puxe' o cilindro livremente e gere cavitação."},
+    {id: 35, modClass: "card-front-m4", name:"Q35 - Retenção Pilotada", icon:"🔀", q:"Qual a função da válvula de retenção pilotada no circuito de uma plataforma elevatória de cargas?", rTitle:"Bloqueio Estanque sem Vazamento", r:"Permite fluxo livre num sentido e bloqueio estanque no inverso, abrindo a retenção apenas mediante sinal de pilotagem externa."},
+    {id: 36, modClass: "card-front-m4", name:"Q36 - Caso: Injetora", icon:"🔀", q:"No circuito da Injetora, como um atuador diferencial é empregado como multiplicador de pressão de 40 bar para 80 bar?", rTitle:"Razão de Áreas (P1.A1=P2.A2)", r:"Aplica-se a pressão P1 na área maior do embolo (A1), gerando força que pressuriza uma câmara secundária de menor área (A2)."},
+    {id: 37, modClass: "card-front-m4", name:"Q37 - Caso: Porta de Forno", icon:"🔀", q:"Na Porta do Forno Térmico, qual foi a solução técnica adotada para evitar o fechamento brusco e impacto da porta gravitacional?", rTitle:"Almofada em Meter-Out", r:"Montagem de reguladora de fluxo unidirecional na linha de saída do cilindro (Meter-Out), sustentando o peso suavemente."},
+    {id: 38, modClass: "card-front-m4", name:"Q38 - Caso: Morsa Hidráulica", icon:"🔀", q:"Na Morsa Hidráulica, como o operador ajusta a força para peças delicadas de Alumínio sem alterar a pressão da prensa?", rTitle:"Redutora no Ramal da Morsa", r:"Regulando a abertura de uma válvula redutora de pressão instalada exclusivamente no subcircuito/ramal da morsa."},
+    {id: 39, modClass: "card-front-m4", name:"Q39 - Caso: Plataforma Elevatória", icon:"🔀", q:"Na Plataforma Elevatória, o que ocorreria se o travamento do cilindro dependesse apenas do centro fechado da direcional?", rTitle:"Queda Lenta por Vazamento", r:"A plataforma desceria lentamente devido aos vazamentos internos normais das folgas micrométricas da válvula direcional."},
+    {id: 40, modClass: "card-front-m4", name:"Q40 - Sintomas de Cavitação", icon:"🔀", q:"Quais os principais sintomas operacionais e danos causados pelo fenômeno da Cavitação em bombas hidráulicas?", rTitle:"Ruído Severo, Vibração e Erosão", r:"Ruído característico de 'molares triturando pedras', vibração, erosão por implosão no metal interno e perda de pressão/vazão."}
+  ];
+
+  var board = document.getElementById("board");
+  var start = document.getElementById("start");
+  var attemptsEl = document.getElementById("attempts");
+  var pairsEl = document.getElementById("pairs");
+  var timerEl = document.getElementById("timer");
+  var message = document.getElementById("message");
+  var success = document.getElementById("success");
+  var finish = document.getElementById("finish");
+  
+  var tabs = [
+    document.getElementById("tab1"),
+    document.getElementById("tab2"),
+    document.getElementById("tab3"),
+    document.getElementById("tab4")
+  ];
+
+  var tutorialBtn = document.getElementById("tutorialBtn");
+  var tutorialModal = document.getElementById("tutorialModal");
+  var closeTutorialBtn = document.getElementById("closeTutorialBtn");
+
+  var modeSoloBtn = document.getElementById("modeSoloBtn");
+  var modeMultiBtn = document.getElementById("modeMultiBtn");
+  var multiplayerSetup = document.getElementById("multiplayerSetup");
+  var playerNameInput = document.getElementById("playerNameInput");
+  var createRoomBtn = document.getElementById("createRoomBtn");
+  var joinRoomBtn = document.getElementById("joinRoomBtn");
+  var joinTokenInput = document.getElementById("joinTokenInput");
+  var roomTokenWrapper = document.getElementById("roomTokenWrapper");
+  var displayToken = document.getElementById("displayToken");
+  var playersPanel = document.getElementById("playersPanel");
+
+  var isMultiplayer = false;
+  var peer = null;
+  var connections = [];
+  var isHost = false;
+  var myPlayerId = "";
+  var players = [];
+  var currentTurnIndex = 0;
+
+  var currentPage = 1;
+  var first = null;
+  var second = null;
+  var attempts = 0;
+  var pairs = 0;
+  var playing = false;
+  var waitingForMatchRemoval = false;
+  var matchTimeoutId = null;
+
+  var secondsElapsed = 0;
+  var timerInterval = null;
+
+  var deckDataPages = [[], [], [], []];
+  var deckPages = [[], [], [], []];
+
+  function generateToken(){
+    return Math.random().toString(36).substring(2, 8).toUpperCase();
+  }
+
+  function formatTime(sec){
+    var m = Math.floor(sec / 60);
+    var s = sec % 60;
+    return (m < 10 ? "0" + m : m) + ":" + (s < 10 ? "0" + s : s);
+  }
+
+  function startTimer(){
+    stopTimer();
+    secondsElapsed = 0;
+    timerEl.textContent = "00:00";
+    timerInterval = setInterval(function(){
+      secondsElapsed++;
+      timerEl.textContent = formatTime(secondsElapsed);
+    }, 1000);
+  }
+
+  function stopTimer(){
+    if(timerInterval){
+      clearInterval(timerInterval);
+      timerInterval = null;
+    }
+  }
+
+  function shuffle(list){
+    var a = list.slice();
+    for(var i=a.length-1;i>0;i--){
+      var j=Math.floor(Math.random()*(i+1));
+      var tmp=a[i]; a[i]=a[j]; a[j]=tmp;
+    }
+    return a;
+  }
+
+  function createRawDeck(concepts){
+    var deck = [];
+    for(var i=0;i<concepts.length;i++){
+      // Carta A: Questão Técnica / Desafio
+      deck.push({ 
+        pairId: concepts[i].id, 
+        cardType: "question", 
+        modClass: concepts[i].modClass, 
+        icon: concepts[i].icon, 
+        title: concepts[i].name, 
+        text: concepts[i].q 
+      });
+      // Carta B: Solução / Conceito Hidráulico
+      deck.push({ 
+        pairId: concepts[i].id, 
+        cardType: "answer", 
+        modClass: concepts[i].modClass, 
+        icon: concepts[i].icon, 
+        title: concepts[i].rTitle, 
+        text: concepts[i].r 
+      });
+    }
+    return deck;
+  }
+
+  function makeCard(item, index, page){
+    var card = document.createElement("button");
+    card.type = "button";
+    card.className = "card";
+    card.disabled = !playing;
+    card.setAttribute("aria-label", item.cardType === "answer" ? "Carta de Solução Hidráulica" : "Carta de Questão Técnica");
+    card.dataset.pairId = item.pairId;
+    card.dataset.type = item.cardType;
+    card.dataset.index = index;
+    card.dataset.page = page;
+
+    var isAnswer = item.cardType === "answer";
+    var codeNum = item.pairId < 10 ? "0" + item.pairId : item.pairId;
+
+    card.innerHTML =
+      '<div class="card-inner">' +
+        '<div class="face back">' +
+          '<span class="logo-tag">SENAI</span>' +
+          '<span class="sub-tag">HIDRÁULICA INDUSTRIAL</span>' +
+        '</div>' +
+        '<div class="face front ' + item.modClass + '">' +
+          '<div class="icon">' + item.icon + '</div>' +
+          '<div class="title">' + (isAnswer ? "SOLUÇÃO ✓" : "DESAFIO " + codeNum) + '</div>' +
+          '<div class="info"><b>' + item.title + '</b><br><span style="font-size:10.5px; margin-top:2px; display:block;">' + item.text + '</span></div>' +
+        '</div>' +
+      '</div>';
+
+    card.addEventListener("click", function(){
+      if(isMultiplayer && players[currentTurnIndex] && players[currentTurnIndex].id !== myPlayerId){
+        return;
+      }
+      handleCardClick(card, true);
+    });
+    return card;
+  }
+
+  function renderCurrentPage(){
+    board.innerHTML = "";
+    var currentDeck = deckPages[currentPage - 1];
+    for(var j=0; j<currentDeck.length; j++){
+      board.appendChild(currentDeck[j]);
+    }
+  }
+
+  function updatePlayersUI(){
+    if(!isMultiplayer){
+      playersPanel.classList.remove("show");
+      return;
+    }
+    playersPanel.classList.add("show");
+    playersPanel.innerHTML = "";
+    players.forEach(function(p, idx){
+      var div = document.createElement("div");
+      div.className = "player-card" + (idx === currentTurnIndex ? " active-turn" : "");
+      div.innerHTML = '<span>' + p.name + (p.id === myPlayerId ? ' (Você)' : '') + '</span><span class="score">' + p.score + ' pts</span>';
+      playersPanel.appendChild(div);
+    });
+  }
+
+  function broadcastData(data){
+    connections.forEach(function(conn){
+      if(conn && conn.open) conn.send(data);
+    });
+  }
+
+  function setupPeerHost(token){
+    peer = new Peer("SENAI-HIDRA-" + token);
+    peer.on("open", function(id){
+      myPlayerId = id;
+      isHost = true;
+      displayToken.textContent = token;
+      roomTokenWrapper.style.display = "inline-flex";
+      players = [{ id: myPlayerId, name: playerNameInput.value || "Host", score: 0 }];
+      updatePlayersUI();
+      message.textContent = "Sala criada com sucesso! Aguardando outros jogadores...";
+    });
+
+    peer.on("connection", function(conn){
+      if(players.length >= 4){
+        conn.close();
+        return;
+      }
+      connections.push(conn);
+      conn.on("data", function(data){
+        handleNetworkData(data, conn);
+      });
+      conn.on("close", function(){
+        players = players.filter(function(p){ return p.id !== conn.peer; });
+        broadcastData({ type: "SYNC_PLAYERS", players: players, turn: currentTurnIndex });
+        updatePlayersUI();
+      });
+    });
+  }
+
+  function setupPeerClient(token){
+    peer = new Peer();
+    peer.on("open", function(id){
+      myPlayerId = id;
+      isHost = false;
+      var conn = peer.connect("SENAI-HIDRA-" + token);
+      connections = [conn];
+
+      conn.on("open", function(){
+        conn.send({ type: "JOIN_REQUEST", name: playerNameInput.value || "Técnico" });
+        message.textContent = "Conectado à sala! Aguardando o Host iniciar...";
+      });
+
+      conn.on("data", function(data){
+        handleNetworkData(data, conn);
+      });
+    });
+  }
+
+  function handleNetworkData(data, conn){
+    if(isHost && data.type === "JOIN_REQUEST"){
+      players.push({ id: conn.peer, name: data.name, score: 0 });
+      broadcastData({ type: "SYNC_PLAYERS", players: players, turn: currentTurnIndex });
+      updatePlayersUI();
+      return;
+    }
+
+    if(data.type === "SYNC_PLAYERS"){
+      players = data.players;
+      currentTurnIndex = data.turn;
+      updatePlayersUI();
+    } else if(data.type === "START_GAME"){
+      deckDataPages = data.deckPages;
+      for(var p = 0; p < 4; p++){
+        deckPages[p] = deckDataPages[p].map(function(item, idx){ return makeCard(item, idx, p + 1); });
+      }
+      executeStartGame();
+    } else if(data.type === "CARD_CLICK"){
+      var deck = deckPages[data.page - 1];
+      var targetCard = deck[data.index];
+      if(data.page !== currentPage){
+        switchPage(data.page, false);
+      }
+      handleCardClick(targetCard, false);
+    } else if(data.type === "SWITCH_PAGE"){
+      switchPage(data.page, false);
+    }
+  }
+
+  function handleCardClick(card, shouldBroadcast){
+    if(!playing || waitingForMatchRemoval) return;
+    if(!card || card.classList.contains("matched") || card.classList.contains("flipped")) return;
+
+    if(shouldBroadcast && isMultiplayer){
+      broadcastData({
+        type: "CARD_CLICK",
+        page: parseInt(card.dataset.page),
+        index: parseInt(card.dataset.index)
+      });
+    }
+
+    if(first !== null && second !== null){
+      if(!first.classList.contains("matched")) first.classList.remove("flipped");
+      if(!second.classList.contains("matched")) second.classList.remove("flipped");
+      first = null;
+      second = null;
+      success.classList.remove("show");
+    }
+
+    card.classList.add("flipped");
+
+    if(first === null){
+      first = card;
+      return;
+    }
+
+    second = card;
+    attempts++;
+    attemptsEl.textContent = String(attempts);
+
+    if(first.dataset.pairId === second.dataset.pairId && first.dataset.type !== second.dataset.type){
+      var a = first;
+      var b = second;
+      pairs++;
+      pairsEl.textContent = String(pairs);
+      success.classList.add("show");
+      message.textContent = "Você achou um par, parabéns!";
+      waitingForMatchRemoval = true;
+
+      if(isMultiplayer){
+        players[currentTurnIndex].score += 1;
+        updatePlayersUI();
+      }
+
+      matchTimeoutId = setTimeout(function(){
+        a.classList.add("matched");
+        b.classList.add("matched");
+        a.disabled = true;
+        b.disabled = true;
+
+        first = null;
+        second = null;
+        waitingForMatchRemoval = false;
+        success.classList.remove("show");
+
+        if(pairs === 40){
+          playing = false;
+          stopTimer();
+          finish.classList.add("show");
+          if(isMultiplayer){
+            var winner = players.reduce(function(prev, current){ return (prev.score > current.score) ? prev : current; });
+            finish.textContent = "Fim de jogo! Vencedor: " + winner.name + " com " + winner.score + " pontos em " + formatTime(secondsElapsed) + "!";
+          } else {
+            finish.textContent = "Parabéns! Você concluiu os 40 pares em " + formatTime(secondsElapsed) + " com " + attempts + " tentativas!";
+          }
+          message.textContent = "";
+        }else{
+          message.textContent = isMultiplayer ? "Par encontrado! " + players[currentTurnIndex].name + " joga novamente." : "Continue procurando os pares.";
+        }
+      }, 1000);
+
+    }else{
+      message.textContent = "Não é um par.";
+      if(isMultiplayer){
+        currentTurnIndex = (currentTurnIndex + 1) % players.length;
+        updatePlayersUI();
+        if(isHost){
+          broadcastData({ type: "SYNC_PLAYERS", players: players, turn: currentTurnIndex });
+        }
+      }
+    }
+  }
+
+  function switchPage(pageNumber, shouldBroadcast){
+    if(currentPage === pageNumber) return;
+
+    if(shouldBroadcast && isMultiplayer){
+      broadcastData({ type: "SWITCH_PAGE", page: pageNumber });
+    }
+
+    if(matchTimeoutId){ clearTimeout(matchTimeoutId); matchTimeoutId = null; }
+    waitingForMatchRemoval = false;
+    success.classList.remove("show");
+
+    if(first !== null && second !== null){
+      if(!first.classList.contains("matched")) first.classList.remove("flipped");
+      if(!second.classList.contains("matched")) second.classList.remove("flipped");
+      first = null;
+      second = null;
+    } else if(first !== null){
+      if(!first.classList.contains("matched")) first.classList.remove("flipped");
+      first = null;
+    }
+
+    currentPage = pageNumber;
+    tabs.forEach(function(btn, idx){
+      if(idx + 1 === currentPage) btn.classList.add("active");
+      else btn.classList.remove("active");
+    });
+
+    renderCurrentPage();
+  }
+
+  function initDecksLocal(){
+    deckDataPages[0] = shuffle(createRawDeck(page1Concepts));
+    deckDataPages[1] = shuffle(createRawDeck(page2Concepts));
+    deckDataPages[2] = shuffle(createRawDeck(page3Concepts));
+    deckDataPages[3] = shuffle(createRawDeck(page4Concepts));
+
+    for(var p = 0; p < 4; p++){
+      deckPages[p] = deckDataPages[p].map(function(item, idx){ return makeCard(item, idx, p + 1); });
+    }
+  }
+
+  function executeStartGame(){
+    if(matchTimeoutId){ clearTimeout(matchTimeoutId); }
+    stopTimer();
+
+    first = null;
+    second = null;
+    attempts = 0;
+    pairs = 0;
+    playing = true;
+    waitingForMatchRemoval = false;
+
+    attemptsEl.textContent = "0";
+    pairsEl.textContent = "0";
+    message.textContent = isMultiplayer ? "Vez de: " + players[currentTurnIndex].name : "Encontre os pares da página atual.";
+    success.classList.remove("show");
+    finish.classList.remove("show");
+    start.textContent = "Reiniciar jogo";
+
+    var allCards = [].concat(deckPages[0], deckPages[1], deckPages[2], deckPages[3]);
+    allCards.forEach(function(c){ c.disabled = false; });
+
+    renderCurrentPage();
+    startTimer();
+  }
+
+  function startGame(){
+    if(isMultiplayer){
+      if(!isHost){
+        alert("Apenas o Host da sala pode iniciar o jogo.");
+        return;
+      }
+      initDecksLocal();
+      broadcastData({
+        type: "START_GAME",
+        deckPages: deckDataPages
+      });
+      executeStartGame();
+    } else {
+      initDecksLocal();
+      executeStartGame();
+    }
+  }
+
+  /* Eventos do Modal de Tutorial */
+  tutorialBtn.addEventListener("click", function(){
+    tutorialModal.classList.add("show");
+  });
+
+  closeTutorialBtn.addEventListener("click", function(){
+    tutorialModal.classList.remove("show");
+  });
+
+  tutorialModal.addEventListener("click", function(e){
+    if(e.target === tutorialModal){
+      tutorialModal.classList.remove("show");
+    }
+  });
+
+  modeSoloBtn.addEventListener("click", function(){
+    isMultiplayer = false;
+    modeSoloBtn.classList.add("active");
+    modeMultiBtn.classList.remove("active");
+    multiplayerSetup.classList.remove("show");
+    playersPanel.classList.remove("show");
+  });
+
+  modeMultiBtn.addEventListener("click", function(){
+    isMultiplayer = true;
+    modeMultiBtn.classList.add("active");
+    modeSoloBtn.classList.remove("active");
+    multiplayerSetup.classList.add("show");
+  });
+
+  createRoomBtn.addEventListener("click", function(){
+    var token = generateToken();
+    setupPeerHost(token);
+  });
+
+  joinRoomBtn.addEventListener("click", function(){
+    var token = joinTokenInput.value.trim().toUpperCase();
+    if(!token){
+      alert("Por favor, insira um Token válido.");
+      return;
+    }
+    setupPeerClient(token);
+  });
+
+  tabs[0].addEventListener("click", function(){ switchPage(1, true); });
+  tabs[1].addEventListener("click", function(){ switchPage(2, true); });
+  tabs[2].addEventListener("click", function(){ switchPage(3, true); });
+  tabs[3].addEventListener("click", function(){ switchPage(4, true); });
+  
+  start.addEventListener("click", startGame);
+
+  initDecksLocal();
+  renderCurrentPage();
+})();
+</script>
+</body>
+</html>
