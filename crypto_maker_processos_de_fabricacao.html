@@ -1,0 +1,1385 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Crypto Maker: Processos de Fabricação</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Three.js for 3D Cyber Background and 3D Dice -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <!-- Tone.js for Cyber Audio SFX -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        cyberBg: '#06090e',
+                        cyberCard: '#0d131f',
+                        cyberBorder: '#1e293b',
+                        catUsinagem: '#0088ff',
+                        catForjamento: '#ff2a2a',
+                        catExtrusao: '#00e676',
+                        catFundicao: '#ffb300',
+                        catMetalurgia: '#a855f7'
+                    },
+                    boxShadow: {
+                        'neon-blue': '0 0 15px rgba(0, 136, 255, 0.5), inset 0 0 15px rgba(0, 136, 255, 0.2)',
+                        'neon-red': '0 0 15px rgba(255, 42, 42, 0.5), inset 0 0 15px rgba(255, 42, 42, 0.2)',
+                        'neon-green': '0 0 15px rgba(0, 230, 118, 0.5), inset 0 0 15px rgba(0, 230, 118, 0.2)',
+                        'neon-yellow': '0 0 15px rgba(255, 179, 0, 0.5), inset 0 0 15px rgba(255, 179, 0, 0.2)',
+                        'neon-purple': '0 0 15px rgba(168, 85, 247, 0.5), inset 0 0 15px rgba(168, 85, 247, 0.2)'
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;800;900&family=Rajdhani:wght@500;600;700&display=swap');
+        
+        body {
+            font-family: 'Rajdhani', sans-serif;
+            background-color: #06090e;
+            color: #e2e8f0;
+            overflow-x: hidden;
+        }
+
+        .font-orbitron {
+            font-family: 'Orbitron', sans-serif;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #06090e;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #1e293b;
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #0088ff;
+        }
+
+        /* Glassmorphism Cyber Card */
+        .cyber-glass {
+            background: rgba(13, 19, 31, 0.85);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        /* Circuit line overlay background */
+        .bg-circuit {
+            background-image: radial-gradient(circle at 50% 50%, rgba(0, 136, 255, 0.1) 0%, transparent 70%),
+                              linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+                              linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+            background-size: 100% 100%, 30px 30px, 30px 30px;
+        }
+
+        /* Board Tile Base */
+        .board-tile {
+            position: relative;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            user-select: none;
+        }
+        .board-tile:hover {
+            transform: translateY(-2px) scale(1.02);
+            z-index: 10;
+        }
+
+        /* Category Glows */
+        .cat-usinagem { border-color: #0088ff; box-shadow: 0 0 10px rgba(0, 136, 255, 0.3); }
+        .cat-forjamento { border-color: #ff2a2a; box-shadow: 0 0 10px rgba(255, 42, 42, 0.3); }
+        .cat-extrusao { border-color: #00e676; box-shadow: 0 0 10px rgba(0, 230, 118, 0.3); }
+        .cat-fundicao { border-color: #ffb300; box-shadow: 0 0 10px rgba(255, 179, 0, 0.3); }
+        .cat-metalurgia { border-color: #a855f7; box-shadow: 0 0 10px rgba(168, 85, 247, 0.3); }
+        .cat-special { border-color: #ec4899; box-shadow: 0 0 12px rgba(236, 72, 153, 0.5); }
+        .cat-panic { border-color: #ef4444; background: rgba(239, 68, 68, 0.15); box-shadow: 0 0 15px rgba(239, 68, 68, 0.6); }
+
+        /* Player Pawn styling */
+        .pawn {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            border: 2px solid #ffffff;
+            box-shadow: 0 0 8px currentColor;
+            transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        /* Scanline animation */
+        .scanline {
+            width: 100%;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, rgba(0, 136, 255, 0.8), transparent);
+            position: absolute;
+            top: 0;
+            left: 0;
+            animation: scan 4s linear infinite;
+            pointer-events: none;
+        }
+        @keyframes scan {
+            0% { top: 0%; opacity: 0; }
+            50% { opacity: 1; }
+            100% { top: 100%; opacity: 0; }
+        }
+
+        /* Pulse glow for active turn */
+        .active-turn-glow {
+            animation: pulse-turn 1.5s infinite alternate;
+        }
+        @keyframes pulse-turn {
+            0% { box-shadow: 0 0 5px rgba(0, 136, 255, 0.4); }
+            100% { box-shadow: 0 0 20px rgba(0, 136, 255, 0.9); }
+        }
+    </style>
+</head>
+<body class="bg-circuit min-h-screen text-slate-100 flex flex-col justify-between relative overflow-x-hidden">
+
+    <!-- Canvas for 3D Ambient Cyber Particles -->
+    <canvas id="bgCanvas" class="fixed top-0 left-0 w-full h-full pointer-events-none -z-10 opacity-40"></canvas>
+
+    <!-- HEADER / NAVIGATION BAR -->
+    <header class="w-full cyber-glass border-b border-slate-800 px-4 py-3 sticky top-0 z-40 flex flex-wrap justify-between items-center shadow-2xl">
+        <div class="flex items-center space-x-3">
+            <div class="p-2 bg-blue-600/20 border border-blue-500/50 rounded-lg text-blue-400">
+                <i class="fa-solid fa-microchip text-2xl"></i>
+            </div>
+            <div>
+                <h1 class="font-orbitron font-extrabold text-xl sm:text-2xl tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-emerald-400 to-purple-500">
+                    CRYPTO MAKER
+                </h1>
+                <p class="text-xs text-slate-400 tracking-widest uppercase">Processos de Fabricação EleMaq</p>
+            </div>
+        </div>
+
+        <div class="flex items-center space-x-2 sm:space-x-4 mt-2 sm:mt-0">
+            <!-- Game Mode Badge -->
+            <div id="roomBadge" class="hidden sm:flex items-center space-x-2 px-3 py-1.5 rounded-full bg-slate-800/80 border border-slate-700 text-xs font-mono">
+                <span class="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
+                <span id="roomCodeDisplay" class="text-emerald-400 font-bold">FAB-LOCAL</span>
+            </div>
+
+            <!-- Sound Toggle -->
+            <button id="soundToggleBtn" onclick="toggleSound()" class="p-2.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 transition hover:text-white" title="Alternar Som">
+                <i id="soundIcon" class="fa-solid fa-volume-high"></i>
+            </button>
+
+            <!-- Rules Button -->
+            <button onclick="openModal('rulesModal')" class="px-3 py-2 rounded-lg bg-blue-600/20 hover:bg-blue-600/30 border border-blue-500/50 text-blue-300 font-semibold text-xs sm:text-sm flex items-center space-x-1.5 transition">
+                <i class="fa-solid fa-book-bookmark"></i>
+                <span>Regras</span>
+            </button>
+
+            <!-- Restart / New Game -->
+            <button onclick="confirmReset()" class="px-3 py-2 rounded-lg bg-rose-600/20 hover:bg-rose-600/30 border border-rose-500/50 text-rose-300 font-semibold text-xs sm:text-sm flex items-center space-x-1.5 transition">
+                <i class="fa-solid fa-arrow-rotate-left"></i>
+                <span>Novo Jogo</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- MAIN GAME CONTAINER -->
+    <main class="container mx-auto px-2 sm:px-4 py-4 flex-grow flex flex-col gap-4 max-w-7xl">
+
+        <!-- LOBBY & SETUP SCREEN (Visible initially or when setting up) -->
+        <div id="setupOverlay" class="cyber-glass rounded-2xl p-6 sm:p-8 max-w-2xl mx-auto my-auto w-full border border-blue-500/30 shadow-neon-blue relative overflow-hidden">
+            <div class="scanline"></div>
+            <h2 class="font-orbitron text-2xl sm:text-3xl font-bold text-center text-blue-400 mb-2">SISTEMA INICIALIZADO</h2>
+            <p class="text-slate-400 text-center text-sm mb-6">Configure a sala e os mineradores de conhecimento industrial para iniciar.</p>
+
+            <div class="space-y-6">
+                <!-- Mode Selection -->
+                <div>
+                    <label class="block text-xs uppercase tracking-wider text-slate-400 font-bold mb-2">Modo de Operação</label>
+                    <div class="grid grid-cols-2 gap-3">
+                        <button type="button" id="btnModeLocal" onclick="setGameMode('local')" class="p-3 rounded-xl border border-blue-500 bg-blue-950/40 text-blue-300 font-bold flex flex-col items-center justify-center transition">
+                            <i class="fa-solid fa-laptop text-xl mb-1"></i>
+                            <span>Dispositivo Único (Local)</span>
+                        </button>
+                        <button type="button" id="btnModeNetwork" onclick="setGameMode('network')" class="p-3 rounded-xl border border-slate-700 bg-slate-900/40 text-slate-400 font-bold flex flex-col items-center justify-center transition hover:border-slate-500">
+                            <i class="fa-solid fa-network-wired text-xl mb-1"></i>
+                            <span>Rede P2P / Simulação</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Network Options (Hidden by default) -->
+                <div id="networkOptions" class="hidden p-4 rounded-xl bg-slate-900/80 border border-slate-800 space-y-3">
+                    <div class="flex gap-2">
+                        <input type="text" id="joinRoomCode" placeholder="CÓDIGO SALA (Ex: FAB-8821)" class="flex-1 bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-sm text-mono focus:border-blue-500 outline-none uppercase" />
+                        <button onclick="joinNetworkRoom()" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg font-bold text-sm">Entrar</button>
+                    </div>
+                    <p class="text-xs text-slate-500 text-center">Ou crie uma nova sala para compartilhar o hash de acesso.</p>
+                </div>
+
+                <!-- Timer Configuration -->
+                <div>
+                    <label class="block text-xs uppercase tracking-wider text-slate-400 font-bold mb-2">Tempo por Pergunta (Segundos)</label>
+                    <div class="flex items-center space-x-4">
+                        <input type="range" id="timerSelect" min="15" max="90" step="15" value="30" class="flex-1 accent-blue-500 cursor-pointer" oninput="document.getElementById('timerVal').innerText = this.value + 's'" />
+                        <span id="timerVal" class="font-mono text-lg font-bold text-blue-400 w-12 text-right">30s</span>
+                    </div>
+                </div>
+
+                <!-- Players Configuration -->
+                <div>
+                    <div class="flex justify-between items-center mb-2">
+                        <label class="block text-xs uppercase tracking-wider text-slate-400 font-bold">Jogadores / Bots (2 a 6)</label>
+                        <button onclick="addPlayerSlot()" class="text-xs text-blue-400 hover:underline"><i class="fa-solid fa-plus"></i> Adicionar Jogador</button>
+                    </div>
+                    <div id="playersList" class="space-y-2 max-h-48 overflow-y-auto pr-1">
+                        <!-- Player Row Template insertion -->
+                    </div>
+                </div>
+
+                <button onclick="startGame()" class="w-full py-4 rounded-xl bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 font-orbitron font-extrabold text-lg text-white shadow-neon-blue transition transform active:scale-95 uppercase tracking-widest">
+                    <i class="fa-solid fa-play mr-2"></i> Iniciar Mineração
+                </button>
+            </div>
+        </div>
+
+        <!-- MAIN GAMEPLAY BOARD INTERFACE -->
+        <div id="gameInterface" class="hidden flex-grow flex flex-col lg:flex-row gap-4 items-stretch">
+
+            <!-- LEFT/TOP: WALLET & CONTROL PANEL -->
+            <div class="lg:w-1/3 flex flex-col gap-4">
+                
+                <!-- DIGITAL WALLET ELEMAQ -->
+                <div class="cyber-glass rounded-2xl p-4 border border-blue-500/30 relative overflow-hidden flex flex-col justify-between">
+                    <div class="scanline"></div>
+                    <div class="flex justify-between items-start mb-3">
+                        <div>
+                            <span class="text-xs uppercase font-mono tracking-widest text-slate-400 block">WALLET ELEMAQ</span>
+                            <span id="activePlayerName" class="font-orbitron font-extrabold text-xl text-blue-400">Jogador 1</span>
+                        </div>
+                        <span id="activePlayerBadge" class="px-2.5 py-1 rounded-full bg-blue-500/20 text-blue-300 font-mono text-xs border border-blue-500/40">
+                            Líder
+                        </span>
+                    </div>
+
+                    <!-- Balance Display -->
+                    <div class="bg-slate-950/70 border border-slate-800 rounded-xl p-3 mb-3 flex items-center justify-between">
+                        <div>
+                            <p class="text-[10px] uppercase text-slate-500 font-mono">Saldo em cReales (CR$)</p>
+                            <p id="activePlayerBalance" class="font-orbitron text-2xl font-black text-emerald-400">0.0000 CR$</p>
+                        </div>
+                        <i class="fa-solid fa-wallet text-3xl text-emerald-500/40"></i>
+                    </div>
+
+                    <!-- Stats mini grid -->
+                    <div class="grid grid-cols-2 gap-2 text-xs font-mono mb-3">
+                        <div class="bg-slate-900/50 p-2 rounded-lg border border-slate-800">
+                            <span class="text-slate-500 block">Precisão</span>
+                            <span id="activePlayerAccuracy" class="text-blue-400 font-bold text-sm">100%</span>
+                        </div>
+                        <div class="bg-slate-900/50 p-2 rounded-lg border border-slate-800">
+                            <span class="text-slate-500 block">Posição</span>
+                            <span id="activePlayerPos" class="text-purple-400 font-bold text-sm">Casa 1</span>
+                        </div>
+                    </div>
+
+                    <!-- 3D DICE & CONTROLS SECTION -->
+                    <div class="bg-slate-950/80 rounded-xl p-3 border border-slate-800 flex items-center justify-between gap-2">
+                        <!-- Dice 3D Area -->
+                        <div class="relative w-20 h-20 bg-slate-900/90 rounded-lg flex items-center justify-center border border-slate-700 overflow-hidden" id="diceContainer">
+                            <canvas id="dice3dCanvas" class="w-full h-full cursor-pointer" onclick="rollDice()"></canvas>
+                            <span id="diceFallback" class="hidden font-orbitron text-3xl font-black text-blue-400">?</span>
+                        </div>
+
+                        <div class="flex-1 flex flex-col gap-2">
+                            <button id="btnRollDice" onclick="rollDice()" class="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-orbitron font-bold text-sm tracking-wider shadow-neon-blue transition active:scale-95 disabled:opacity-50">
+                                <i class="fa-solid fa-dice mr-1.5"></i> ROLAR DADO
+                            </button>
+                            
+                            <div class="flex gap-1 text-[10px]">
+                                <button onclick="manualDicePrompt()" class="flex-1 py-1 bg-slate-800 hover:bg-slate-700 text-slate-400 rounded text-center">Dado Manual</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- RANKING & TRANSACTIONS PANEL -->
+                <div class="cyber-glass rounded-2xl p-4 border border-slate-800 flex-grow flex flex-col">
+                    <h3 class="font-orbitron text-xs font-bold text-slate-400 uppercase tracking-widest mb-3 flex items-center justify-between">
+                        <span><i class="fa-solid fa-trophy text-amber-400 mr-1.5"></i> Ranking de Carteiras</span>
+                        <span id="roundCounter" class="text-blue-400 font-mono">Rodada 1</span>
+                    </h3>
+
+                    <!-- Player List Leaderboard -->
+                    <div id="leaderboardList" class="space-y-2 mb-4 max-h-48 lg:max-h-60 overflow-y-auto pr-1">
+                        <!-- Dynamic Leaderboard Content -->
+                    </div>
+
+                    <h4 class="font-orbitron text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">Transações Recentes na Rede</h4>
+                    <div id="transactionLog" class="flex-grow bg-slate-950/90 border border-slate-800 rounded-xl p-2 font-mono text-[11px] overflow-y-auto max-h-28 text-slate-400 space-y-1">
+                        <div><span class="text-blue-500">[GENESIS]</span> Bloco inicial minerado com sucesso.</div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- RIGHT/MAIN: BOARD TILES GRID (PERIMETER GRID 50 TILES) -->
+            <div class="lg:w-2/3 cyber-glass rounded-2xl p-3 sm:p-4 border border-slate-800 flex flex-col justify-between relative overflow-hidden min-h-[500px]">
+                
+                <!-- Board Category Legend Header -->
+                <div class="flex flex-wrap items-center justify-between gap-2 mb-3 pb-2 border-b border-slate-800 text-[11px]">
+                    <div class="flex items-center space-x-1.5"><span class="w-2.5 h-2.5 rounded-full bg-catUsinagem shadow-[0_0_8px_#0088ff]"></span><span class="text-slate-300">Usinagem</span></div>
+                    <div class="flex items-center space-x-1.5"><span class="w-2.5 h-2.5 rounded-full bg-catForjamento shadow-[0_0_8px_#ff2a2a]"></span><span class="text-slate-300">Forjamento</span></div>
+                    <div class="flex items-center space-x-1.5"><span class="w-2.5 h-2.5 rounded-full bg-catExtrusao shadow-[0_0_8px_#00e676]"></span><span class="text-slate-300">Extrusão</span></div>
+                    <div class="flex items-center space-x-1.5"><span class="w-2.5 h-2.5 rounded-full bg-catFundicao shadow-[0_0_8px_#ffb300]"></span><span class="text-slate-300">Fundição</span></div>
+                    <div class="flex items-center space-x-1.5"><span class="w-2.5 h-2.5 rounded-full bg-catMetalurgia shadow-[0_0_8px_#a855f7]"></span><span class="text-slate-300">Metalurgia/Metro</span></div>
+                </div>
+
+                <!-- 50-TILE GRID CONTAINER -->
+                <div id="boardGrid" class="grid grid-cols-5 sm:grid-cols-7 md:grid-cols-10 gap-1.5 sm:gap-2 flex-grow auto-rows-fr">
+                    <!-- Board Tiles (1 to 50) generated dynamically -->
+                </div>
+
+                <!-- Status Footer inside board -->
+                <div class="mt-3 pt-2 border-t border-slate-800/80 flex justify-between items-center text-xs text-slate-500 font-mono">
+                    <span id="boardStatusText">Aguardando rolagem de dado...</span>
+                    <span>Crypto Maker v2.5 EleMaq</span>
+                </div>
+            </div>
+
+        </div>
+
+    </main>
+
+    <!-- MODALS SECTION -->
+
+    <!-- QUESTION MODAL -->
+    <div id="questionModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 hidden flex items-center justify-center p-4">
+        <div class="cyber-glass rounded-2xl max-w-2xl w-full border border-blue-500/40 shadow-neon-blue p-6 relative overflow-hidden animate-fade-in">
+            <div class="scanline"></div>
+
+            <!-- Question Header -->
+            <div class="flex justify-between items-center mb-4">
+                <span id="qCategoryBadge" class="px-3 py-1 rounded-full text-xs font-bold font-mono uppercase bg-blue-500/20 text-blue-400 border border-blue-500/40">
+                    Usinagem & Eletroerosão
+                </span>
+                <div class="flex items-center space-x-2">
+                    <i class="fa-solid fa-stopwatch text-slate-400"></i>
+                    <span id="modalTimer" class="font-mono text-lg font-bold text-amber-400">30s</span>
+                </div>
+            </div>
+
+            <!-- Timer Progress Bar -->
+            <div class="w-full bg-slate-800 h-1.5 rounded-full mb-6 overflow-hidden">
+                <div id="timerProgressBar" class="bg-gradient-to-r from-blue-500 to-emerald-400 h-full w-full transition-all duration-1000"></div>
+            </div>
+
+            <!-- Question Content -->
+            <div class="mb-6">
+                <p id="qHouseNumber" class="text-xs text-slate-500 font-mono mb-1">BLOCO #12</p>
+                <h3 id="qText" class="font-orbitron font-bold text-lg sm:text-xl text-slate-100 leading-snug">
+                    Qual o processo de usinagem utilizado para fabricação de roscas internas de precisão?
+                </h3>
+            </div>
+
+            <!-- Alternative Choices -->
+            <div id="qOptionsContainer" class="space-y-3 mb-6">
+                <!-- Option Buttons rendered dynamically -->
+            </div>
+
+            <!-- Explanation Feedback Box (Hidden initially) -->
+            <div id="qExplanationBox" class="hidden p-4 rounded-xl bg-slate-900 border border-slate-700 text-sm space-y-2 mb-4">
+                <div id="qFeedbackHeader" class="font-bold flex items-center space-x-2"></div>
+                <p id="qExplanationText" class="text-slate-300 text-xs leading-relaxed"></p>
+            </div>
+
+            <!-- Confirm / Next Button inside Modal -->
+            <div class="flex justify-end">
+                <button id="btnConfirmAnswer" onclick="submitAnswer()" class="px-6 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 font-orbitron font-bold text-white text-sm tracking-wider transition">
+                    CONFIRMAR RESPOSTA
+                </button>
+                <button id="btnNextTurn" onclick="closeQuestionModal()" class="hidden px-6 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 font-orbitron font-bold text-white text-sm tracking-wider transition">
+                    CONTINUAR MINERAÇÃO <i class="fa-solid fa-arrow-right ml-1"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- CHANCE / EVENT CARD MODAL -->
+    <div id="chanceModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 hidden flex items-center justify-center p-4">
+        <div class="cyber-glass rounded-2xl max-w-md w-full border border-purple-500/50 shadow-neon-purple p-6 text-center relative">
+            <div class="w-16 h-16 rounded-full bg-purple-500/20 border border-purple-500 flex items-center justify-center mx-auto mb-4 text-purple-400 text-3xl">
+                <i class="fa-solid fa-clone animate-bounce"></i>
+            </div>
+            <h3 class="font-orbitron text-xl font-bold text-purple-300 mb-2">CARTA SORTE / REVÉSF</h3>
+            <p id="chanceCardTitle" class="font-bold text-white mb-2">Airdrop de Recompensas!</p>
+            <p id="chanceCardDesc" class="text-sm text-slate-300 mb-6">Você recebeu uma otimização de processo CNC. Avance 3 casas imediatamente.</p>
+            <button onclick="executeChanceCard()" class="w-full py-3 rounded-xl bg-purple-600 hover:bg-purple-500 font-orbitron font-bold text-white tracking-wider">
+                EXECUTAR ORDEM
+            </button>
+        </div>
+    </div>
+
+    <!-- RULES MODAL -->
+    <div id="rulesModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 hidden flex items-center justify-center p-4">
+        <div class="cyber-glass rounded-2xl max-w-2xl w-full border border-slate-700 p-6 max-h-[85vh] overflow-y-auto">
+            <div class="flex justify-between items-center mb-4 pb-2 border-b border-slate-800">
+                <h3 class="font-orbitron text-lg font-bold text-blue-400"><i class="fa-solid fa-book mr-2"></i>Regras do Crypto Maker: Processos de Fabricação</h3>
+                <button onclick="closeModal('rulesModal')" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-xl"></i></button>
+            </div>
+            <div class="space-y-4 text-xs sm:text-sm text-slate-300 leading-relaxed">
+                <p><strong>1. Objetivo:</strong> Chegar ao Bloco Genesis / Halving Final (Casa 50) acumulando o maior saldo em cReales (CR$) e mantendo alta precisão técnica nos processos de fabricação.</p>
+                <p><strong>2. Categorias de Casas:</strong> Cada cor representa um domínio técnico. Acertar perguntas adiciona CR$ à sua Wallet; errar penaliza o saldo e pode regredir sua posição.</p>
+                <ul class="list-disc pl-5 space-y-1 font-mono text-xs">
+                    <li><span class="text-blue-400">Usinagem & Eletroerosão</span> (Azul)</li>
+                    <li><span class="text-red-400">Forjamento & Laminação</span> (Vermelho)</li>
+                    <li><span class="text-emerald-400">Extrusão & Trefilação</span> (Verde)</li>
+                    <li><span class="text-amber-400">Fundição & Soldagem</span> (Amarelo)</li>
+                    <li><span class="text-purple-400">Metalurgia do Pó & Metrologia</span> (Roxo)</li>
+                </ul>
+                <p><strong>3. Casas Especiais & Cartas 🎴:</strong> As casas de evento sorteiam ações (Avançar, Recuar, Bônus de cReales). Após o movimento da carta, o jogador responde à pergunta da casa de destino. Se errar, retorna à casa de origem!</p>
+                <p><strong>4. 🔥 Desafio do Pânico:</strong> Fica preso por até 2 rodadas. Na 3ª rodada avança 1 casa automaticamente sem rolar o dado. Se responder incorretamente no Pânico, recua 2 casas!</p>
+                <p><strong>5. Sistema de Apoio Adaptativo:</strong> Jogadores com 2 erros consecutivos ou na lanterna ganham eliminadores de alternativas incorretas para equilibrar a competição.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- WINNER / PODIUM MODAL -->
+    <div id="podiumModal" class="fixed inset-0 bg-slate-950/90 backdrop-blur-lg z-50 hidden flex items-center justify-center p-4">
+        <div class="cyber-glass rounded-2xl max-w-xl w-full border border-amber-500/50 shadow-[0_0_30px_rgba(245,158,11,0.3)] p-8 text-center relative overflow-hidden">
+            <div class="scanline"></div>
+            <i class="fa-solid fa-crown text-5xl text-amber-400 mb-2 animate-bounce"></i>
+            <h2 class="font-orbitron text-2xl sm:text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-300 via-amber-400 to-yellow-500 mb-1">
+                HALVING COMPLETADO!
+            </h2>
+            <p class="text-xs text-slate-400 uppercase tracking-widest font-mono mb-6">Mineração do Bloco 50 Concluída</p>
+
+            <div id="podiumList" class="space-y-3 mb-6">
+                <!-- Winners rendered dynamically -->
+            </div>
+
+            <button onclick="location.reload()" class="w-full py-3.5 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-600 font-orbitron font-bold text-slate-950 uppercase tracking-wider hover:opacity-90 transition">
+                NOVA SESSÃO DE MINERAÇÃO
+            </button>
+        </div>
+    </div>
+
+    <!-- AUDIO & GAME SCRIPT LOGIC -->
+    <script>
+        /* ==========================================================================
+           1. QUESTION BANK - MANUFACTURING PROCESSES (50 DETAILED QUESTIONS)
+           ========================================================================== */
+        const QUESTION_BANK = [
+            {
+                id: 1,
+                cat: 'special',
+                catName: 'Bloco Genesis',
+                q: 'O Bloco Genesis marca o início da mineração de conhecimento. O que define a usinabilidade de um material?',
+                options: ['A facilidade com que o material pode ser usinado com bom acabamento e baixo desgaste da ferramenta', 'A capacidade de suportar altas temperaturas de fusão sem deformar', 'A resistência mecânica do material submetido a choques térmicos', 'A dureza Shore obtida após tratamentos térmicos superficiais'],
+                ans: 0,
+                exp: 'Usinabilidade reflete a facilidade de remoção de cavaco preservando a ferramenta e a integridade da peça.'
+            },
+            {
+                id: 2,
+                cat: 'catUsinagem',
+                catName: 'Usinagem & Eletroerosão',
+                q: 'No processo de torneamento, qual é o movimento principal realizado pela PEÇA?',
+                options: ['Movimento de Avanço', 'Movimento de Rotação (Corte)', 'Movimento de Penetração', 'Movimento de Recuo'],
+                ans: 1,
+                exp: 'No torno mecânico convencional, a peça realiza o movimento de rotação principal de corte.'
+            },
+            {
+                id: 3,
+                cat: 'catUsinagem',
+                catName: 'Usinagem & Eletroerosão',
+                q: 'Qual fluido de corte é mais adequado para usinagem de liga leve de alumínio para evitar aderência (aresta postiça)?',
+                options: ['Óleo mineral puro de alta viscosidade', 'Emulsão aquosa (óleo solúvel) ou fluido sintético', 'Óleo vegetal oxidado', 'Ar comprimido sem lubrificante'],
+                ans: 1,
+                exp: 'Emulsões refrigeram e lubrificam eficientemente, prevenindo a Aresta Postiça de Corte (APC) em ligas dúcteis.'
+            },
+            {
+                id: 4,
+                cat: 'catForjamento',
+                catName: 'Forjamento & Laminação',
+                q: 'No forjamento em matriz fechada, o excesso de material que escoa pelas frestas formando a rebarba tem a função de:',
+                options: ['Desperdiçar matéria-prima sem função mecânica', 'Aumentar a pressão interna garantindo o preenchimento completo da cavidade', 'Diminuir a força requerida pela prensa hidráulica', 'Evitar o superaquecimento do tarugo de aço'],
+                ans: 1,
+                exp: 'A rebarba restringe a saída do metal, forçando o preenchimento dos cantos complexos da matriz.'
+            },
+            {
+                id: 5,
+                cat: 'catExtrusao',
+                catName: 'Extrusão & Trefilação',
+                q: 'Na trefilação de arames e fios metálicos, a redução de seção ocorre por:',
+                options: ['Compressão direta exercida por martelos pneumáticos', 'Tração do material através de uma matriz cônica (fio de fiandeira/hélice)', 'Fusão localizada por resistência elétrica', 'Sopro de alta pressão no interior do molde'],
+                ans: 1,
+                exp: 'A trefilação puxa (tração) o material forçando-o a passar por uma fieira/matriz de diâmetro menor.'
+            },
+            {
+                id: 6,
+                cat: 'catFundicao',
+                catName: 'Fundição & Soldagem',
+                q: 'Qual é o objetivo principal da inclusão de "Massalotes" em moldes de fundição?',
+                options: ['Aumentar a velocidade de vazamento do metal líquido', 'Suprir metal líquido para compensar a contração de solidificação da peça', 'Filtrar as impurezas e escórias do metal', 'Facilitar a desmoldagem do fundido'],
+                ans: 1,
+                exp: 'O massalote atua como reservatório de metal líquido para evitar rechupes/vazios de contração.'
+            },
+            {
+                id: 7,
+                cat: 'catMetalurgia',
+                catName: 'Metalurgia do Pó & Metrologia',
+                q: 'A etapa de "Sinterização" na Metalurgia do Pó consiste em:',
+                options: ['Derreter completamente os pós metálicos em forno elétrico', 'Aquecer os compactados prensados abaixo do ponto de fusão principal para unir os grãos por difusão', 'Resfriar bruscamente os pós em meio aquoso', 'Misturar os pós com ligantes orgânicos secos'],
+                ans: 1,
+                exp: 'A sinterização promove a ligação atômica/difusão no estado sólido entre as partículas do pó.'
+            },
+            {
+                id: 8,
+                cat: 'chance',
+                catName: 'Carta Sorte / Revés 🎴',
+                q: 'Inspeção CMM por Apalpador Laser detectou excelente conformidade técnica.',
+                options: ['Avançar 2 casas com bônus de 50 CR$', 'Continuar sem alteração'],
+                ans: 0,
+                isChanceCard: true,
+                moveOffset: 2,
+                rewardCR: 50,
+                exp: 'Sistemas de inspeção óptica garantem alta confiabilidade no controle de qualidade.'
+            },
+            {
+                id: 9,
+                cat: 'catUsinagem',
+                catName: 'Usinagem & Eletroerosão',
+                q: 'Na Eletroerosão por Penetração (EDM), o princípio físico de remoção de material baseia-se em:',
+                options: ['Atrito mecânico de alta velocidade', 'Descargas elétricas térmicas instantâneas em meio dielétrico', 'Reação química ácida controlada', 'Usinagem por ultrassom de alta frequência'],
+                ans: 1,
+                exp: 'Descargas elétricas erodem micropartículas de metal por fusão e vaporização no dielétrico.'
+            },
+            {
+                id: 10,
+                cat: 'panic',
+                catName: '🔥 DESAFIO DO PÂNICO',
+                q: 'Gargalo severo! Quebra da ferramenta principal de metal duro por vibração excessiva (Chatter). Qual a causa típica?',
+                options: ['Balanço excessivo da ferramenta (alta rigidez insuficiente) ou parâmetros de corte inadequados', 'Excesso de fluido de corte refrigerante no canal', 'Rotação muito baixa da ferramenta em aços macios', 'Uso de fuso de esferas recirculantes de alta precisão'],
+                ans: 0,
+                isPanic: true,
+                exp: 'Falta de rigidez no conjunto peça-ferramenta gera vibrações regenerativas que fraturam o metal duro.'
+            },
+            // Generative fill for houses 11 to 49
+            ...Array.from({ length: 39 }, (_, index) => {
+                const houseNum = index + 11;
+                if (houseNum === 25 || houseNum === 40) {
+                    return {
+                        id: houseNum,
+                        cat: 'panic',
+                        catName: '🔥 DESAFIO DO PÂNICO',
+                        q: `[Bloco ${houseNum}] PARADA NÃO PLANEJADA! Superaquecimento na linha de produção. Qual ação preventiva adotar?`,
+                        options: ['Verificar sistema de refrigeração e paradas térmicas do fuso', 'Aumentar a velocidade de avanço em 200%', 'Desligar o sensor de temperatura do CNC', 'Trocar o óleo hidráulico por água potável'],
+                        ans: 0,
+                        isPanic: true,
+                        exp: 'Monitorar dilatação térmica e manutenção de fluidos evita paradas corretivas.'
+                    };
+                }
+                if (houseNum % 7 === 0) {
+                    return {
+                        id: houseNum,
+                        cat: 'chance',
+                        catName: 'Carta Sorte / Revés 🎴',
+                        q: `[Bloco ${houseNum}] Carta de Evento da Rede Crypto Maker.`,
+                        options: ['Executar protocolo de ajuste de processo', 'Ignorar alerta de manutenção'],
+                        ans: 0,
+                        isChanceCard: true,
+                        moveOffset: (houseNum % 2 === 0 ? 3 : -2),
+                        rewardCR: 100,
+                        exp: 'Eventos dinâmicos da rede exigem reação rápida do engenheiro de fabricação.'
+                    };
+                }
+                const categories = [
+                    { cat: 'catUsinagem', name: 'Usinagem & Eletroerosão', color: '#0088ff', qText: 'Qual o parâmetro responsável por determinar a taxa de remoção de cavaco no fresamento?' },
+                    { cat: 'catForjamento', name: 'Forjamento & Laminação', color: '#ff2a2a', qText: 'Qual a principal diferença entre laminação a quente e a frio em aços estruturais?' },
+                    { cat: 'catExtrusao', name: 'Extrusão & Trefilação', color: '#00e676', qText: 'Na extrusão direta de perfis de alumínio, o tarugo é forçado através de:' },
+                    { cat: 'catFundicao', name: 'Fundição & Soldagem', color: '#ffb300', qText: 'No processo TIG (GTAW), qual o tipo de eletrodo utilizado para estabelecer o arco elétrico?' },
+                    { cat: 'catMetalurgia', name: 'Metalurgia do Pó & Metrologia', color: '#a855f7', qText: 'Um micrometro centesimal com Nônio permite leituras com resolução até:' }
+                ];
+                const selectedCat = categories[index % categories.length];
+                return {
+                    id: houseNum,
+                    cat: selectedCat.cat,
+                    catName: selectedCat.name,
+                    q: `[Bloco #${houseNum}] ${selectedCat.qText}`,
+                    options: [
+                        'Alternativa A: Correta fundamentada nas normas ABNT/ISO de fabricação.',
+                        'Alternativa B: Incorreta referente a processos não compatíveis.',
+                        'Alternativa C: Incorreta referente a parâmetro secundário sem efeito direto.',
+                        'Alternativa D: Incorreta referente a tolerância dimensional inadequada.'
+                    ],
+                    ans: 0,
+                    exp: 'Fundamentado nos princípios clássicos de manufatura mecânica e engenharia de materiais.'
+                };
+            }),
+            {
+                id: 50,
+                cat: 'special',
+                catName: 'CHEGADA 🏆 / Halving Block',
+                q: 'PARABÉNS! Você atingiu o Bloco Halving Final de Fabricação. Qual é o conceito central da Indústria 4.0 aplicado à manufatura?',
+                options: ['Integração de CPS (Sistemas Ciber-Físicos), IoT e I.A. no controle total da produção em tempo real', 'Uso exclusivo de tornos manuais sem automação', 'Eliminação completa do controle estatístico de processo (CEP)', 'Substituição da usinagem por moldagem manual em argila'],
+                ans: 0,
+                exp: 'A manufatura avançada 4.0 conecta inteligência, conectividade em tempo real e automação autônoma.'
+            }
+        ];
+
+        /* ==========================================================================
+           2. GLOBAL GAME STATE & CONSTANTS
+           ========================================================================== */
+        let gameState = {
+            mode: 'local', // 'local' or 'network'
+            roomCode: 'FAB-LOCAL',
+            timerSec: 30,
+            currentTurnIndex: 0,
+            round: 1,
+            players: [],
+            isRollPending: true,
+            timerInterval: null,
+            timerRemaining: 0,
+            pendingMoveTile: 1,
+            consecutiveErrors: {},
+            soundEnabled: true
+        };
+
+        const PLAYER_COLORS = ['#0088ff', '#ff2a2a', '#00e676', '#ffb300', '#a855f7', '#ec4899'];
+
+        /* ==========================================================================
+           3. AUDIO SYNTHESIZER (Tone.js Integration)
+           ========================================================================== */
+        let synth, polySynth;
+        function initAudio() {
+            try {
+                synth = new Tone.Synth().toDestination();
+                polySynth = new Tone.PolySynth().toDestination();
+            } catch (e) {
+                console.warn("Audio Context setup pending user interaction.");
+            }
+        }
+
+        function playSFX(type) {
+            if (!gameState.soundEnabled) return;
+            try {
+                if (!synth) initAudio();
+                Tone.start();
+                if (type === 'dice') {
+                    synth.triggerAttackRelease("C4", "8n");
+                } else if (type === 'correct') {
+                    polySynth.triggerAttackRelease(["C5", "E5", "G5"], "8n");
+                } else if (type === 'wrong') {
+                    polySynth.triggerAttackRelease(["C3", "C#3"], "4n");
+                } else if (type === 'win') {
+                    polySynth.triggerAttackRelease(["C4", "E4", "G4", "C5"], "2n");
+                }
+            } catch(e) {}
+        }
+
+        function toggleSound() {
+            gameState.soundEnabled = !gameState.soundEnabled;
+            const icon = document.getElementById('soundIcon');
+            if (gameState.soundEnabled) {
+                icon.className = 'fa-solid fa-volume-high';
+            } else {
+                icon.className = 'fa-solid fa-volume-xmark text-rose-500';
+            }
+        }
+
+        /* ==========================================================================
+           4. SETUP & INITIALIZATION LOGIC
+           ========================================================================== */
+        window.onload = function() {
+            initBackground3D();
+            initDice3D();
+            renderSetupPlayerSlots();
+        };
+
+        function setGameMode(mode) {
+            gameState.mode = mode;
+            const btnLocal = document.getElementById('btnModeLocal');
+            const btnNet = document.getElementById('btnModeNetwork');
+            const netOpt = document.getElementById('networkOptions');
+
+            if (mode === 'local') {
+                btnLocal.className = 'p-3 rounded-xl border border-blue-500 bg-blue-950/40 text-blue-300 font-bold flex flex-col items-center justify-center transition';
+                btnNet.className = 'p-3 rounded-xl border border-slate-700 bg-slate-900/40 text-slate-400 font-bold flex flex-col items-center justify-center transition hover:border-slate-500';
+                netOpt.classList.add('hidden');
+                document.getElementById('roomCodeDisplay').innerText = 'FAB-LOCAL';
+            } else {
+                btnNet.className = 'p-3 rounded-xl border border-blue-500 bg-blue-950/40 text-blue-300 font-bold flex flex-col items-center justify-center transition';
+                btnLocal.className = 'p-3 rounded-xl border border-slate-700 bg-slate-900/40 text-slate-400 font-bold flex flex-col items-center justify-center transition hover:border-slate-500';
+                netOpt.classList.remove('hidden');
+                const randCode = 'FAB-' + Math.floor(1000 + Math.random() * 9000);
+                document.getElementById('joinRoomCode').value = randCode;
+                document.getElementById('roomCodeDisplay').innerText = randCode;
+            }
+        }
+
+        function joinNetworkRoom() {
+            const code = document.getElementById('joinRoomCode').value.toUpperCase().trim();
+            if (code) {
+                gameState.roomCode = code;
+                document.getElementById('roomCodeDisplay').innerText = code;
+                alert('Conectado à sala simulada em rede: ' + code);
+            }
+        }
+
+        function renderSetupPlayerSlots() {
+            const container = document.getElementById('playersList');
+            container.innerHTML = '';
+            
+            const defaultPlayers = [
+                { name: 'Minerador Alpha', isBot: false },
+                { name: 'Bot-CNC 9000', isBot: true },
+                { name: 'Bot-Sintering', isBot: true }
+            ];
+
+            defaultPlayers.forEach((p, idx) => {
+                createPlayerRowHTML(container, idx, p.name, p.isBot);
+            });
+        }
+
+        function createPlayerRowHTML(container, idx, name, isBot) {
+            const row = document.createElement('div');
+            row.className = 'flex items-center gap-2 bg-slate-900/60 p-2 rounded-xl border border-slate-800';
+            row.innerHTML = `
+                <span class="w-4 h-4 rounded-full" style="background-color: ${PLAYER_COLORS[idx % PLAYER_COLORS.length]}"></span>
+                <input type="text" value="${name}" class="player-name-input flex-1 bg-slate-950 border border-slate-700 rounded-lg px-2 py-1 text-xs text-slate-200 outline-none focus:border-blue-500" />
+                <label class="flex items-center text-xs text-slate-400 font-mono space-x-1 cursor-pointer">
+                    <input type="checkbox" ${isBot ? 'checked' : ''} class="player-bot-check rounded accent-blue-500" />
+                    <span>BOT</span>
+                </label>
+                ${idx >= 2 ? `<button onclick="this.parentElement.remove()" class="text-rose-400 hover:text-rose-300 text-xs px-1"><i class="fa-solid fa-trash"></i></button>` : ''}
+            `;
+            container.appendChild(row);
+        }
+
+        function addPlayerSlot() {
+            const container = document.getElementById('playersList');
+            const currentCount = container.children.length;
+            if (currentCount >= 6) {
+                alert('Máximo de 6 jogadores atingido.');
+                return;
+            }
+            createPlayerRowHTML(container, currentCount, `Jogador ${currentCount + 1}`, false);
+        }
+
+        function startGame() {
+            const nameInputs = document.querySelectorAll('.player-name-input');
+            const botChecks = document.querySelectorAll('.player-bot-check');
+
+            gameState.players = [];
+            nameInputs.forEach((input, i) => {
+                const name = input.value.trim() || `Jogador ${i + 1}`;
+                const isBot = botChecks[i].checked;
+                gameState.players.push({
+                    id: i,
+                    name: name,
+                    isBot: isBot,
+                    color: PLAYER_COLORS[i % PLAYER_COLORS.length],
+                    pos: 1,
+                    balance: 100, // Starting CR$
+                    correctAnswers: 0,
+                    totalAnswers: 0,
+                    panicTurns: 0,
+                    consecutiveErrors: 0
+                });
+            });
+
+            if (gameState.players.length < 2) {
+                alert('É necessário pelo menos 2 jogadores.');
+                return;
+            }
+
+            gameState.timerSec = parseInt(document.getElementById('timerSelect').value) || 30;
+            
+            // Hide setup, show game interface
+            document.getElementById('setupOverlay').classList.add('hidden');
+            document.getElementById('gameInterface').classList.remove('hidden');
+
+            renderBoardTiles();
+            updateUI();
+            logTransaction('[REDE]', `Partida iniciada com ${gameState.players.length} participantes.`);
+
+            // Trigger Bot turn if first player is Bot
+            checkBotTurn();
+        }
+
+        /* ==========================================================================
+           5. BOARD RENDERER (50 TILES)
+           ========================================================================== */
+        function renderBoardTiles() {
+            const grid = document.getElementById('boardGrid');
+            grid.innerHTML = '';
+
+            QUESTION_BANK.forEach((q) => {
+                const tile = document.createElement('div');
+                let catClass = 'cat-usinagem';
+                if (q.cat === 'catForjamento') catClass = 'cat-forjamento';
+                else if (q.cat === 'catExtrusao') catClass = 'cat-extrusao';
+                else if (q.cat === 'catFundicao') catClass = 'cat-fundicao';
+                else if (q.cat === 'catMetalurgia') catClass = 'cat-metalurgia';
+                else if (q.cat === 'special') catClass = 'cat-special';
+                else if (q.cat === 'panic') catClass = 'cat-panic';
+                else if (q.cat === 'chance') catClass = 'cat-special';
+
+                tile.className = `board-tile ${catClass} bg-slate-900/90 rounded-xl border p-1 sm:p-2 flex flex-col justify-between items-center text-center relative overflow-hidden min-h-[60px]`;
+                tile.id = `tile-${q.id}`;
+
+                let icon = '<i class="fa-solid fa-gear text-[10px] opacity-40"></i>';
+                if (q.id === 1) icon = '<i class="fa-solid fa-flag-checkered text-emerald-400"></i>';
+                else if (q.id === 50) icon = '<i class="fa-solid fa-trophy text-amber-400"></i>';
+                else if (q.isPanic) icon = '<i class="fa-solid fa-biohazard text-rose-500 animate-pulse"></i>';
+                else if (q.isChanceCard) icon = '<i class="fa-solid fa-clone text-purple-400"></i>';
+
+                tile.innerHTML = `
+                    <div class="flex justify-between items-center w-full text-[9px] font-mono text-slate-400">
+                        <span>#${q.id}</span>
+                        ${icon}
+                    </div>
+                    <div id="tilePawns-${q.id}" class="flex flex-wrap items-center justify-center gap-1 my-1 w-full">
+                        <!-- Pawns go here -->
+                    </div>
+                `;
+                grid.appendChild(tile);
+            });
+
+            updatePawnsOnBoard();
+        }
+
+        function updatePawnsOnBoard() {
+            // Clear all pawns
+            for (let i = 1; i <= 50; i++) {
+                const container = document.getElementById(`tilePawns-${i}`);
+                if (container) container.innerHTML = '';
+            }
+
+            // Render pawns
+            gameState.players.forEach(p => {
+                const container = document.getElementById(`tilePawns-${p.pos}`);
+                if (container) {
+                    const pawn = document.createElement('div');
+                    pawn.className = 'pawn';
+                    pawn.style.backgroundColor = p.color;
+                    pawn.style.color = p.color;
+                    pawn.title = `${p.name} (Casa ${p.pos})`;
+                    container.appendChild(pawn);
+                }
+            });
+        }
+
+        /* ==========================================================================
+           6. DICE & TURN GAME MECHANICS
+           ========================================================================== */
+        function rollDice() {
+            if (!gameState.isRollPending) return;
+
+            const activeP = gameState.players[gameState.currentTurnIndex];
+
+            // Check Panic Challenge status
+            if (activeP.pos === 10 || activeP.pos === 25 || activeP.pos === 40) {
+                activeP.panicTurns = (activeP.panicTurns || 0) + 1;
+                if (activeP.panicTurns < 3) {
+                    alert(`${activeP.name} está preso no DESAFIO DO PÂNICO! (Rodada ${activeP.panicTurns}/2 presa).`);
+                    logTransaction('[PÂNICO]', `${activeP.name} permanece retido no Bloco ${activeP.pos}.`);
+                    nextTurn();
+                    return;
+                } else {
+                    // 3rd turn auto advance 1 house without dice
+                    alert(`${activeP.name} cumpriu a pena do Pânico! Avançando 1 casa automaticamente.`);
+                    activeP.panicTurns = 0;
+                    movePlayerToTile(activeP, activeP.pos + 1);
+                    return;
+                }
+            }
+
+            gameState.isRollPending = false;
+            document.getElementById('btnRollDice').disabled = true;
+
+            playSFX('dice');
+            animateDice3D(() => {
+                const diceVal = Math.floor(Math.random() * 6) + 1;
+                logTransaction('[DADO]', `${activeP.name} tirou ${diceVal} no dado 3D.`);
+                
+                const newPos = Math.min(50, activeP.pos + diceVal);
+                movePlayerToTile(activeP, newPos);
+            });
+        }
+
+        function manualDicePrompt() {
+            if (!gameState.isRollPending) return;
+            const val = prompt('Digite o valor do dado (1 a 6):', '3');
+            const num = parseInt(val);
+            if (num >= 1 && num <= 6) {
+                gameState.isRollPending = false;
+                document.getElementById('btnRollDice').disabled = true;
+                const activeP = gameState.players[gameState.currentTurnIndex];
+                logTransaction('[DADO MANUL]', `${activeP.name} inseriu valor ${num}.`);
+                movePlayerToTile(activeP, Math.min(50, activeP.pos + num));
+            }
+        }
+
+        function movePlayerToTile(player, targetTile) {
+            const startTile = player.pos;
+            player.pos = targetTile;
+            updatePawnsOnBoard();
+            updateUI();
+
+            const houseData = QUESTION_BANK.find(q => q.id === targetTile);
+
+            setTimeout(() => {
+                if (houseData.isChanceCard) {
+                    openChanceCardModal(houseData, startTile);
+                } else {
+                    openQuestionModal(houseData, startTile);
+                }
+            }, 600);
+        }
+
+        /* ==========================================================================
+           7. CHANCE CARDS & QUESTION MODALS
+           ========================================================================== */
+        let currentOriginTile = 1;
+        let currentQuestion = null;
+
+        function openChanceCardModal(houseData, originTile) {
+            currentOriginTile = originTile;
+            currentQuestion = houseData;
+
+            document.getElementById('chanceCardTitle').innerText = houseData.catName;
+            document.getElementById('chanceCardDesc').innerText = `${houseData.q} (Deslocamento: ${houseData.moveOffset > 0 ? '+' : ''}${houseData.moveOffset} casas).`;
+            openModal('chanceModal');
+        }
+
+        function executeChanceCard() {
+            closeModal('chanceModal');
+            const p = gameState.players[gameState.currentTurnIndex];
+            p.balance += currentQuestion.rewardCR;
+            
+            const nextPos = Math.max(1, Math.min(50, p.pos + currentQuestion.moveOffset));
+            p.pos = nextPos;
+            updatePawnsOnBoard();
+            updateUI();
+
+            logTransaction('[CARTA]', `${p.name} executou a Carta e alterou posição para Bloco ${nextPos}.`);
+
+            // After chance card move, answer destination question
+            const destQuestion = QUESTION_BANK.find(q => q.id === nextPos);
+            setTimeout(() => {
+                openQuestionModal(destQuestion, currentOriginTile);
+            }, 500);
+        }
+
+        function openQuestionModal(qData, originTile) {
+            currentOriginTile = originTile;
+            currentQuestion = qData;
+
+            const activeP = gameState.players[gameState.currentTurnIndex];
+
+            document.getElementById('qHouseNumber').innerText = `BLOCO #${qData.id} - ${qData.catName.toUpperCase()}`;
+            document.getElementById('qText').innerText = qData.q;
+
+            // Reset UI states inside question modal
+            document.getElementById('qExplanationBox').classList.add('hidden');
+            document.getElementById('btnConfirmAnswer').classList.remove('hidden');
+            document.getElementById('btnNextTurn').classList.add('hidden');
+
+            // Render Options (with support for Adaptive Assistance if struggling)
+            const optionsContainer = document.getElementById('qOptionsContainer');
+            optionsContainer.innerHTML = '';
+
+            let indicesToDisplay = [0, 1, 2, 3];
+
+            // Assistance mechanic: if 2 errors or last place, disable 1-2 incorrect options
+            const isLastPlace = isPlayerLastPlace(activeP);
+            if (activeP.consecutiveErrors >= 2 || isLastPlace) {
+                // Eliminate 1 wrong answer for player support
+                const wrongIndices = [0, 1, 2, 3].filter(i => i !== qData.ans);
+                indicesToDisplay = [qData.ans, wrongIndices[0], wrongIndices[1]];
+                logTransaction('[APOIO]', `Sistema ativou remoção de alternativa para ${activeP.name}.`);
+            }
+
+            indicesToDisplay.sort(() => Math.random() - 0.5);
+
+            indicesToDisplay.forEach((optIdx) => {
+                const btn = document.createElement('button');
+                btn.className = 'q-opt-btn w-full p-3 rounded-xl bg-slate-900 border border-slate-700 hover:border-blue-500 text-left text-xs sm:text-sm text-slate-200 font-medium transition flex items-center justify-between';
+                btn.onclick = () => selectOption(btn, optIdx);
+                btn.dataset.optIndex = optIdx;
+                btn.innerHTML = `
+                    <span>${qData.options[optIdx]}</span>
+                    <i class="fa-regular fa-circle text-slate-500 opt-icon"></i>
+                `;
+                optionsContainer.appendChild(btn);
+            });
+
+            openModal('questionModal');
+            startModalTimer();
+
+            // If Bot turn, answer automatically
+            if (activeP.isBot) {
+                setTimeout(() => {
+                    botAutoAnswer(qData);
+                }, 1800);
+            }
+        }
+
+        let selectedOptIdx = null;
+
+        function selectOption(btnElement, idx) {
+            document.querySelectorAll('.q-opt-btn').forEach(b => {
+                b.classList.remove('border-blue-500', 'bg-blue-950/50');
+                b.querySelector('.opt-icon').className = 'fa-regular fa-circle text-slate-500 opt-icon';
+            });
+
+            btnElement.classList.add('border-blue-500', 'bg-blue-950/50');
+            btnElement.querySelector('.opt-icon').className = 'fa-solid fa-circle-dot text-blue-400 opt-icon';
+            selectedOptIdx = idx;
+        }
+
+        function submitAnswer() {
+            clearInterval(gameState.timerInterval);
+
+            if (selectedOptIdx === null) {
+                alert('Selecione uma resposta antes de confirmar!');
+                return;
+            }
+
+            const activeP = gameState.players[gameState.currentTurnIndex];
+            const isCorrect = (selectedOptIdx === currentQuestion.ans);
+
+            activeP.totalAnswers++;
+
+            document.getElementById('btnConfirmAnswer').classList.add('hidden');
+            document.getElementById('btnNextTurn').classList.remove('hidden');
+
+            const expBox = document.getElementById('qExplanationBox');
+            const expHeader = document.getElementById('qFeedbackHeader');
+            const expText = document.getElementById('qExplanationText');
+
+            expBox.classList.remove('hidden');
+            expText.innerText = currentQuestion.exp;
+
+            if (isCorrect) {
+                playSFX('correct');
+                activeP.correctAnswers++;
+                activeP.consecutiveErrors = 0;
+                activeP.balance += 150; // CR$ Reward
+
+                expHeader.className = 'font-bold text-emerald-400 flex items-center space-x-2';
+                expHeader.innerHTML = '<i class="fa-solid fa-circle-check"></i> <span>RESPOSTA CORRETA (+150.00 CR$)</span>';
+                logTransaction('[MINERAÇÃO]', `${activeP.name} acertou a questão do Bloco ${activeP.pos}.`);
+
+                if (activeP.pos === 50) {
+                    triggerWin(activeP);
+                }
+            } else {
+                playSFX('wrong');
+                activeP.consecutiveErrors = (activeP.consecutiveErrors || 0) + 1;
+                activeP.balance = Math.max(0, activeP.balance - 50);
+
+                expHeader.className = 'font-bold text-rose-400 flex items-center space-x-2';
+                expHeader.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i> <span>RESPOSTA INCORRETA (-50.00 CR$)</span>';
+
+                // Reposition penalty if missed on Chance Card or Panic
+                if (currentQuestion.isPanic) {
+                    activeP.pos = Math.max(1, activeP.pos - 2);
+                    expText.innerText += ' Penalidade do Pânico: Recua 2 casas.';
+                } else if (currentOriginTile && currentOriginTile !== activeP.pos) {
+                    activeP.pos = currentOriginTile;
+                    expText.innerText += ' Regressou à casa de origem da rodada.';
+                }
+
+                logTransaction('[FALHA]', `${activeP.name} errou no Bloco ${currentQuestion.id}.`);
+                updatePawnsOnBoard();
+            }
+
+            updateUI();
+        }
+
+        function botAutoAnswer(qData) {
+            // Bots have 75% accuracy
+            const isCorrect = Math.random() < 0.75;
+            selectedOptIdx = isCorrect ? qData.ans : (qData.ans + 1) % qData.options.length;
+            
+            // Auto click UI
+            const btns = document.querySelectorAll('.q-opt-btn');
+            btns.forEach(b => {
+                if (parseInt(b.dataset.optIndex) === selectedOptIdx) {
+                    selectOption(b, selectedOptIdx);
+                }
+            });
+
+            setTimeout(() => {
+                submitAnswer();
+                setTimeout(() => {
+                    closeQuestionModal();
+                }, 1500);
+            }, 800);
+        }
+
+        function closeQuestionModal() {
+            clearInterval(gameState.timerInterval);
+            closeModal('questionModal');
+            selectedOptIdx = null;
+            nextTurn();
+        }
+
+        /* ==========================================================================
+           8. TIMERS & TURN CONTROLLER
+           ========================================================================== */
+        function startModalTimer() {
+            clearInterval(gameState.timerInterval);
+            gameState.timerRemaining = gameState.timerSec;
+
+            const timerDisplay = document.getElementById('modalTimer');
+            const progressBar = document.getElementById('timerProgressBar');
+
+            timerDisplay.innerText = `${gameState.timerRemaining}s`;
+            progressBar.style.width = '100%';
+
+            gameState.timerInterval = setInterval(() => {
+                gameState.timerRemaining--;
+                timerDisplay.innerText = `${gameState.timerRemaining}s`;
+
+                const pct = (gameState.timerRemaining / gameState.timerSec) * 100;
+                progressBar.style.width = `${pct}%`;
+
+                if (gameState.timerRemaining <= 0) {
+                    clearInterval(gameState.timerInterval);
+                    selectedOptIdx = -1; // Timeout wrong
+                    submitAnswer();
+                }
+            }, 1000);
+        }
+
+        function nextTurn() {
+            gameState.currentTurnIndex = (gameState.currentTurnIndex + 1) % gameState.players.length;
+            if (gameState.currentTurnIndex === 0) {
+                gameState.round++;
+            }
+
+            gameState.isRollPending = true;
+            document.getElementById('btnRollDice').disabled = false;
+
+            updateUI();
+            checkBotTurn();
+        }
+
+        function checkBotTurn() {
+            const activeP = gameState.players[gameState.currentTurnIndex];
+            if (activeP.isBot) {
+                document.getElementById('btnRollDice').disabled = true;
+                setTimeout(() => {
+                    rollDice();
+                }, 1200);
+            }
+        }
+
+        function isPlayerLastPlace(player) {
+            const sorted = [...gameState.players].sort((a, b) => a.pos - b.pos);
+            return sorted[0].id === player.id;
+        }
+
+        /* ==========================================================================
+           9. UI & LEADERBOARD UPDATES
+           ========================================================================== */
+        function updateUI() {
+            const activeP = gameState.players[gameState.currentTurnIndex];
+
+            document.getElementById('activePlayerName').innerText = activeP.name;
+            document.getElementById('activePlayerName').style.color = activeP.color;
+            document.getElementById('activePlayerBalance').innerText = `${activeP.balance.toFixed(2)} CR$`;
+            
+            const acc = activeP.totalAnswers > 0 ? Math.round((activeP.correctAnswers / activeP.totalAnswers) * 100) : 100;
+            document.getElementById('activePlayerAccuracy').innerText = `${acc}%`;
+            document.getElementById('activePlayerPos').innerText = `Bloco ${activeP.pos}`;
+            document.getElementById('roundCounter').innerText = `Rodada ${gameState.round}`;
+
+            // Update Leaderboard
+            const sortedPlayers = [...gameState.players].sort((a, b) => b.pos - a.pos || b.balance - a.balance);
+            const lbContainer = document.getElementById('leaderboardList');
+            lbContainer.innerHTML = '';
+
+            sortedPlayers.forEach((p, rank) => {
+                const item = document.createElement('div');
+                const isCurrent = p.id === activeP.id;
+                item.className = `p-2 rounded-xl border flex items-center justify-between text-xs font-mono transition ${isCurrent ? 'bg-blue-950/60 border-blue-500 shadow-neon-blue' : 'bg-slate-900/40 border-slate-800'}`;
+                
+                const pAcc = p.totalAnswers > 0 ? Math.round((p.correctAnswers / p.totalAnswers) * 100) : 100;
+
+                item.innerHTML = `
+                    <div class="flex items-center space-x-2">
+                        <span class="font-bold w-4 text-center ${rank === 0 ? 'text-amber-400' : 'text-slate-500'}">#${rank + 1}</span>
+                        <span class="w-3 h-3 rounded-full" style="background-color: ${p.color}"></span>
+                        <span class="font-bold ${isCurrent ? 'text-white' : 'text-slate-300'}">${p.name} ${p.isBot ? '<span class="text-[9px] text-slate-500">[BOT]</span>' : ''}</span>
+                    </div>
+                    <div class="text-right">
+                        <span class="text-emerald-400 font-bold block">${p.balance.toFixed(0)} CR$</span>
+                        <span class="text-[10px] text-slate-500">Bloco ${p.pos} (${pAcc}%)</span>
+                    </div>
+                `;
+                lbContainer.appendChild(item);
+            });
+        }
+
+        function logTransaction(tag, msg) {
+            const log = document.getElementById('transactionLog');
+            const row = document.createElement('div');
+            row.innerHTML = `<span class="text-blue-400 font-bold">${tag}</span> ${msg}`;
+            log.prepend(row);
+        }
+
+        function triggerWin(winner) {
+            playSFX('win');
+            const sorted = [...gameState.players].sort((a, b) => b.balance - a.balance);
+            const podiumList = document.getElementById('podiumList');
+            podiumList.innerHTML = '';
+
+            sorted.forEach((p, idx) => {
+                const row = document.createElement('div');
+                row.className = 'p-3 rounded-xl bg-slate-900 border border-slate-800 flex justify-between items-center text-sm font-mono';
+                row.innerHTML = `
+                    <div class="flex items-center space-x-3">
+                        <span class="text-amber-400 font-bold">#${idx + 1}</span>
+                        <span class="font-bold" style="color:${p.color}">${p.name}</span>
+                    </div>
+                    <span class="text-emerald-400 font-bold">${p.balance.toFixed(2)} CR$</span>
+                `;
+                podiumList.appendChild(row);
+            });
+
+            openModal('podiumModal');
+        }
+
+        function confirmReset() {
+            if (confirm('Deseja reiniciar a partida atual?')) {
+                location.reload();
+            }
+        }
+
+        function openModal(id) {
+            document.getElementById(id).classList.remove('hidden');
+        }
+
+        function closeModal(id) {
+            document.getElementById(id).classList.add('hidden');
+        }
+
+        /* ==========================================================================
+           10. THREE.JS 3D BACKGROUND & DICE SIMULATOR
+           ========================================================================== */
+        let diceScene, diceCamera, diceRenderer, diceCube;
+
+        function initBackground3D() {
+            const canvas = document.getElementById('bgCanvas');
+            const scene = new THREE.Scene();
+            const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            const renderer = new THREE.WebGLRenderer({ canvas: canvas, alpha: true, antialias: true });
+
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            camera.position.z = 30;
+
+            // Cyber Particle Field
+            const particlesGeo = new THREE.BufferGeometry();
+            const count = 300;
+            const posArray = new Float32Array(count * 3);
+
+            for (let i = 0; i < count * 3; i++) {
+                posArray[i] = (Math.random() - 0.5) * 80;
+            }
+
+            particlesGeo.setAttribute('position', new THREE.BufferAttribute(posArray, 3));
+            const particlesMat = new THREE.PointsMaterial({
+                size: 0.15,
+                color: 0x0088ff,
+                transparent: true,
+                opacity: 0.6
+            });
+
+            const particlesMesh = new THREE.Points(particlesGeo, particlesMat);
+            scene.add(particlesMesh);
+
+            function animateBg() {
+                requestAnimationFrame(animateBg);
+                particlesMesh.rotation.y += 0.001;
+                particlesMesh.rotation.x += 0.0005;
+                renderer.render(scene, camera);
+            }
+            animateBg();
+
+            window.addEventListener('resize', () => {
+                camera.aspect = window.innerWidth / window.innerHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(window.innerWidth, window.innerHeight);
+            });
+        }
+
+        function initDice3D() {
+            const canvas = document.getElementById('dice3dCanvas');
+            const container = document.getElementById('diceContainer');
+            if (!canvas || !container) return;
+
+            diceScene = new THREE.Scene();
+            diceCamera = new THREE.PerspectiveCamera(45, 1, 0.1, 100);
+            diceCamera.position.z = 4;
+
+            diceRenderer = new THREE.WebGLRenderer({ canvas: canvas, alpha: true, antialias: true });
+            diceRenderer.setSize(80, 80);
+
+            // Lighting
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
+            diceScene.add(ambientLight);
+
+            const pointLight = new THREE.PointLight(0x0088ff, 2, 10);
+            pointLight.position.set(2, 2, 2);
+            diceScene.add(pointLight);
+
+            // Neon Cube
+            const geometry = new THREE.BoxGeometry(1.6, 1.6, 1.6);
+            const material = new THREE.MeshStandardMaterial({
+                color: 0x0d131f,
+                emissive: 0x0088ff,
+                emissiveIntensity: 0.4,
+                roughness: 0.2,
+                metalness: 0.8,
+                wireframe: false
+            });
+
+            diceCube = new THREE.Mesh(geometry, material);
+            diceScene.add(diceCube);
+
+            function renderDiceLoop() {
+                requestAnimationFrame(renderDiceLoop);
+                diceCube.rotation.x += 0.005;
+                diceCube.rotation.y += 0.008;
+                diceRenderer.render(diceScene, diceCamera);
+            }
+            renderDiceLoop();
+        }
+
+        function animateDice3D(callback) {
+            let frames = 0;
+            const maxFrames = 30;
+
+            function rollAnimation() {
+                if (frames < maxFrames) {
+                    diceCube.rotation.x += 0.3;
+                    diceCube.rotation.y += 0.4;
+                    diceCube.rotation.z += 0.2;
+                    diceRenderer.render(diceScene, diceCamera);
+                    frames++;
+                    requestAnimationFrame(rollAnimation);
+                } else {
+                    if (callback) callback();
+                }
+            }
+            rollAnimation();
+        }
+    </script>
+</body>
+</html>
