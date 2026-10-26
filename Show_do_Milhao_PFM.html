@@ -1,0 +1,919 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Show do Milhão — Processos de Fabricação</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Canvas Confetti CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800;900&display=swap');
+
+        body {
+            font-family: 'Montserrat', sans-serif;
+            background: radial-gradient(circle at center, #0f172a 0%, #030712 100%);
+            color: #ffffff;
+            min-height: 100vh;
+        }
+
+        /* Animação de Tremor na Tela */
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-6px); }
+            40%, 80% { transform: translateX(6px); }
+        }
+        .shake-screen { animation: shake 0.4s ease-in-out; }
+
+        /* Botão de Alternativa */
+        .btn-option {
+            background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
+            border: 2px solid #3b82f6;
+            transition: all 0.2s ease;
+        }
+        .btn-option:hover:not(:disabled) {
+            background: linear-gradient(180deg, #2563eb 0%, #1d4ed8 100%);
+            border-color: #f59e0b;
+            transform: scale(1.01);
+            box-shadow: 0 0 15px rgba(245, 158, 11, 0.4);
+        }
+        .btn-option.selected {
+            background: linear-gradient(180deg, #d97706 0%, #b45309 100%) !important;
+            border-color: #ffffff !important;
+            color: #ffffff !important;
+            animation: pulse-orange 0.8s infinite alternate;
+        }
+        .btn-option.correct {
+            background: linear-gradient(180deg, #15803d 0%, #166534 100%) !important;
+            border-color: #4ade80 !important;
+            color: #ffffff !important;
+            animation: pulse-green 0.6s infinite alternate;
+        }
+        .btn-option.wrong {
+            background: linear-gradient(180deg, #b91c1c 0%, #991b1b 100%) !important;
+            border-color: #f87171 !important;
+        }
+
+        /* Botões de Ajuda */
+        .btn-help {
+            background: linear-gradient(180deg, #312e81 0%, #1e1b4b 100%);
+            border: 2px solid #6366f1;
+            transition: all 0.2s ease;
+        }
+        .btn-help:hover:not(:disabled) {
+            border-color: #f59e0b;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
+        }
+        .btn-help:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+            border-color: #475569;
+            filter: grayscale(1);
+        }
+
+        /* Animações */
+        @keyframes pulse-green {
+            0% { box-shadow: 0 0 5px #4ade80; }
+            100% { box-shadow: 0 0 20px #4ade80; }
+        }
+        @keyframes pulse-orange {
+            0% { box-shadow: 0 0 5px #f59e0b; }
+            100% { box-shadow: 0 0 20px #f59e0b; }
+        }
+
+        /* Pirâmide de Prêmios */
+        .prize-step { transition: all 0.3s ease; }
+        .prize-step.active {
+            background-color: #f59e0b;
+            color: #0f172a;
+            font-weight: 900;
+            transform: scale(1.05);
+            box-shadow: 0 0 15px rgba(245, 158, 11, 0.6);
+        }
+        .prize-step.safe-haven {
+            border: 2px solid #22c55e;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #030712; }
+        ::-webkit-scrollbar-thumb { background: #1e3a8a; border-radius: 3px; }
+    </style>
+</head>
+<body id="main-body" class="p-3 md:p-6 flex flex-col justify-between items-center min-h-screen">
+
+    <!-- CABEÇALHO -->
+    <header class="text-center w-full max-w-5xl mb-4">
+        <div class="inline-block bg-amber-500/10 border border-amber-500/40 px-4 py-1 rounded-full mb-2">
+            <span class="text-amber-400 font-bold text-xs uppercase tracking-widest">⚙️ Desafio de Engenharia de Manufatura</span>
+        </div>
+        <h1 class="text-2xl md:text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-300 via-amber-500 to-yellow-200 uppercase tracking-tight">
+            Show dos Processos de Fabricação
+        </h1>
+        <p class="text-xs md:text-sm text-slate-400">Edição Especial: Usinagem, Forjamento, Fundição, Extrusão e Metrologia</p>
+    </header>
+
+    <!-- TELA INICIAL (CADASTRO) -->
+    <div id="screen-start" class="w-full max-w-xl bg-slate-900/90 border-2 border-amber-500/60 rounded-2xl p-6 md:p-8 text-center shadow-2xl my-auto">
+        <div class="text-5xl mb-4">⚙️</div>
+        <h2 class="text-2xl font-black text-amber-400 mb-2">Rumo ao 1 Milhão!</h2>
+        <p class="text-slate-300 text-sm mb-6 leading-relaxed">
+            Responda corretamente às 15 perguntas sobre <strong>Usinagem, Forjamento, Fundição, Extrusão, Metalurgia do Pó e Indústria 4.0</strong>. Insira seu nome para iniciar!
+        </p>
+
+        <!-- Campo de Nome do Participante -->
+        <div class="mb-6 text-left">
+            <label for="input-player-name" class="block text-xs font-bold text-amber-400 uppercase tracking-wider mb-2">
+                👤 Nome do Participante:
+            </label>
+            <input type="text" id="input-player-name" placeholder="Digite seu nome completo ou apelido..." class="w-full bg-slate-950 border border-amber-500/50 rounded-xl p-3.5 text-slate-100 text-sm font-bold placeholder-slate-600 focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-500/20">
+        </div>
+
+        <div class="bg-slate-950 p-4 rounded-xl border border-slate-800 text-left text-xs text-slate-300 space-y-2 mb-6">
+            <div class="font-bold text-amber-400 border-b border-slate-800 pb-1">💡 Regras & Recursos do Jogo:</div>
+            <div>⏱️ <strong>Takt Time:</strong> 30 segundos por pergunta!</div>
+            <div>🛡️ <strong>Marcos de Segurança:</strong> Perguntas 5 (R$ 10 mil) e 10 (R$ 100 mil) garantem prêmio mínimo!</div>
+            <div>🔀 <strong>Alternativas Dinâmicas:</strong> Opções de resposta embaralhadas a cada rodada.</div>
+            <div>🔄 <strong>Proteção de Sessão:</strong> Se fechar ou recarregar, você retorna ao ponto exato onde parou!</div>
+        </div>
+
+        <button onclick="startGame()" class="w-full bg-gradient-to-r from-amber-500 to-yellow-400 hover:from-amber-400 hover:to-yellow-300 text-slate-950 font-black py-4 rounded-xl text-lg uppercase tracking-wider transition-all transform hover:scale-105 shadow-xl cursor-pointer">
+            Iniciar o Show 🚀
+        </button>
+    </div>
+
+    <!-- TELA DO JOGO -->
+    <div id="screen-game" class="hidden w-full max-w-6xl grid grid-cols-1 lg:grid-cols-4 gap-4 my-auto">
+        
+        <!-- PAINEL PRINCIPAL (PERGUNTA + OPÇÕES) -->
+        <div class="lg:col-span-3 flex flex-col justify-between gap-4">
+            
+            <!-- Painel Superior de Status, Nome, Cronômetro e Ajudas -->
+            <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-4 flex flex-wrap items-center justify-between gap-3 shadow-lg">
+                <div class="flex items-center gap-3">
+                    <span id="player-name-display" class="bg-indigo-950 border border-indigo-500/40 text-indigo-300 font-black text-xs px-3 py-1 rounded-md">👤 Participante</span>
+                    <span id="badge-level" class="bg-amber-500 text-slate-950 font-black text-xs px-3 py-1 rounded-md uppercase">Fácil</span>
+                    <span id="label-q-num" class="text-xs text-slate-400 font-bold">Pergunta 1 de 15</span>
+                </div>
+
+                <!-- Cronômetro Visual -->
+                <div class="flex items-center gap-2 bg-slate-950 border border-slate-800 px-4 py-1.5 rounded-full">
+                    <span class="text-xs text-slate-400 font-bold">⏱️ Tempo:</span>
+                    <span id="timer-display" class="font-black text-lg text-amber-400 font-mono">30s</span>
+                </div>
+
+                <!-- Botões de Ajuda -->
+                <div class="flex items-center gap-2">
+                    <button id="btn-help-skip" onclick="useHelpSkip()" class="btn-help px-3 py-2 rounded-lg text-xs font-bold flex items-center gap-1 text-slate-200">
+                        ⏩ Pular
+                    </button>
+                    <button id="btn-help-students" onclick="useHelpStudents()" class="btn-help px-3 py-2 rounded-lg text-xs font-bold flex items-center gap-1 text-slate-200">
+                        🎓 Universitários
+                    </button>
+                    <button id="btn-help-5050" onclick="useHelp5050()" class="btn-help px-3 py-2 rounded-lg text-xs font-bold flex items-center gap-1 text-slate-200">
+                        ✂️ 50:50
+                    </button>
+                </div>
+            </div>
+
+            <!-- Caixa da Pergunta -->
+            <div class="bg-slate-900/90 border-2 border-amber-500/80 rounded-2xl p-6 shadow-2xl min-h-[140px] flex items-center justify-center text-center">
+                <h3 id="question-text" class="text-base md:text-xl font-bold text-slate-100 leading-snug">
+                    Carregando pergunta...
+                </h3>
+            </div>
+
+            <!-- Grade de Opções (A, B, C, D) -->
+            <div id="options-grid" class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <!-- Opções injetadas via JS -->
+            </div>
+
+            <!-- PAINEL DE CONFIRMAÇÃO DE RESPOSTA (SUSPENSE) -->
+            <div id="confirm-panel" class="hidden bg-amber-500/10 border-2 border-amber-500 rounded-2xl p-4 flex flex-wrap items-center justify-between gap-3 animate-pulse">
+                <span class="text-xs md:text-sm font-bold text-amber-400">🤔 Tem certeza absoluta da sua resposta?</span>
+                <div class="flex gap-2">
+                    <button onclick="cancelSelection()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold px-4 py-2 rounded-lg text-xs cursor-pointer">
+                        Mudar de Ideia
+                    </button>
+                    <button onclick="confirmAnswer()" class="bg-amber-500 hover:bg-amber-400 text-slate-950 font-black px-5 py-2 rounded-lg text-xs uppercase tracking-wider cursor-pointer shadow-lg">
+                        Resposta Definitiva!
+                    </button>
+                </div>
+            </div>
+
+            <!-- Painel do Rodapé: Botão Parar & Valores de Risco -->
+            <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-4 flex flex-wrap items-center justify-between gap-3">
+                <div class="flex gap-4 text-xs md:text-sm">
+                    <div class="text-slate-400">Errar: <span id="val-errar" class="font-bold text-red-400">R$ 0</span></div>
+                    <div class="text-slate-400">Parar: <span id="val-parar" class="font-bold text-amber-400">R$ 0</span></div>
+                    <div class="text-slate-400">Acertar: <span id="val-acertar" class="font-bold text-green-400">R$ 1.000</span></div>
+                </div>
+
+                <button id="btn-stop" onclick="stopGame()" class="bg-red-600/80 hover:bg-red-500 text-white font-bold px-4 py-2 rounded-lg text-xs md:text-sm transition-all border border-red-500 cursor-pointer">
+                    ✋ Parar e Levar Prêmio
+                </button>
+            </div>
+        </div>
+
+        <!-- PAINEL LATERAL (ESCALA DE PRÊMIOS) -->
+        <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-4 flex flex-col justify-between shadow-xl">
+            <h4 class="font-black text-center text-amber-400 text-xs uppercase tracking-wider mb-3 pb-2 border-b border-slate-800">
+                💰 Escala de Prêmios
+            </h4>
+
+            <div id="prize-ladder" class="flex flex-col-reverse gap-1 text-xs font-bold">
+                <!-- Degraus gerados via JS -->
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL DE RESPOSTA DOS UNIVERSITÁRIOS -->
+    <div id="modal-students" class="fixed inset-0 bg-black/80 backdrop-blur-sm hidden items-center justify-center p-4 z-50">
+        <div class="bg-slate-900 border-2 border-indigo-500 rounded-2xl p-6 max-w-md w-full text-center shadow-2xl">
+            <div class="text-4xl mb-2">🎓</div>
+            <h3 class="text-lg font-black text-indigo-400 mb-2">Votação dos Universitários</h3>
+            <p class="text-xs text-slate-300 mb-4">Os estudantes de Engenharia Mecânica consultados votaram da seguinte forma:</p>
+
+            <div id="students-bars" class="space-y-3 text-xs font-bold mb-6 text-left">
+                <!-- Barras de votação injetadas via JS -->
+            </div>
+
+            <button onclick="closeModal('modal-students')" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-3 rounded-xl text-xs uppercase transition-all cursor-pointer">
+                Entendido
+            </button>
+        </div>
+    </div>
+
+    <!-- MODAL DE FIM DE JOGO -->
+    <div id="modal-end" class="fixed inset-0 bg-black/90 backdrop-blur-md hidden items-center justify-center p-4 z-50">
+        <div class="bg-slate-900 border-2 border-amber-500 rounded-2xl p-6 md:p-8 max-w-lg w-full text-center shadow-2xl">
+            <div id="end-icon" class="text-6xl mb-3">🏆</div>
+            <h2 id="end-title" class="text-2xl font-black text-amber-400 mb-2">Parabéns!</h2>
+            <p id="end-player" class="text-xs font-bold text-amber-300 uppercase tracking-widest mb-1"></p>
+            <p id="end-desc" class="text-sm text-slate-300 mb-6 leading-relaxed"></p>
+
+            <div class="bg-slate-950 p-4 rounded-xl border border-slate-800 mb-6">
+                <span class="text-xs text-slate-400 uppercase font-bold block mb-1">Prêmio Final Conquistado:</span>
+                <span id="end-prize" class="text-3xl font-black text-green-400">R$ 1.000.000</span>
+            </div>
+
+            <button onclick="restartGame()" class="w-full bg-gradient-to-r from-amber-500 to-yellow-400 hover:from-amber-400 text-slate-950 font-black py-4 rounded-xl text-base uppercase tracking-wider transition-all cursor-pointer">
+                Jogar Novamente 🔄
+            </button>
+        </div>
+    </div>
+
+    <script>
+        /* SINTETIZADOR DE ÁUDIO WEB AUDIO API */
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        let audioCtx = null;
+        let heartbeatInterval = null;
+
+        function initAudio() { if (!audioCtx) audioCtx = new AudioContext(); }
+
+        function playSound(freq, type, duration) {
+            try {
+                initAudio();
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = type;
+                osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+                gain.gain.setValueAtTime(0.08, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start();
+                osc.stop(audioCtx.currentTime + duration);
+            } catch (e) {}
+        }
+
+        function playHeartbeat() {
+            playSound(70, 'sine', 0.15);
+            setTimeout(() => playSound(60, 'sine', 0.15), 150);
+        }
+
+        function startHeartbeatSound(speedMs = 1000) {
+            stopHeartbeatSound();
+            heartbeatInterval = setInterval(playHeartbeat, speedMs);
+        }
+
+        function stopHeartbeatSound() {
+            if (heartbeatInterval) clearInterval(heartbeatInterval);
+        }
+
+        function playCorrectSound() {
+            playSound(523.25, 'triangle', 0.12);
+            setTimeout(() => playSound(659.25, 'triangle', 0.12), 120);
+            setTimeout(() => playSound(783.99, 'triangle', 0.3), 240);
+        }
+
+        function playWrongSound() {
+            playSound(220, 'sawtooth', 0.2);
+            setTimeout(() => playSound(180, 'sawtooth', 0.4), 180);
+        }
+
+        function playClickSound() { playSound(400, 'sine', 0.08); }
+
+        /* TABELA DE PRÊMIOS COM MARCOS DE SEGURANÇA */
+        const prizes = [
+            { level: 1, val: "R$ 1.000", stop: "R$ 0", err: "R$ 0", name: "Fácil" },
+            { level: 2, val: "R$ 2.000", stop: "R$ 1.000", err: "R$ 500", name: "Fácil" },
+            { level: 3, val: "R$ 3.000", stop: "R$ 2.000", err: "R$ 1.000", name: "Fácil" },
+            { level: 4, val: "R$ 5.000", stop: "R$ 3.000", err: "R$ 1.500", name: "Fácil" },
+            { level: 5, val: "R$ 10.000", stop: "R$ 5.000", err: "R$ 10.000", name: "MARCO DE SEGURANÇA 🛡️", isSafe: true },
+            { level: 6, val: "R$ 20.000", stop: "R$ 10.000", err: "R$ 10.000", name: "Intermediário" },
+            { level: 7, val: "R$ 30.000", stop: "R$ 20.000", err: "R$ 10.000", name: "Intermediário" },
+            { level: 8, val: "R$ 40.000", stop: "R$ 30.000", err: "R$ 10.000", name: "Intermediário" },
+            { level: 9, val: "R$ 50.000", stop: "R$ 40.000", err: "R$ 10.000", name: "Intermediário" },
+            { level: 10, val: "R$ 100.000", stop: "R$ 50.000", err: "R$ 100.000", name: "MARCO DE SEGURANÇA 🛡️", isSafe: true },
+            { level: 11, val: "R$ 200.000", stop: "R$ 100.000", err: "R$ 100.000", name: "Difícil" },
+            { level: 12, val: "R$ 300.000", stop: "R$ 200.000", err: "R$ 100.000", name: "Difícil" },
+            { level: 13, val: "R$ 400.000", stop: "R$ 300.000", err: "R$ 100.000", name: "Difícil" },
+            { level: 14, val: "R$ 500.000", stop: "R$ 400.000", err: "R$ 100.000", name: "Difícil" },
+            { level: 15, val: "R$ 1 MILHÃO", stop: "R$ 500.000", err: "R$ 100.000", name: "SUPER EXPERT" }
+        ];
+
+        /* BANCO DE QUESTÕES ADAPTADO DOS PROCESSOS DE FABRICAÇÃO DO CRYPTO MAKER */
+        const rawQuestionBank = {
+            facil: [
+                { 
+                    q: "O que define a usinabilidade de um material metálico?", 
+                    correctText: "A facilidade com que o material pode ser usinado com bom acabamento e baixo desgaste da ferramenta", 
+                    wrongTexts: [
+                        "A capacidade de suportar altas temperaturas de fusão sem deformar", 
+                        "A resistência mecânica do material quando submetido a choques térmicos", 
+                        "A dureza Shore obtida após tratamentos térmicos superficiais"
+                    ] 
+                },
+                { 
+                    q: "No processo de torneamento mecânico convencional, qual é o movimento principal realizado pela PEÇA?", 
+                    correctText: "Movimento de Rotação (Corte)", 
+                    wrongTexts: [
+                        "Movimento de Avanço", 
+                        "Movimento de Penetração", 
+                        "Movimento de Recuo Transversal"
+                    ] 
+                },
+                { 
+                    q: "Qual fluido de corte é mais adequado na usinagem de ligas de alumínio para evitar a aresta postiça (APC)?", 
+                    correctText: "Emulsão aquosa (óleo solúvel) ou fluido sintético", 
+                    wrongTexts: [
+                        "Óleo mineral puro de alta viscosidade", 
+                        "Óleo vegetal oxidado", 
+                        "Ar comprimido seco sem lubrificante"
+                    ] 
+                },
+                { 
+                    q: "Na trefilação de arames e fios metálicos, a redução da seção transversal ocorre primariamente por:", 
+                    correctText: "Tração do material através de uma matriz cônica (fieira)", 
+                    wrongTexts: [
+                        "Compressão direta exercida por martelos pneumáticos", 
+                        "Fusão localizada por resistência elétrica", 
+                        "Sopro de alta pressão no interior do molde"
+                    ] 
+                },
+                { 
+                    q: "Qual é o objetivo principal da inclusão de 'Massalotes' em moldes de fundição de peças metálicas?", 
+                    correctText: "Suprir metal líquido para compensar a contração de solidificação da peça", 
+                    wrongTexts: [
+                        "Aumentar a velocidade de vazamento do metal líquido", 
+                        "Filtrar as impurezas e escórias do metal fundido", 
+                        "Facilitar a desmoldagem do fundido sem quebrar o molde"
+                    ] 
+                }
+            ],
+            intermediario: [
+                { 
+                    q: "No forjamento em matriz fechada, qual a função da rebarba formada pelas frestas da matriz?", 
+                    correctText: "Aumentar a pressão interna garantindo o preenchimento completo da cavidade", 
+                    wrongTexts: [
+                        "Desperdiçar matéria-prima sem qualquer função mecânica", 
+                        "Diminuir a força requerida pela prensa hidráulica", 
+                        "Evitar o superaquecimento do tarugo de aço durante a conformação"
+                    ] 
+                },
+                { 
+                    q: "A etapa de 'Sinterização' na Metalurgia do Pó consiste em:", 
+                    correctText: "Aquecer os compactados prensados abaixo do ponto de fusão para unir os grãos por difusão", 
+                    wrongTexts: [
+                        "Derreter completamente os pós metálicos em forno elétrico", 
+                        "Resfriar bruscamente os pós em meio aquoso (tempera)", 
+                        "Misturar os pós metálicos com ligantes orgânicos secos"
+                    ] 
+                },
+                { 
+                    q: "Na Eletroerosão por Penetração (EDM), o princípio físico de remoção de material baseia-se em:", 
+                    correctText: "Descargas elétricas térmicas instantâneas em meio dielétrico", 
+                    wrongTexts: [
+                        "Atrito mecânico de alta velocidade entre peça e eletrodo", 
+                        "Reação química ácida controlada sobre a superfície", 
+                        "Usinagem por ultrassom de alta frequência"
+                    ] 
+                },
+                { 
+                    q: "No processo de soldagem TIG (GTAW), qual é o tipo de eletrodo utilizado para estabelecer o arco elétrico?", 
+                    correctText: "Eletrodo não consumível de Tungstênio", 
+                    wrongTexts: [
+                        "Eletrodo consumível revestido de rutilo", 
+                        "Arame contínuo de cobre desoxidado", 
+                        "Eletrodo de Grafite de alta densidade"
+                    ] 
+                },
+                { 
+                    q: "A vibração excessiva (Chatter) durante o fresamento, que pode causar a quebra da ferramenta de metal duro, é provocada por:", 
+                    correctText: "Balanço excessivo da ferramenta (rigidez insuficiente) ou parâmetros de corte inadequados", 
+                    wrongTexts: [
+                        "Excesso de fluido de corte refrigerante no canal de cavaco", 
+                        "Rotação muito baixa da ferramenta em aços macios", 
+                        "Uso de fuso de esferas recirculantes de alta precisão"
+                    ] 
+                }
+            ],
+            dificil: [
+                { 
+                    q: "Um micrômetro centesimal equipado com Nônio (Vernier) permite realizar leituras dimensionais com resolução de até:", 
+                    correctText: "0,001 mm (1 micrômetro / µm)", 
+                    wrongTexts: [
+                        "0,01 mm (1 centésimo)", 
+                        "0,1 mm (1 décimo)", 
+                        "0,0001 mm (1 décimo de micrômetro)"
+                    ] 
+                },
+                { 
+                    q: "Qual a principal diferença estrutural e mecânica entre a laminação a quente e a laminação a frio em aços?", 
+                    correctText: "A laminação a quente ocorre acima da temperatura de recristalização, enquanto a frio gera encruamento", 
+                    wrongTexts: [
+                        "A laminação a frio aumenta a porosidade interna do aço", 
+                        "A laminação a quente proporciona melhor acabamento superficial e tolerâncias mais estreitas", 
+                        "A laminação a frio elimina a necessidade de qualquer lubrificação industrial"
+                    ] 
+                },
+                { 
+                    q: "Na extrusão direta de perfis de alumínio, o tarugo aquecido é forçado a escoar através de:", 
+                    correctText: "Uma matriz ou fieira com a geometria do perfil desejado", 
+                    wrongTexts: [
+                        "Dois cilindros laminadores de contra-rotação", 
+                        "Um martelo pneumático de impacto contínuo", 
+                        "Um banho de sal fundido pressurizado"
+                    ] 
+                },
+                { 
+                    q: "Na usinagem CNC, qual parâmetro determina diretamente a velocidade instantânea de remoção de material (MRR)?", 
+                    correctText: "Multiplicação da profundidade de corte (ap), largura de corte (ae) e velocidade de avanço (vf)", 
+                    wrongTexts: [
+                        "Apenas a rotação máxima do fuso (RPM)", 
+                        "A pressão do fluido refrigerante no cabeçote", 
+                        "O diâmetro do cone de fixação da ferramenta (BT40/HSK)"
+                    ] 
+                },
+                { 
+                    q: "Qual é o conceito central da Indústria 4.0 aplicado aos processos avançados de manufatura?", 
+                    correctText: "Integração de CPS (Sistemas Ciber-Físicos), IoT e I.A. no controle de produção em tempo real", 
+                    wrongTexts: [
+                        "Uso exclusivo de tornos manuais convencionais sem automação", 
+                        "Eliminação completa do controle estatístico de processo (CEP)", 
+                        "Substituição total da usinagem por moldagem manual em areia verde"
+                    ] 
+                }
+            ]
+        };
+
+        /* ESTADO DO JOGO */
+        let playerName = "";
+        let currentStep = 0;
+        let helps = { skip: true, students: true, '5050': true };
+        
+        let poolFacil = [];
+        let poolIntermediario = [];
+        let poolDificil = [];
+
+        let currentQuestionObj = null;
+        let selectedIdxPending = null;
+
+        let timerSeconds = 30;
+        let timerInterval = null;
+
+        /* ALGORITMO FISHER-YATES PARA EMBARALHAMENTO */
+        function shuffleArray(arr) {
+            let shuffled = [...arr];
+            for (let i = shuffled.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+            }
+            return shuffled;
+        }
+
+        /* MONTA A QUESTÃO E EMBARALHA AS ALTERNATIVAS */
+        function buildShuffledQuestion(rawQ) {
+            const allTexts = [rawQ.correctText, ...rawQ.wrongTexts];
+            const shuffledTexts = shuffleArray(allTexts);
+            const correctIndex = shuffledTexts.indexOf(rawQ.correctText);
+
+            return {
+                q: rawQ.q,
+                options: shuffledTexts,
+                correct: correctIndex
+            };
+        }
+
+        /* MECANISMO DE PERSISTÊNCIA / AUTOCONEXÃO */
+        function saveSessionState() {
+            const state = {
+                playerName,
+                currentStep,
+                helps,
+                poolFacil,
+                poolIntermediario,
+                poolDificil,
+                currentQuestionObj,
+                timerSeconds
+            };
+            sessionStorage.setItem('fab_milhao_session', JSON.stringify(state));
+        }
+
+        window.addEventListener('load', () => {
+            const saved = sessionStorage.getItem('fab_milhao_session');
+            if (saved) {
+                try {
+                    const state = JSON.parse(saved);
+                    if (state.playerName && state.currentQuestionObj) {
+                        playerName = state.playerName;
+                        currentStep = state.currentStep;
+                        helps = state.helps;
+                        poolFacil = state.poolFacil;
+                        poolIntermediario = state.poolIntermediario;
+                        poolDificil = state.poolDificil;
+                        currentQuestionObj = state.currentQuestionObj;
+                        timerSeconds = state.timerSeconds || 30;
+
+                        document.getElementById('screen-start').classList.add('hidden');
+                        document.getElementById('screen-game').classList.remove('hidden');
+                        document.getElementById('player-name-display').innerText = `👤 ${playerName}`;
+
+                        updateHelpsUI();
+                        renderPrizeLadder();
+                        renderCurrentQuestionUI();
+                        startTimer(timerSeconds);
+                    }
+                } catch(e) { sessionStorage.removeItem('fab_milhao_session'); }
+            }
+        });
+
+        function startGame() {
+            const inputName = document.getElementById('input-player-name').value.trim();
+            if (!inputName) {
+                alert("Por favor, digite seu nome para iniciar o jogo!");
+                return;
+            }
+
+            playerName = inputName;
+            initAudio();
+            playClickSound();
+
+            document.getElementById('screen-start').classList.add('hidden');
+            document.getElementById('screen-game').classList.remove('hidden');
+            document.getElementById('player-name-display').innerText = `👤 ${playerName}`;
+
+            currentStep = 0;
+            helps = { skip: true, students: true, '5050': true };
+
+            poolFacil = shuffleArray(rawQuestionBank.facil);
+            poolIntermediario = shuffleArray(rawQuestionBank.intermediario);
+            poolDificil = shuffleArray(rawQuestionBank.dificil);
+
+            updateHelpsUI();
+            renderPrizeLadder();
+            loadQuestion();
+        }
+
+        function renderPrizeLadder() {
+            const ladder = document.getElementById('prize-ladder');
+            ladder.innerHTML = '';
+            prizes.forEach((p, idx) => {
+                const stepDiv = document.createElement('div');
+                stepDiv.id = `prize-step-${idx}`;
+                const safeClass = p.isSafe ? 'safe-haven' : '';
+                stepDiv.className = `prize-step flex justify-between items-center p-2 rounded-lg border border-slate-800 ${safeClass} ${idx === currentStep ? 'active' : 'bg-slate-950 text-slate-400'}`;
+                stepDiv.innerHTML = `
+                    <span>${p.level}. ${p.val}</span>
+                    <span class="text-[10px] opacity-75">${p.name}</span>
+                `;
+                ladder.appendChild(stepDiv);
+            });
+        }
+
+        function loadQuestion() {
+            document.getElementById('confirm-panel').classList.add('hidden');
+            selectedIdxPending = null;
+
+            let rawQ = null;
+
+            if (currentStep < 5) {
+                if (poolFacil.length === 0) poolFacil = shuffleArray(rawQuestionBank.facil);
+                rawQ = poolFacil.pop();
+            } else if (currentStep < 10) {
+                if (poolIntermediario.length === 0) poolIntermediario = shuffleArray(rawQuestionBank.intermediario);
+                rawQ = poolIntermediario.pop();
+            } else {
+                if (poolDificil.length === 0) poolDificil = shuffleArray(rawQuestionBank.dificil);
+                rawQ = poolDificil.pop();
+            }
+
+            currentQuestionObj = buildShuffledQuestion(rawQ);
+
+            renderCurrentQuestionUI();
+            startTimer(30);
+            saveSessionState();
+        }
+
+        function renderCurrentQuestionUI() {
+            const pData = prizes[currentStep];
+            document.getElementById('badge-level').innerText = `Nível: ${pData.name}`;
+            document.getElementById('label-q-num').innerText = `Pergunta ${currentStep + 1} de 15`;
+            document.getElementById('question-text').innerText = currentQuestionObj.q;
+
+            document.getElementById('val-errar').innerText = pData.err;
+            document.getElementById('val-parar').innerText = pData.stop;
+            document.getElementById('val-acertar').innerText = pData.val;
+
+            const grid = document.getElementById('options-grid');
+            grid.innerHTML = '';
+
+            const letters = ['A', 'B', 'C', 'D'];
+            currentQuestionObj.options.forEach((optText, idx) => {
+                const btn = document.createElement('button');
+                btn.id = `opt-btn-${idx}`;
+                btn.onclick = () => selectOption(idx);
+                btn.className = 'btn-option p-4 rounded-xl text-left font-bold text-xs md:text-sm text-slate-200 flex items-start gap-3 w-full cursor-pointer';
+                btn.innerHTML = `<span class="bg-amber-500 text-slate-950 px-2 py-0.5 rounded font-black shrink-0">${letters[idx]}</span> <span>${optText}</span>`;
+                grid.appendChild(btn);
+            });
+
+            prizes.forEach((p, idx) => {
+                const el = document.getElementById(`prize-step-${idx}`);
+                const safeClass = p.isSafe ? 'safe-haven' : '';
+                if (el) el.className = `prize-step flex justify-between items-center p-2 rounded-lg border border-slate-800 ${safeClass} ${idx === currentStep ? 'active' : 'bg-slate-950 text-slate-400'}`;
+            });
+        }
+
+        function startTimer(initialSeconds = 30) {
+            stopTimer();
+            timerSeconds = initialSeconds;
+            document.getElementById('timer-display').innerText = `${timerSeconds}s`;
+            document.getElementById('timer-display').className = "font-black text-lg text-amber-400 font-mono";
+
+            startHeartbeatSound(1000);
+
+            timerInterval = setInterval(() => {
+                timerSeconds--;
+                saveSessionState();
+                document.getElementById('timer-display').innerText = `${timerSeconds}s`;
+
+                if (timerSeconds <= 10) {
+                    document.getElementById('timer-display').className = "font-black text-lg text-red-500 font-mono animate-ping";
+                    startHeartbeatSound(400);
+                }
+
+                if (timerSeconds <= 0) {
+                    stopTimer();
+                    triggerTimeOut();
+                }
+            }, 1000);
+        }
+
+        function stopTimer() {
+            if (timerInterval) clearInterval(timerInterval);
+            stopHeartbeatSound();
+        }
+
+        function triggerTimeOut() {
+            playWrongSound();
+            document.getElementById('main-body').classList.add('shake-screen');
+            setTimeout(() => document.getElementById('main-body').classList.remove('shake-screen'), 500);
+            endGame('timeout');
+        }
+
+        function selectOption(selectedIdx) {
+            playClickSound();
+            selectedIdxPending = selectedIdx;
+
+            const buttons = document.querySelectorAll('.btn-option');
+            buttons.forEach(b => b.classList.remove('selected'));
+
+            const selectedBtn = document.getElementById(`opt-btn-${selectedIdx}`);
+            selectedBtn.classList.add('selected');
+
+            document.getElementById('confirm-panel').classList.remove('hidden');
+        }
+
+        function cancelSelection() {
+            playClickSound();
+            selectedIdxPending = null;
+            const buttons = document.querySelectorAll('.btn-option');
+            buttons.forEach(b => b.classList.remove('selected'));
+            document.getElementById('confirm-panel').classList.add('hidden');
+        }
+
+        function confirmAnswer() {
+            stopTimer();
+            document.getElementById('confirm-panel').classList.add('hidden');
+
+            const buttons = document.querySelectorAll('.btn-option');
+            buttons.forEach(b => b.disabled = true);
+
+            const selectedBtn = document.getElementById(`opt-btn-${selectedIdxPending}`);
+
+            setTimeout(() => {
+                if (selectedIdxPending === currentQuestionObj.correct) {
+                    playCorrectSound();
+                    selectedBtn.classList.remove('selected');
+                    selectedBtn.classList.add('correct');
+
+                    if (prizes[currentStep].isSafe) {
+                        confetti({ particleCount: 60, spread: 70, origin: { y: 0.7 } });
+                    }
+
+                    setTimeout(() => {
+                        if (currentStep === 14) {
+                            winGame();
+                        } else {
+                            currentStep++;
+                            loadQuestion();
+                        }
+                    }, 1500);
+                } else {
+                    playWrongSound();
+                    document.getElementById('main-body').classList.add('shake-screen');
+                    setTimeout(() => document.getElementById('main-body').classList.remove('shake-screen'), 500);
+
+                    selectedBtn.classList.remove('selected');
+                    selectedBtn.classList.add('wrong');
+
+                    const correctBtn = document.getElementById(`opt-btn-${currentQuestionObj.correct}`);
+                    if (correctBtn) correctBtn.classList.add('correct');
+
+                    setTimeout(() => {
+                        endGame('wrong');
+                    }, 2000);
+                }
+            }, 1000);
+        }
+
+        /* SISTEMA DE AJUDAS */
+        function updateHelpsUI() {
+            document.getElementById('btn-help-skip').disabled = !helps.skip;
+            document.getElementById('btn-help-students').disabled = !helps.students;
+            document.getElementById('btn-help-5050').disabled = !helps['5050'];
+        }
+
+        function useHelpSkip() {
+            if (!helps.skip) return;
+            playClickSound();
+            
+            helps.skip = false;
+            updateHelpsUI();
+
+            let rawQ = null;
+
+            if (currentStep < 5) {
+                if (poolFacil.length === 0) poolFacil = shuffleArray(rawQuestionBank.facil);
+                rawQ = poolFacil.pop();
+            } else if (currentStep < 10) {
+                if (poolIntermediario.length === 0) poolIntermediario = shuffleArray(rawQuestionBank.intermediario);
+                rawQ = poolIntermediario.pop();
+            } else {
+                if (poolDificil.length === 0) poolDificil = shuffleArray(rawQuestionBank.dificil);
+                rawQ = poolDificil.pop();
+            }
+
+            document.getElementById('confirm-panel').classList.add('hidden');
+            selectedIdxPending = null;
+
+            currentQuestionObj = buildShuffledQuestion(rawQ);
+
+            renderCurrentQuestionUI();
+            startTimer(30);
+            saveSessionState();
+        }
+
+        function useHelp5050() {
+            if (!helps['5050']) return;
+            playClickSound();
+            helps['5050'] = false;
+            updateHelpsUI();
+
+            const correct = currentQuestionObj.correct;
+            let indices = [0, 1, 2, 3].filter(i => i !== correct);
+            indices.sort(() => Math.random() - 0.5);
+
+            indices.slice(0, 2).forEach(idx => {
+                const btn = document.getElementById(`opt-btn-${idx}`);
+                if (btn) btn.style.visibility = 'hidden';
+            });
+            saveSessionState();
+        }
+
+        function useHelpStudents() {
+            if (!helps.students) return;
+            playClickSound();
+            helps.students = false;
+            updateHelpsUI();
+
+            const correct = currentQuestionObj.correct;
+            let percentages = [0, 0, 0, 0];
+
+            percentages[correct] = Math.floor(Math.random() * 25) + 55;
+            let remaining = 100 - percentages[correct];
+
+            let incorrects = [0, 1, 2, 3].filter(i => i !== correct);
+            let p1 = Math.floor(Math.random() * remaining);
+            let p2 = Math.floor(Math.random() * (remaining - p1));
+            let p3 = remaining - p1 - p2;
+
+            percentages[incorrects[0]] = p1;
+            percentages[incorrects[1]] = p2;
+            percentages[incorrects[2]] = p3;
+
+            const letters = ['A', 'B', 'C', 'D'];
+            const container = document.getElementById('students-bars');
+            container.innerHTML = '';
+
+            percentages.forEach((p, idx) => {
+                container.innerHTML += `
+                    <div>
+                        <div class="flex justify-between text-xs mb-1">
+                            <span>Opção ${letters[idx]}</span>
+                            <span>${p}%</span>
+                        </div>
+                        <div class="w-full bg-slate-950 h-3 rounded-full overflow-hidden border border-slate-800">
+                            <div class="bg-indigo-500 h-full transition-all duration-500" style="width: ${p}%"></div>
+                        </div>
+                    </div>
+                `;
+            });
+
+            openModal('modal-students');
+            saveSessionState();
+        }
+
+        function stopGame() {
+            stopTimer();
+            playClickSound();
+            endGame('stopped');
+        }
+
+        function winGame() {
+            stopTimer();
+            playCorrectSound();
+            confetti({ particleCount: 200, spread: 100, origin: { y: 0.6 } });
+
+            sessionStorage.removeItem('fab_milhao_session');
+            document.getElementById('end-icon').innerText = '👑';
+            document.getElementById('end-title').innerText = 'VOCÊ É UM MILIONÁRIO DA MANUFATURA!';
+            document.getElementById('end-player').innerText = `PARABÉNS, ${playerName.toUpperCase()}!`;
+            document.getElementById('end-desc').innerText = 'Você demonstrou domínio técnico total sobre os Processos de Fabricação Mecânica sob máxima pressão!';
+            document.getElementById('end-prize').innerText = 'R$ 1 MILHÃO';
+            openModal('modal-end');
+        }
+
+        function endGame(reason) {
+            stopTimer();
+            sessionStorage.removeItem('fab_milhao_session');
+            const pData = prizes[currentStep];
+
+            document.getElementById('end-player').innerText = `JOGADOR: ${playerName.toUpperCase()}`;
+
+            if (reason === 'stopped') {
+                document.getElementById('end-icon').innerText = '✋';
+                document.getElementById('end-title').innerText = 'Você Decidiu Parar!';
+                document.getElementById('end-desc').innerText = 'Decisão inteligente de gestão de risco em projeto. Você garante um excelente prêmio!';
+                document.getElementById('end-prize').innerText = pData.stop;
+            } else if (reason === 'timeout') {
+                document.getElementById('end-icon').innerText = '⏳';
+                document.getElementById('end-title').innerText = 'Tempo Esgotado!';
+                document.getElementById('end-desc').innerText = 'O Takt Time da pergunta estourou. Você leva o valor garantido pelo seu último marco de segurança!';
+                document.getElementById('end-prize').innerText = pData.err;
+            } else {
+                document.getElementById('end-icon').innerText = '❌';
+                document.getElementById('end-title').innerText = 'Que Pena, Você Errou!';
+                document.getElementById('end-desc').innerText = 'A jornada foi longe, mas a falha no processo custou o prêmio máximo. Você leva o valor do seu marco garantido!';
+                document.getElementById('end-prize').innerText = pData.err;
+            }
+            openModal('modal-end');
+        }
+
+        function restartGame() {
+            sessionStorage.removeItem('fab_milhao_session');
+            playClickSound();
+            closeModal('modal-end');
+            document.getElementById('screen-game').classList.add('hidden');
+            document.getElementById('screen-start').classList.remove('hidden');
+        }
+
+        function openModal(id) { document.getElementById(id).classList.remove('hidden'); document.getElementById(id).classList.add('flex'); }
+        function closeModal(id) { document.getElementById(id).classList.add('hidden'); document.getElementById(id).classList.remove('flex'); }
+    </script>
+</body>
+</html>
