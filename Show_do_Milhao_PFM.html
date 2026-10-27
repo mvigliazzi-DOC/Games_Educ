@@ -73,6 +73,23 @@
             filter: grayscale(1);
         }
 
+        /* Cartões de Modo de Jogo */
+        .mode-card {
+            border: 2px solid #334155;
+            background: #0f172a;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .mode-card:hover {
+            border-color: #6366f1;
+            transform: translateY(-2px);
+        }
+        .mode-card.selected {
+            border-color: #f59e0b;
+            background: #1e1b4b;
+            box-shadow: 0 0 15px rgba(245, 158, 11, 0.3);
+        }
+
         /* Animações */
         @keyframes pulse-green {
             0% { box-shadow: 0 0 5px #4ade80; }
@@ -115,12 +132,12 @@
         <p class="text-xs md:text-sm text-slate-400">Edição Especial: Usinagem, Forjamento, Fundição, Extrusão e Metrologia</p>
     </header>
 
-    <!-- TELA INICIAL (CADASTRO) -->
-    <div id="screen-start" class="w-full max-w-xl bg-slate-900/90 border-2 border-amber-500/60 rounded-2xl p-6 md:p-8 text-center shadow-2xl my-auto">
-        <div class="text-5xl mb-4">⚙️</div>
+    <!-- TELA INICIAL (CADASTRO E MODO DE JOGO) -->
+    <div id="screen-start" class="w-full max-w-2xl bg-slate-900/90 border-2 border-amber-500/60 rounded-2xl p-6 md:p-8 text-center shadow-2xl my-auto">
+        <div class="text-5xl mb-3">⚙️</div>
         <h2 class="text-2xl font-black text-amber-400 mb-2">Rumo ao 1 Milhão!</h2>
         <p class="text-slate-300 text-sm mb-6 leading-relaxed">
-            Responda corretamente às 15 perguntas sobre <strong>Usinagem, Forjamento, Fundição, Extrusão, Metalurgia do Pó e Indústria 4.0</strong>. Insira seu nome para iniciar!
+            Responda corretamente às 15 perguntas sobre <strong>Usinagem, Forjamento, Fundição, Extrusão, Metalurgia do Pó e Indústria 4.0</strong>. Escolha o seu modo de desafio!
         </p>
 
         <!-- Campo de Nome do Participante -->
@@ -131,9 +148,34 @@
             <input type="text" id="input-player-name" placeholder="Digite seu nome completo ou apelido..." class="w-full bg-slate-950 border border-amber-500/50 rounded-xl p-3.5 text-slate-100 text-sm font-bold placeholder-slate-600 focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-500/20">
         </div>
 
+        <!-- Seleção de Modo de Jogo -->
+        <div class="mb-6 text-left">
+            <label class="block text-xs font-bold text-amber-400 uppercase tracking-wider mb-2">
+                🎮 Escolha o Modo de Jogo:
+            </label>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                <div id="mode-estudio" onclick="selectGameMode('estudio')" class="mode-card p-3 rounded-xl">
+                    <div class="text-xl mb-1">📖</div>
+                    <div class="font-bold text-xs text-amber-400">1. Tempo Livre</div>
+                    <div class="text-[11px] text-slate-400 mt-1">Sem cronômetro. Focado em estudo e memorização com ajudas liberadas.</div>
+                </div>
+
+                <div id="mode-padrao" onclick="selectGameMode('padrao')" class="mode-card selected p-3 rounded-xl">
+                    <div class="text-xl mb-1">⏱️</div>
+                    <div class="font-bold text-xs text-amber-400">2. Modo Padrão</div>
+                    <div class="text-[11px] text-slate-400 mt-1">30 segundos por pergunta. Experiência clássica com ajudas.</div>
+                </div>
+
+                <div id="mode-panico" onclick="selectGameMode('panico')" class="mode-card p-3 rounded-xl">
+                    <div class="text-xl mb-1">🔥</div>
+                    <div class="font-bold text-xs text-red-400">3. Modo Pânico</div>
+                    <div class="text-[11px] text-slate-400 mt-1">Apenas 15s por pergunta e <strong>SEM NENHUMA AJUDA!</strong></div>
+                </div>
+            </div>
+        </div>
+
         <div class="bg-slate-950 p-4 rounded-xl border border-slate-800 text-left text-xs text-slate-300 space-y-2 mb-6">
-            <div class="font-bold text-amber-400 border-b border-slate-800 pb-1">💡 Regras & Recursos do Jogo:</div>
-            <div>⏱️ <strong>Takt Time:</strong> 30 segundos por pergunta!</div>
+            <div class="font-bold text-amber-400 border-b border-slate-800 pb-1">💡 Regras do Jogo:</div>
             <div>🛡️ <strong>Marcos de Segurança:</strong> Perguntas 5 (R$ 10 mil) e 10 (R$ 100 mil) garantem prêmio mínimo!</div>
             <div>🔀 <strong>Alternativas Dinâmicas:</strong> Opções de resposta embaralhadas a cada rodada.</div>
             <div>🔄 <strong>Proteção de Sessão:</strong> Se fechar ou recarregar, você retorna ao ponto exato onde parou!</div>
@@ -159,13 +201,13 @@
                 </div>
 
                 <!-- Cronômetro Visual -->
-                <div class="flex items-center gap-2 bg-slate-950 border border-slate-800 px-4 py-1.5 rounded-full">
+                <div id="timer-box" class="flex items-center gap-2 bg-slate-950 border border-slate-800 px-4 py-1.5 rounded-full">
                     <span class="text-xs text-slate-400 font-bold">⏱️ Tempo:</span>
                     <span id="timer-display" class="font-black text-lg text-amber-400 font-mono">30s</span>
                 </div>
 
                 <!-- Botões de Ajuda -->
-                <div class="flex items-center gap-2">
+                <div id="helps-container" class="flex items-center gap-2">
                     <button id="btn-help-skip" onclick="useHelpSkip()" class="btn-help px-3 py-2 rounded-lg text-xs font-bold flex items-center gap-1 text-slate-200">
                         ⏩ Pular
                     </button>
@@ -335,7 +377,7 @@
             { level: 15, val: "R$ 1 MILHÃO", stop: "R$ 500.000", err: "R$ 100.000", name: "SUPER EXPERT" }
         ];
 
-        /* BANCO DE QUESTÕES ADAPTADO DOS PROCESSOS DE FABRICAÇÃO DO CRYPTO MAKER */
+        /* BANCO DE QUESTÕES ADAPTADO DOS PROCESSOS DE FABRICAÇÃO */
         const rawQuestionBank = {
             facil: [
                 { 
@@ -482,6 +524,7 @@
 
         /* ESTADO DO JOGO */
         let playerName = "";
+        let gameMode = "padrao"; // 'estudio', 'padrao' ou 'panico'
         let currentStep = 0;
         let helps = { skip: true, students: true, '5050': true };
         
@@ -494,6 +537,13 @@
 
         let timerSeconds = 30;
         let timerInterval = null;
+
+        /* SELEÇÃO DO MODO DE JOGO */
+        function selectGameMode(mode) {
+            gameMode = mode;
+            document.querySelectorAll('.mode-card').forEach(el => el.classList.remove('selected'));
+            document.getElementById(`mode-${mode}`).classList.add('selected');
+        }
 
         /* ALGORITMO FISHER-YATES PARA EMBARALHAMENTO */
         function shuffleArray(arr) {
@@ -522,6 +572,7 @@
         function saveSessionState() {
             const state = {
                 playerName,
+                gameMode,
                 currentStep,
                 helps,
                 poolFacil,
@@ -540,6 +591,7 @@
                     const state = JSON.parse(saved);
                     if (state.playerName && state.currentQuestionObj) {
                         playerName = state.playerName;
+                        gameMode = state.gameMode || "padrao";
                         currentStep = state.currentStep;
                         helps = state.helps;
                         poolFacil = state.poolFacil;
@@ -624,7 +676,12 @@
             currentQuestionObj = buildShuffledQuestion(rawQ);
 
             renderCurrentQuestionUI();
-            startTimer(30);
+            
+            // Define o tempo conforme o Modo de Jogo escolhido
+            let initialTime = 30;
+            if (gameMode === 'panico') initialTime = 15;
+            
+            startTimer(initialTime);
             saveSessionState();
         }
 
@@ -660,6 +717,15 @@
 
         function startTimer(initialSeconds = 30) {
             stopTimer();
+
+            // MODO 1: ESTUDO (Sem cronômetro)
+            if (gameMode === 'estudio') {
+                document.getElementById('timer-display').innerText = "∞ Livre";
+                document.getElementById('timer-display').className = "font-black text-lg text-green-400 font-mono";
+                return;
+            }
+
+            // MODO 2 & 3: PADRÃO E PÂNICO
             timerSeconds = initialSeconds;
             document.getElementById('timer-display').innerText = `${timerSeconds}s`;
             document.getElementById('timer-display').className = "font-black text-lg text-amber-400 font-mono";
@@ -671,9 +737,9 @@
                 saveSessionState();
                 document.getElementById('timer-display').innerText = `${timerSeconds}s`;
 
-                if (timerSeconds <= 10) {
+                if (timerSeconds <= 5) {
                     document.getElementById('timer-display').className = "font-black text-lg text-red-500 font-mono animate-ping";
-                    startHeartbeatSound(400);
+                    startHeartbeatSound(300);
                 }
 
                 if (timerSeconds <= 0) {
@@ -763,13 +829,22 @@
 
         /* SISTEMA DE AJUDAS */
         function updateHelpsUI() {
+            const container = document.getElementById('helps-container');
+            
+            // MODO 3: PÂNICO (Esconde todos os botões de ajuda)
+            if (gameMode === 'panico') {
+                container.classList.add('hidden');
+                return;
+            }
+
+            container.classList.remove('hidden');
             document.getElementById('btn-help-skip').disabled = !helps.skip;
             document.getElementById('btn-help-students').disabled = !helps.students;
             document.getElementById('btn-help-5050').disabled = !helps['5050'];
         }
 
         function useHelpSkip() {
-            if (!helps.skip) return;
+            if (!helps.skip || gameMode === 'panico') return;
             playClickSound();
             
             helps.skip = false;
@@ -794,12 +869,15 @@
             currentQuestionObj = buildShuffledQuestion(rawQ);
 
             renderCurrentQuestionUI();
-            startTimer(30);
+            
+            let initialTime = 30;
+            if (gameMode === 'panico') initialTime = 15;
+            startTimer(initialTime);
             saveSessionState();
         }
 
         function useHelp5050() {
-            if (!helps['5050']) return;
+            if (!helps['5050'] || gameMode === 'panico') return;
             playClickSound();
             helps['5050'] = false;
             updateHelpsUI();
@@ -816,7 +894,7 @@
         }
 
         function useHelpStudents() {
-            if (!helps.students) return;
+            if (!helps.students || gameMode === 'panico') return;
             playClickSound();
             helps.students = false;
             updateHelpsUI();
