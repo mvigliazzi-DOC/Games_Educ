@@ -1,0 +1,1155 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gerador & Apresentador Interativo Mentimeter</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome CDN -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- QRCode.js CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <!-- Canvas-Confetti CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        menti: {
+                            blue: '#1967d2',
+                            purple: '#6b11ff',
+                            teal: '#00d2b5',
+                            dark: '#0e1726',
+                            light: '#f8fafc',
+                            card: '#ffffff',
+                            accent: '#ff4757',
+                            yellow: '#ffa502'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Custom Styles & Animations */
+        body { font-family: 'Inter', sans-serif; }
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(226, 232, 240, 0.8);
+        }
+        .animate-bounce-short {
+            animation: bounce 0.6s ease-in-out 1;
+        }
+        @keyframes popIn {
+            0% { transform: scale(0.8); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        .pop-in { animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
+        
+        /* Word Cloud simulation tags */
+        .wc-tag-1 { font-size: 2.25rem; font-weight: 800; color: #6b11ff; }
+        .wc-tag-2 { font-size: 1.75rem; font-weight: 700; color: #1967d2; }
+        .wc-tag-3 { font-size: 1.35rem; font-weight: 600; color: #00d2b5; }
+        .wc-tag-4 { font-size: 1.1rem; font-weight: 500; color: #ff4757; }
+        .wc-tag-5 { font-size: 0.95rem; font-weight: 400; color: #64748b; }
+
+        /* Custom scrollbars */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #f1f5f9; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col antialiased selection:bg-purple-100 selection:text-purple-700">
+
+    <!-- HEADER / NAVIGATION -->
+    <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center space-x-3 cursor-pointer" onclick="switchTab('creator')">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-menti-purple to-menti-blue flex items-center justify-center text-white font-black text-xl shadow-md">
+                    <i class="fa-solid font-bold fa-chart-simple"></i>
+                </div>
+                <div>
+                    <span class="font-extrabold text-lg tracking-tight bg-gradient-to-r from-menti-purple to-menti-blue bg-clip-text text-transparent">MentiStudio</span>
+                    <span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-purple-100 text-purple-700 ml-1.5 hidden sm:inline-block">Pedagógico Pro</span>
+                </div>
+            </div>
+
+            <nav class="flex items-center space-x-1 sm:space-x-3">
+                <button onclick="switchTab('creator')" id="nav-creator" class="px-3.5 py-2 rounded-lg text-sm font-semibold transition flex items-center space-x-2 bg-purple-50 text-menti-purple">
+                    <i class="fa-solid fa-wand-magic-sparkles"></i>
+                    <span class="hidden md:inline">Criador & Prompt</span>
+                </button>
+                <button onclick="switchTab('slides')" id="nav-slides" class="px-3.5 py-2 rounded-lg text-sm font-semibold text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition flex items-center space-x-2">
+                    <i class="fa-solid fa-list-check"></i>
+                    <span class="hidden md:inline">Slides Gerados</span>
+                    <span id="badge-slide-count" class="bg-slate-200 text-slate-700 text-xs px-2 py-0.5 rounded-full">0</span>
+                </button>
+                <button onclick="startLivePresentation()" class="px-4 py-2 rounded-lg text-sm font-bold bg-gradient-to-r from-menti-purple to-menti-blue text-white shadow-md hover:opacity-95 transition flex items-center space-x-2">
+                    <i class="fa-solid fa-play"></i>
+                    <span>Apresentar ao Vivo</span>
+                </button>
+            </nav>
+        </div>
+    </header>
+
+    <!-- MAIN CONTAINER -->
+    <main class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        
+        <!-- ALERT MESSAGE BOX -->
+        <div id="toast" class="fixed bottom-5 right-5 z-50 transform translate-y-20 opacity-0 transition-all duration-300 ease-in-out pointer-events-none">
+            <div id="toast-content" class="bg-slate-900 text-white px-5 py-3.5 rounded-xl shadow-2xl flex items-center space-x-3 border border-slate-700">
+                <i id="toast-icon" class="fa-solid fa-circle-check text-green-400 text-lg"></i>
+                <span id="toast-text" class="text-sm font-medium">Ação realizada com sucesso!</span>
+            </div>
+        </div>
+
+        <!-- SECTION 1: CREATOR & CONFIGURATION FORM -->
+        <section id="tab-creator" class="space-y-8 animate-fade-in">
+            <!-- HERO BANNER -->
+            <div class="relative overflow-hidden rounded-2xl bg-gradient-to-r from-indigo-900 via-purple-900 to-slate-900 text-white p-6 sm:p-10 shadow-xl">
+                <div class="relative z-10 max-w-3xl">
+                    <span class="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-white/10 text-purple-200 text-xs font-semibold backdrop-blur-md mb-4 border border-white/10">
+                        <i class="fa-solid fa-graduation-cap"></i>
+                        <span>Design Pedagógico Interativo</span>
+                    </span>
+                    <h1 class="text-2xl sm:text-4xl font-black tracking-tight leading-tight">
+                        Crie Apresentações Mentimeter Engajadoras para seus Alunos
+                    </h1>
+                    <p class="mt-3 text-slate-300 text-sm sm:text-base leading-relaxed">
+                        Preencha as diretrizes pedagógicas abaixo para gerar dinamicamente os slides com diagnósticos, quebra-gelos, quizzes com pontuação, e debates interativos em tempo real.
+                    </p>
+                </div>
+                <div class="absolute -right-10 -bottom-10 opacity-15 pointer-events-none">
+                    <i class="fa-solid fa-comments text-[240px]"></i>
+                </div>
+            </div>
+
+            <!-- FORM CARD -->
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 sm:p-8">
+                <div class="flex items-center justify-between pb-6 mb-6 border-b border-slate-100">
+                    <div>
+                        <h2 class="text-xl font-bold text-slate-900 flex items-center gap-2">
+                            <i class="fa-solid fa-sliders text-menti-purple"></i> Parâmetros da Aula & Alunos
+                        </h2>
+                        <p class="text-sm text-slate-500">Configure o perfil da turma para adaptar o tom e a dinâmica das perguntas.</p>
+                    </div>
+                    <button onclick="resetDefaults()" class="text-xs text-slate-400 hover:text-menti-purple transition font-medium">
+                        <i class="fa-solid fa-rotate-left mr-1"></i> Restaurar Padrões
+                    </button>
+                </div>
+
+                <form id="menti-form" onsubmit="handleGenerate(event)" class="space-y-6">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <!-- Nível / Ano dos Alunos -->
+                        <div>
+                            <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-2" for="input-nivel">
+                                Nível / Ano dos Alunos <span class="text-rose-500">*</span>
+                            </label>
+                            <div class="relative">
+                                <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-400">
+                                    <i class="fa-solid fa-user-graduate"></i>
+                                </span>
+                                <select id="input-nivel" class="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-200 focus:border-menti-purple focus:ring-2 focus:ring-purple-100 bg-slate-50/50 text-slate-800 text-sm font-medium transition" required>
+                                    <option value="Ensino Fundamental II">Ensino Fundamental II (6º ao 9º ano)</option>
+                                    <option value="Ensino Médio" selected>Ensino Médio (1º ao 3º ano)</option>
+                                    <option value="Graduação / Faculdade">Graduação / Ensino Superior</option>
+                                    <option value="Pós-Graduação / MBA">Pós-Graduação / MBA</option>
+                                    <option value="Treinamento Corporativo">Treinamento / Workshop Corporativo</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Tema da Aula -->
+                        <div>
+                            <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-2" for="input-tema">
+                                Tema da Aula / Encontro <span class="text-rose-500">*</span>
+                            </label>
+                            <div class="relative">
+                                <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-400">
+                                    <i class="fa-solid fa-book-open"></i>
+                                </span>
+                                <input type="text" id="input-tema" value="Inteligência Artificial e Ética no Século XXI" placeholder="Ex: Sustentabilidade Urbana, Gestão de Tempo, Leis de Newton" class="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-200 focus:border-menti-purple focus:ring-2 focus:ring-purple-100 bg-slate-50/50 text-slate-800 text-sm font-medium transition" required>
+                            </div>
+                        </div>
+
+                        <!-- Objetivo da Atividade -->
+                        <div>
+                            <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-2" for="input-objetivo">
+                                Objetivo da Atividade <span class="text-rose-500">*</span>
+                            </label>
+                            <div class="relative">
+                                <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-400">
+                                    <i class="fa-solid fa-bullseye"></i>
+                                </span>
+                                <select id="input-objetivo" class="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-200 focus:border-menti-purple focus:ring-2 focus:ring-purple-100 bg-slate-50/50 text-slate-800 text-sm font-medium transition" required>
+                                    <option value="Diagnóstico prévio e engajamento inicial" selected>Sondar Conhecimentos Prévios & Diagnóstico</option>
+                                    <option value="Revisão dinâmica e fixação para avaliação">Revisar Conteúdo antes da Prova/Avaliação</option>
+                                    <option value="Estimular debate crítico e tomadas de decisão">Promover Debate e Troca de Ideias</option>
+                                    <option value="Verificação contínua do aprendizado em tempo real">Avaliar Compreensão Intermediária em Tempo Real</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Tom da Linguagem -->
+                        <div>
+                            <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-2" for="input-tom">
+                                Tom da Linguagem <span class="text-rose-500">*</span>
+                            </label>
+                            <div class="relative">
+                                <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-400">
+                                    <i class="fa-solid fa-wand-magic"></i>
+                                </span>
+                                <select id="input-tom" class="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-200 focus:border-menti-purple focus:ring-2 focus:ring-purple-100 bg-slate-50/50 text-slate-800 text-sm font-medium transition" required>
+                                    <option value="Acessível, descontraída e jovem" selected>Descontraído, Dinâmico & Acessível</option>
+                                    <option value="Formal, acadêmica e rigorosa">Formal, Técnico & Acadêmico</option>
+                                    <option value="Persuasiva, prática e orientada a negócios">Prático, Inspirador & Executivo</option>
+                                    <option value="Gamificada e altamente interativa">Gamificado & Divertido</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Duração Estimada -->
+                        <div>
+                            <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-2" for="input-duracao">
+                                Duração Estimada (Minutos)
+                            </label>
+                            <div class="relative">
+                                <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-400">
+                                    <i class="fa-solid fa-clock"></i>
+                                </span>
+                                <input type="text" id="input-duracao" value="15 a 20 minutos" class="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-200 focus:border-menti-purple focus:ring-2 focus:ring-purple-100 bg-slate-50/50 text-slate-800 text-sm font-medium transition">
+                            </div>
+                        </div>
+
+                        <!-- Número de Slides -->
+                        <div>
+                            <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-2" for="input-qtd">
+                                Quantidade de Slides
+                            </label>
+                            <div class="relative">
+                                <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-400">
+                                    <i class="fa-solid fa-layer-group"></i>
+                                </span>
+                                <select id="input-qtd" class="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-200 focus:border-menti-purple focus:ring-2 focus:ring-purple-100 bg-slate-50/50 text-slate-800 text-sm font-medium transition">
+                                    <option value="5">5 Slides (Rápido)</option>
+                                    <option value="6" selected>6 Slides (Recomendado)</option>
+                                    <option value="7">7 Slides (Completo)</option>
+                                    <option value="8">8 Slides (Aprofundado)</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- BOTÕES DE AÇÃO -->
+                    <div class="pt-4 flex flex-col sm:flex-row items-center gap-3">
+                        <button type="submit" class="w-full sm:w-auto flex-1 bg-gradient-to-r from-menti-purple to-menti-blue text-white font-bold px-6 py-3.5 rounded-xl shadow-lg hover:shadow-xl hover:opacity-95 transition flex items-center justify-center space-x-2">
+                            <i class="fa-solid fa-bolt text-yellow-300"></i>
+                            <span>Gerar Apresentação Agora</span>
+                        </button>
+                        
+                        <button type="button" onclick="exportPromptModal()" class="w-full sm:w-auto px-5 py-3.5 rounded-xl border border-slate-300 text-slate-700 font-semibold hover:bg-slate-100 transition flex items-center justify-center space-x-2">
+                            <i class="fa-solid fa-copy text-purple-600"></i>
+                            <span>Exportar Prompt Formato Texto</span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </section>
+
+        <!-- SECTION 2: SLIDES LIST VIEW -->
+        <section id="tab-slides" class="space-y-6 hidden animate-fade-in">
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+                <div>
+                    <h2 id="generated-title" class="text-xl font-bold text-slate-900">Slides Gerados para Mentimeter</h2>
+                    <p id="generated-subtitle" class="text-sm text-slate-500">Exibindo o roteiro interativo pronto para ser aplicado no Mentimeter ou apresentado diretamente aqui.</p>
+                </div>
+
+                <div class="flex items-center space-x-2">
+                    <button onclick="exportJSON()" class="px-3.5 py-2 rounded-lg border border-slate-200 text-xs font-bold text-slate-700 hover:bg-slate-50 transition flex items-center space-x-1.5">
+                        <i class="fa-solid fa-download text-slate-500"></i>
+                        <span>Exportar JSON</span>
+                    </button>
+                    <button onclick="exportMarkdown()" class="px-3.5 py-2 rounded-lg border border-slate-200 text-xs font-bold text-slate-700 hover:bg-slate-50 transition flex items-center space-x-1.5">
+                        <i class="fa-solid fa-file-lines text-slate-500"></i>
+                        <span>Baixar Markdown</span>
+                    </button>
+                    <button onclick="startLivePresentation()" class="px-4 py-2 rounded-lg bg-menti-purple text-white text-xs font-bold hover:bg-purple-700 transition flex items-center space-x-1.5 shadow-md">
+                        <i class="fa-solid fa-play"></i>
+                        <span>Apresentar Agora</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- CONTAINER ONDE OS SLIDES GERADOS SÃO RENDERIZADOS -->
+            <div id="slides-container" class="space-y-4">
+                <!-- Inserido dinamicamente via JS -->
+            </div>
+        </section>
+    </main>
+
+    <!-- PROMPT MODAL -->
+    <div id="modal-prompt" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
+        <div class="bg-white rounded-2xl max-w-2xl w-full p-6 shadow-2xl border border-slate-100 flex flex-col max-h-[85vh]">
+            <div class="flex items-center justify-between pb-4 border-b border-slate-100">
+                <h3 class="text-lg font-bold text-slate-900 flex items-center gap-2">
+                    <i class="fa-solid fa-terminal text-menti-purple"></i> Prompt Otimizado para Copiar
+                </h3>
+                <button onclick="closePromptModal()" class="text-slate-400 hover:text-slate-600 transition text-lg">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            <div class="py-4 flex-grow overflow-y-auto">
+                <p class="text-xs text-slate-500 mb-3">Copie este prompt formatado para reutilizar em outros modelos ou guardar em seu repositório pedagógico:</p>
+                <textarea id="prompt-text-area" readonly class="w-full h-72 p-4 text-xs font-mono bg-slate-900 text-slate-200 rounded-xl border border-slate-800 focus:outline-none resize-none selection:bg-purple-600"></textarea>
+            </div>
+            <div class="pt-4 border-t border-slate-100 flex items-center justify-end space-x-3">
+                <button onclick="closePromptModal()" class="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-lg transition">Fechar</button>
+                <button onclick="copyPromptToClipboard()" class="px-5 py-2 text-xs font-bold bg-menti-purple text-white rounded-lg hover:bg-purple-700 transition flex items-center space-x-1.5">
+                    <i class="fa-solid fa-copy"></i>
+                    <span>Copiar Texto</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- FULLSCREEN LIVE PRESENTATION MODE (SIMULATOR) -->
+    <div id="live-presentation-overlay" class="fixed inset-0 bg-slate-950 text-white z-50 flex flex-col hidden select-none">
+        
+        <!-- TOP APRESENTADOR BAR -->
+        <header class="bg-slate-900/90 border-b border-slate-800 px-6 py-3 flex items-center justify-between backdrop-blur-md">
+            <div class="flex items-center space-x-4">
+                <button onclick="closeLivePresentation()" class="text-slate-400 hover:text-white transition px-2 py-1 rounded-md bg-slate-800 text-xs font-semibold flex items-center space-x-1.5">
+                    <i class="fa-solid fa-xmark text-sm"></i>
+                    <span>Sair</span>
+                </button>
+                <div class="h-4 w-px bg-slate-700"></div>
+                <div class="flex items-center space-x-2 text-xs">
+                    <span class="text-slate-400 font-medium">Acesse:</span>
+                    <span class="font-mono font-bold bg-purple-900/60 text-purple-300 px-2.5 py-1 rounded-md border border-purple-500/30">menti.com</span>
+                    <span class="text-slate-400 font-medium">Código:</span>
+                    <span id="presentation-pin" class="font-mono font-black text-amber-400 text-sm tracking-wider">8492 1039</span>
+                </div>
+            </div>
+
+            <!-- Slide Progress & Quick Actions -->
+            <div class="flex items-center space-x-4">
+                <button onclick="simulateStudentVotes()" class="px-3 py-1.5 rounded-lg bg-emerald-600/80 hover:bg-emerald-600 text-white text-xs font-bold transition flex items-center space-x-1.5 shadow-sm">
+                    <i class="fa-solid fa-user-plus"></i>
+                    <span>Simular Votos de Alunos</span>
+                </button>
+                <button onclick="toggleQRModal()" class="p-2 text-slate-300 hover:text-white hover:bg-slate-800 rounded-lg transition text-xs flex items-center gap-1.5" title="Mostrar QR Code">
+                    <i class="fa-solid fa-qrcode text-base"></i>
+                    <span class="hidden sm:inline">QR Code</span>
+                </button>
+                <div class="text-xs font-semibold text-slate-400">
+                    Slide <span id="current-slide-num" class="text-white font-bold">1</span> de <span id="total-slides-num">6</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- CANVAS PRINCIPAL DA APRESENTAÇÃO -->
+        <main class="flex-grow relative flex items-center justify-center p-6 md:p-12 overflow-hidden bg-gradient-to-b from-slate-950 via-slate-900 to-indigo-950">
+            <div id="slide-stage" class="w-full max-w-5xl h-full flex flex-col justify-between pop-in">
+                <!-- O conteúdo visual interativo do slide ativo é renderizado aqui -->
+            </div>
+        </main>
+
+        <!-- BOTTOM CONTROL BAR -->
+        <footer class="bg-slate-900/90 border-t border-slate-800 px-6 py-3 flex items-center justify-between backdrop-blur-md">
+            <div class="flex items-center space-x-2">
+                <button onclick="prevSlide()" class="p-2.5 rounded-xl bg-slate-800 text-slate-300 hover:text-white hover:bg-slate-700 transition disabled:opacity-30 disabled:cursor-not-allowed">
+                    <i class="fa-solid fa-chevron-left"></i>
+                </button>
+                <button onclick="nextSlide()" class="p-2.5 rounded-xl bg-slate-800 text-slate-300 hover:text-white hover:bg-slate-700 transition disabled:opacity-30 disabled:cursor-not-allowed">
+                    <i class="fa-solid fa-chevron-right"></i>
+                </button>
+                <span class="text-xs text-slate-400 ml-2 hidden sm:inline">Dica: Use as setas ← e → do teclado</span>
+            </div>
+
+            <!-- Tip / Pedagogy Overlay toggle -->
+            <div class="flex items-center space-x-3">
+                <div id="total-votes-badge" class="text-xs font-semibold text-purple-300 bg-purple-950/80 px-3 py-1 rounded-full border border-purple-800/40">
+                    <i class="fa-solid fa-users text-purple-400 mr-1.5"></i> <span id="votes-counter">0</span> participantes ativos
+                </div>
+                <button onclick="toggleTeacherNotes()" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-amber-300 text-xs font-semibold transition flex items-center space-x-1.5">
+                    <i class="fa-solid fa-lightbulb"></i>
+                    <span>Nota Pedagógica</span>
+                </button>
+            </div>
+        </footer>
+
+        <!-- SLIDE PEDAGOGICAL NOTES FLOATING PANEL -->
+        <div id="teacher-notes-panel" class="absolute bottom-20 right-6 max-w-sm w-full bg-slate-900/95 border border-amber-500/30 text-slate-200 p-4 rounded-xl shadow-2xl backdrop-blur-lg hidden">
+            <div class="flex items-center justify-between pb-2 border-b border-slate-800 mb-2">
+                <span class="text-xs font-bold text-amber-400 uppercase tracking-wider flex items-center gap-1.5">
+                    <i class="fa-solid fa-chalkboard-user"></i> Dica do Professor
+                </span>
+                <button onclick="toggleTeacherNotes()" class="text-slate-400 hover:text-slate-200 text-xs">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            <p id="teacher-notes-text" class="text-xs leading-relaxed text-slate-300">
+                Oriente os alunos a refletirem antes de votar...
+            </p>
+        </div>
+
+        <!-- QR CODE OVERLAY MODAL -->
+        <div id="modal-qr" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex items-center justify-center hidden p-4" onclick="toggleQRModal()">
+            <div class="bg-white text-slate-900 rounded-3xl p-8 max-w-sm w-full text-center shadow-2xl border border-slate-200" onclick="event.stopPropagation()">
+                <h3 class="text-xl font-extrabold text-slate-900 mb-1">Escaneie para Participar</h3>
+                <p class="text-xs text-slate-500 mb-6">Aponta a câmera do celular ou acesse menti.com</p>
+                
+                <div class="flex justify-center mb-6">
+                    <div id="qrcode-canvas" class="p-3 bg-slate-50 border border-slate-200 rounded-2xl shadow-inner"></div>
+                </div>
+
+                <div class="bg-purple-50 p-3 rounded-xl border border-purple-100 mb-4">
+                    <span class="block text-xs uppercase tracking-wider text-purple-600 font-bold mb-0.5">Código de Acesso</span>
+                    <span id="qr-pin-code" class="text-2xl font-black text-menti-purple tracking-wider">8492 1039</span>
+                </div>
+
+                <button onclick="toggleQRModal()" class="w-full py-2.5 bg-slate-900 text-white text-xs font-bold rounded-xl hover:bg-slate-800 transition">
+                    Fechar Tela de Entrada
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- JAVASCRIPT APPLICATION LOGIC -->
+    <script>
+        // GLOBAL STATE
+        let currentGeneratedData = null;
+        let currentSlideIndex = 0;
+        let liveVotes = {};
+        let activePin = "8492 1039";
+        let quizTimerInterval = null;
+        let quizTimeLeft = 15;
+
+        // INITIALIZATION
+        window.addEventListener('DOMContentLoaded', () => {
+            // Generate initial default presentation
+            generateScriptFromParams();
+            setupKeyboardListeners();
+        });
+
+        // TAB SWITCHING
+        function switchTab(tab) {
+            document.getElementById('tab-creator').classList.add('hidden');
+            document.getElementById('tab-slides').classList.add('hidden');
+            
+            document.getElementById('nav-creator').className = "px-3.5 py-2 rounded-lg text-sm font-semibold text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition flex items-center space-x-2";
+            document.getElementById('nav-slides').className = "px-3.5 py-2 rounded-lg text-sm font-semibold text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition flex items-center space-x-2";
+
+            if (tab === 'creator') {
+                document.getElementById('tab-creator').classList.remove('hidden');
+                document.getElementById('nav-creator').className = "px-3.5 py-2 rounded-lg text-sm font-semibold transition flex items-center space-x-2 bg-purple-50 text-menti-purple";
+            } else if (tab === 'slides') {
+                document.getElementById('tab-slides').classList.remove('hidden');
+                document.getElementById('nav-slides').className = "px-3.5 py-2 rounded-lg text-sm font-semibold transition flex items-center space-x-2 bg-purple-50 text-menti-purple";
+            }
+        }
+
+        // RESET DEFAULT VALUES
+        function resetDefaults() {
+            document.getElementById('input-nivel').value = "Ensino Médio";
+            document.getElementById('input-tema').value = "Inteligência Artificial e Ética no Século XXI";
+            document.getElementById('input-objetivo').value = "Diagnóstico prévio e engajamento inicial";
+            document.getElementById('input-tom').value = "Acessível, descontraída e jovem";
+            document.getElementById('input-duracao').value = "15 a 20 minutos";
+            document.getElementById('input-qtd').value = "6";
+            showToast("Campos restaurados!", "info");
+        }
+
+        // HANDLE FORM SUBMISSION
+        function handleGenerate(event) {
+            event.preventDefault();
+            generateScriptFromParams();
+            switchTab('slides');
+            showToast("Apresentação gerada com sucesso!", "success");
+        }
+
+        // SCRIPT GENERATOR ALGORITHM (PEDAGOGIC RULES)
+        function generateScriptFromParams() {
+            const nivel = document.getElementById('input-nivel').value;
+            const tema = document.getElementById('input-tema').value;
+            const objetivo = document.getElementById('input-objetivo').value;
+            const tom = document.getElementById('input-tom').value;
+            const duracao = document.getElementById('input-duracao').value;
+            const qtd = parseInt(document.getElementById('input-qtd').value, 10);
+
+            // Dynamically generate slides based on parameters
+            const slides = [];
+
+            // Slide 1: Icebreaker (Word Cloud or Scale)
+            slides.push({
+                type: "Word Cloud",
+                typeLabel: "Nuvem de Palavras",
+                icon: "fa-cloud",
+                title: `Em 1 ou 2 palavras, o que vem à sua cabeça quando ouve "${tema}"?`,
+                options: ["Limite de 3 entradas por aluno", "Filtro de profanidade ativo", "Visualização em tempo real"],
+                correct: null,
+                pedagogy: `Quebra-gelo inicial para ativar os conhecimentos prévios sobre ${tema}. Deixe as palavras crescerem na tela e destaque os termos mais votados para introduzir a aula.`,
+                mockData: ["Inovação", "Futuro", "Robôs", "Ética", "Algoritmos", "Dúvida", "Tecnologia", "Automação", "Criatividade", "Medo"]
+            });
+
+            // Slide 2: Sondagem / Diagnóstico (Scales)
+            slides.push({
+                type: "Scales",
+                typeLabel: "Escala / Matriz de Opinião",
+                icon: "fa-sliders",
+                title: `Como você avalia seu nível de contato prévio com ${tema}?`,
+                options: [
+                    "1. Tenho pouca segurança no assunto (1 a 5)",
+                    "2. Acompanho notícias e debates frequentemente (1 a 5)",
+                    "3. Sei como aplicar isso na prática no meu dia a dia (1 a 5)"
+                ],
+                correct: null,
+                pedagogy: `Sondagem de nível da turma. Avalie as médias para calibrar o aprofundamento explicativo durante o restante da aula.`,
+                mockData: [
+                    { label: "Segurança no assunto", val: 2.8 },
+                    { label: "Acompanha notícias", val: 4.1 },
+                    { label: "Aplicação prática", val: 3.2 }
+                ]
+            });
+
+            // Slide 3: Desenvolvimento - Multiple Choice
+            slides.push({
+                type: "Multiple Choice",
+                typeLabel: "Múltipla Escolha",
+                icon: "fa-chart-column",
+                title: `Qual é o principal desafio ético/prático associado a ${tema}?`,
+                options: [
+                    "A. Viés algorítmico e imparcialidade dos dados",
+                    "B. Privacidade e segurança dos dados pessoais",
+                    "C. Substituição de postos de trabalho humanos",
+                    "D. Falta de regulamentação transparente"
+                ],
+                correct: null,
+                pedagogy: `Incentive os alunos a justificarem suas escolhas. Não há resposta única inteiramente errada, mas sirva de gancho para o tópico principal.`,
+                mockData: { "A": 12, "B": 24, "C": 18, "D": 9 }
+            });
+
+            // Slide 4: Quiz Game (Competitive)
+            slides.push({
+                type: "Quiz Competition",
+                typeLabel: "Quiz Competitivo (Com Tempo)",
+                icon: "fa-trophy",
+                title: `[QUIZ RÁPIDO] Qual destes conceitos é fundamental para entender ${tema}?`,
+                options: [
+                    "A. Aprendizado de Máquina (Machine Learning)",
+                    "B. Design Gráfico Vetorial Simples",
+                    "C. Armazenamento local sem conectividade",
+                    "D. Processamento analógico de papel"
+                ],
+                correct: "A. Aprendizado de Máquina (Machine Learning)",
+                pedagogy: `Elemento de gamificação! O Quiz conta pontos pela resposta correta e pela rapidez. Revele o gabarito e faça uma breve explicação técnica antes do placar.`,
+                mockData: { "A": 32, "B": 2, "C": 3, "D": 1 }
+            });
+
+            // Slide 5: Debate / Opinião Aberta (Open Ended)
+            if (qtd >= 5) {
+                slides.push({
+                    type: "Open Ended",
+                    typeLabel: "Pergunta Aberta / Mural",
+                    icon: "fa-comments",
+                    title: `Se você pudesse definir uma regra essencial para o futuro de ${tema}, qual seria?`,
+                    options: ["Respostas curtas no mural (até 150 caracteres)", "Modo de exibição em cards virtuais"],
+                    correct: null,
+                    pedagogy: `Espaço de voz ativa para a turma. Leia 2 ou 3 post-its que se destacarem na tela e peça para os autores responderem oralmente se desejarem.`,
+                    mockData: [
+                        "Garantir transparência nos algoritmos!",
+                        "Privacidade em primeiro lugar sempre.",
+                        "Capacitar as pessoas antes de substituir funções.",
+                        "Uso consciente e regulação ética global."
+                    ]
+                });
+            }
+
+            // Slide 6: Fechamento / Feedback Final (Scales or Quick Poll)
+            if (qtd >= 6) {
+                slides.push({
+                    type: "Scales",
+                    typeLabel: "Feedback Final da Sessão",
+                    icon: "fa-star",
+                    title: "Avaliação da Atividade Interativa de Hoje",
+                    options: [
+                        "1. Compreendi bem os conceitos abordados hoje (1 a 5)",
+                        "2. O formato interativo Mentimeter ajudou no aprendizado (1 a 5)",
+                        "3. Me sinto motivado para aprofundar no tema (1 a 5)"
+                    ],
+                    correct: null,
+                    pedagogy: `Fechamento e metacognição. Avalie o engajamento da turma para planejar os próximos passos pedagógicos.`,
+                    mockData: [
+                        { label: "Compreensão do Tema", val: 4.7 },
+                        { label: "Engajamento Interativo", val: 4.9 },
+                        { label: "Motivação Futura", val: 4.4 }
+                    ]
+                });
+            }
+
+            // Extra slides if 7 or 8 selected
+            if (qtd >= 7) {
+                slides.splice(4, 0, {
+                    type: "Multiple Choice",
+                    typeLabel: "Múltipla Escolha - Aplicação",
+                    icon: "fa-list-check",
+                    title: `Em qual setor a aplicação de ${tema} terá maior impacto nos próximos 5 anos?`,
+                    options: ["A. Saúde e Medicina", "B. Educação e Ensino", "C. Finanças e Mercado", "D. Arte e Entretenimento"],
+                    correct: null,
+                    pedagogy: "Use esta sondagem para demonstrar a abrangência multidisciplinar do conteúdo.",
+                    mockData: { "A": 15, "B": 20, "C": 10, "D": 5 }
+                });
+            }
+
+            if (qtd >= 8) {
+                slides.splice(6, 0, {
+                    type: "Word Cloud",
+                    typeLabel: "Nuvem de Palavras - Síntese",
+                    icon: "fa-cloud-meatball",
+                    title: "Qual sentimento resume a aula de hoje?",
+                    options: ["1 palavra por aluno"],
+                    correct: null,
+                    pedagogy: "Nuvem rápida de síntese emocional e de aprendizado.",
+                    mockData: ["Inspirado", "Curioso", "Desafiado", "Conectado", "Preparado"]
+                });
+            }
+
+            currentGeneratedData = {
+                metadata: { nivel, tema, objetivo, tom, duracao, qtd },
+                slides: slides
+            };
+
+            renderSlidesList();
+        }
+
+        // RENDER GENERATED SLIDES IN LIST VIEW
+        function renderSlidesList() {
+            if (!currentGeneratedData) return;
+
+            const container = document.getElementById('slides-container');
+            const slideCountBadge = document.getElementById('badge-slide-count');
+            
+            slideCountBadge.innerText = currentGeneratedData.slides.length;
+            container.innerHTML = "";
+
+            document.getElementById('generated-title').innerText = `Roteiro: ${currentGeneratedData.metadata.tema}`;
+            document.getElementById('generated-subtitle').innerText = `Público: ${currentGeneratedData.metadata.nivel} • Tom: ${currentGeneratedData.metadata.tom} • ${currentGeneratedData.metadata.duracao}`;
+
+            currentGeneratedData.slides.forEach((slide, idx) => {
+                const card = document.createElement('div');
+                card.className = "bg-white rounded-2xl border border-slate-200 p-6 shadow-sm hover:shadow-md transition space-y-4";
+                
+                let optionsFormatted = Array.isArray(slide.options) 
+                    ? slide.options.map(o => `<li class="text-xs text-slate-600 font-medium">• ${o}</li>`).join('') 
+                    : "";
+
+                let correctHtml = slide.correct 
+                    ? `<div class="mt-2 text-xs font-bold text-emerald-700 bg-emerald-50 px-3 py-1.5 rounded-lg border border-emerald-200 inline-block">
+                        <i class="fa-solid fa-circle-check mr-1"></i> Gabarito Correto: ${slide.correct}
+                       </div>` 
+                    : '';
+
+                card.innerHTML = `
+                    <div class="flex items-start justify-between border-b border-slate-100 pb-3">
+                        <div class="flex items-center space-x-3">
+                            <span class="w-8 h-8 rounded-lg bg-purple-100 text-menti-purple flex items-center justify-center font-black text-sm">
+                                ${idx + 1}
+                            </span>
+                            <div>
+                                <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">1. Tipo de Slide Mentimeter</span>
+                                <h4 class="text-sm font-bold text-slate-800 flex items-center gap-1.5">
+                                    <i class="fa-solid ${slide.icon} text-menti-purple"></i> ${slide.typeLabel} (${slide.type})
+                                </h4>
+                            </div>
+                        </div>
+                        <button onclick="copySingleSlide(${idx})" class="px-2.5 py-1 text-xs font-semibold text-slate-500 hover:text-purple-600 hover:bg-purple-50 rounded-md transition" title="Copiar Slide">
+                            <i class="fa-solid fa-copy mr-1"></i> Copiar
+                        </button>
+                    </div>
+
+                    <div>
+                        <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">2. Título / Pergunta do Slide</span>
+                        <p class="text-base font-extrabold text-slate-900 mt-0.5">${slide.title}</p>
+                    </div>
+
+                    <div>
+                        <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">3. Opções de Resposta / Configurações</span>
+                        <ul class="mt-1 space-y-1">
+                            ${optionsFormatted}
+                        </ul>
+                        ${correctHtml}
+                    </div>
+
+                    <div class="bg-amber-50/80 border border-amber-200/60 rounded-xl p-3.5">
+                        <span class="text-xs font-bold text-amber-800 flex items-center gap-1">
+                            <i class="fa-solid fa-lightbulb text-amber-500"></i> 5. Objetivo Pedagógico / Dica para o Professor
+                        </span>
+                        <p class="text-xs text-amber-900 mt-1 leading-relaxed">${slide.pedagogy}</p>
+                    </div>
+                `;
+
+                container.appendChild(card);
+            });
+        }
+
+        // COPY SINGLE SLIDE DETAILS
+        function copySingleSlide(index) {
+            const slide = currentGeneratedData.slides[index];
+            const text = `1. Tipo de Slide Mentimeter: ${slide.typeLabel} (${slide.type})\n` +
+                         `2. Título/Pergunta: ${slide.title}\n` +
+                         `3. Opções: ${slide.options.join(', ')}\n` +
+                         (slide.correct ? `4. Gabarito: ${slide.correct}\n` : '') +
+                         `5. Objetivo Pedagógico: ${slide.pedagogy}`;
+            
+            copyToClipboard(text);
+            showToast(`Slide ${index + 1} copiado!`, "success");
+        }
+
+        // EXPORT PROMPT MODAL
+        function exportPromptModal() {
+            if (!currentGeneratedData) return;
+            
+            const promptText = `ATUANDO COMO ESPECIALISTA PEDAGÓGICO - ROTEIRO MENTIMETER\n\n` +
+                `Público Alvo: ${currentGeneratedData.metadata.nivel}\n` +
+                `Tema da Aula: ${currentGeneratedData.metadata.tema}\n` +
+                `Objetivo: ${currentGeneratedData.metadata.objetivo}\n` +
+                `Tom: ${currentGeneratedData.metadata.tom}\n` +
+                `Duração: ${currentGeneratedData.metadata.duracao}\n\n` +
+                `ESTRUTURA DE SLIDES GERADA:\n\n` +
+                currentGeneratedData.slides.map((s, i) => 
+                    `SLIDE ${i+1}:\n` +
+                    `1. Tipo de Slide Mentimeter: ${s.typeLabel} (${s.type})\n` +
+                    `2. Título/Pergunta: ${s.title}\n` +
+                    `3. Opções/Configurações: ${s.options.join(' | ')}\n` +
+                    (s.correct ? `4. Gabarito: ${s.correct}\n` : `4. Gabarito: N/A\n`) +
+                    `5. Dica Pedagógica: ${s.pedagogy}\n`
+                ).join('\n---\n\n');
+
+            document.getElementById('prompt-text-area').value = promptText;
+            document.getElementById('modal-prompt').classList.remove('hidden');
+        }
+
+        function closePromptModal() {
+            document.getElementById('modal-prompt').classList.add('hidden');
+        }
+
+        function copyPromptToClipboard() {
+            const text = document.getElementById('prompt-text-area').value;
+            copyToClipboard(text);
+            showToast("Prompt copiado para a área de transferência!", "success");
+            closePromptModal();
+        }
+
+        // EXPORT JSON / MARKDOWN
+        function exportJSON() {
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(currentGeneratedData, null, 2));
+            const dlAnchor = document.createElement('a');
+            dlAnchor.setAttribute("href", dataStr);
+            dlAnchor.setAttribute("download", `mentimeter-roteiro-${Date.now()}.json`);
+            document.body.appendChild(dlAnchor);
+            dlAnchor.click();
+            dlAnchor.remove();
+            showToast("Arquivo JSON baixado com sucesso!", "success");
+        }
+
+        function exportMarkdown() {
+            let md = `# Roteiro Mentimeter: ${currentGeneratedData.metadata.tema}\n\n`;
+            md += `**Público:** ${currentGeneratedData.metadata.nivel}  \n`;
+            md += `**Objetivo:** ${currentGeneratedData.metadata.objetivo}  \n`;
+            md += `**Duração:** ${currentGeneratedData.metadata.duracao}  \n\n`;
+            
+            currentGeneratedData.slides.forEach((s, i) => {
+                md += `### Slide ${i+1}: ${s.title}\n`;
+                md += `- **Tipo:** ${s.typeLabel} (${s.type})\n`;
+                md += `- **Opções:** ${s.options.join(', ')}\n`;
+                if(s.correct) md += `- **Gabarito:** ${s.correct}\n`;
+                md += `- **Objetivo Pedagógico:** ${s.pedagogy}\n\n`;
+            });
+
+            const dataStr = "data:text/markdown;charset=utf-8," + encodeURIComponent(md);
+            const dlAnchor = document.createElement('a');
+            dlAnchor.setAttribute("href", dataStr);
+            dlAnchor.setAttribute("download", `mentimeter-roteiro-${Date.now()}.md`);
+            document.body.appendChild(dlAnchor);
+            dlAnchor.click();
+            dlAnchor.remove();
+            showToast("Arquivo Markdown baixado com sucesso!", "success");
+        }
+
+        // LIVE PRESENTATION MODE (SIMULATION & INTERACTION)
+        function startLivePresentation() {
+            if (!currentGeneratedData || currentGeneratedData.slides.length === 0) {
+                showToast("Gere uma apresentação primeiro!", "warning");
+                return;
+            }
+
+            currentSlideIndex = 0;
+            liveVotes = {};
+            
+            // Generate Random PIN
+            activePin = Math.floor(1000 + Math.random() * 9000) + " " + Math.floor(1000 + Math.random() * 9000);
+            document.getElementById('presentation-pin').innerText = activePin;
+            document.getElementById('qr-pin-code').innerText = activePin;
+            
+            // Generate QR Code
+            generateQRCode();
+
+            document.getElementById('total-slides-num').innerText = currentGeneratedData.slides.length;
+            document.getElementById('live-presentation-overlay').classList.remove('hidden');
+
+            renderLiveSlide();
+        }
+
+        function closeLivePresentation() {
+            if (quizTimerInterval) clearInterval(quizTimerInterval);
+            document.getElementById('live-presentation-overlay').classList.add('hidden');
+        }
+
+        function renderLiveSlide() {
+            const slide = currentGeneratedData.slides[currentSlideIndex];
+            document.getElementById('current-slide-num').innerText = currentSlideIndex + 1;
+            document.getElementById('teacher-notes-text').innerText = slide.pedagogy;
+
+            const stage = document.getElementById('slide-stage');
+            stage.className = "w-full max-w-5xl h-full flex flex-col justify-between pop-in";
+            
+            // Clear timer if active
+            if (quizTimerInterval) clearInterval(quizTimerInterval);
+
+            // Init state for slide
+            if (!liveVotes[currentSlideIndex]) {
+                liveVotes[currentSlideIndex] = JSON.parse(JSON.stringify(slide.mockData));
+            }
+            const currentData = liveVotes[currentSlideIndex];
+
+            // Render interactive widget based on type
+            let htmlContent = `
+                <div class="text-center space-y-2 mb-6">
+                    <span class="px-3 py-1 rounded-full bg-purple-900/40 text-purple-300 text-xs font-bold border border-purple-500/30 uppercase tracking-wider inline-flex items-center gap-1.5">
+                        <i class="fa-solid ${slide.icon}"></i> ${slide.typeLabel}
+                    </span>
+                    <h2 class="text-2xl md:text-4xl font-black text-white leading-tight tracking-tight">${slide.title}</h2>
+                </div>
+            `;
+
+            if (slide.type === "Word Cloud") {
+                htmlContent += renderWordCloudWidget(currentData);
+            } else if (slide.type === "Multiple Choice") {
+                htmlContent += renderBarChartWidget(currentData);
+            } else if (slide.type === "Scales") {
+                htmlContent += renderScalesWidget(currentData);
+            } else if (slide.type === "Quiz Competition") {
+                htmlContent += renderQuizWidget(slide, currentData);
+                startQuizTimer();
+            } else if (slide.type === "Open Ended") {
+                htmlContent += renderOpenEndedWidget(currentData);
+            }
+
+            stage.innerHTML = htmlContent;
+            updateVoteCountDisplay();
+        }
+
+        // SLIDE WIDGET RENDERERS
+        function renderWordCloudWidget(words) {
+            let tagsHtml = words.map((word, i) => {
+                const tagClass = `wc-tag-${(i % 5) + 1}`;
+                return `<span class="${tagClass} inline-block m-3 transition transform hover:scale-110 cursor-pointer" onclick="bumpWord('${word}')">${word}</span>`;
+            }).join('');
+
+            return `
+                <div class="flex-grow flex items-center justify-center p-6 bg-slate-900/60 rounded-3xl border border-slate-800 backdrop-blur-md shadow-2xl">
+                    <div class="flex flex-wrap items-center justify-center text-center max-w-3xl leading-relaxed">
+                        ${tagsHtml}
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderBarChartWidget(data) {
+            const total = Object.values(data).reduce((a, b) => a + b, 0) || 1;
+            
+            let barsHtml = Object.keys(data).map(key => {
+                const val = data[key];
+                const pct = Math.round((val / total) * 100);
+                return `
+                    <div class="space-y-1.5 cursor-pointer" onclick="voteBar('${key}')">
+                        <div class="flex justify-between text-xs font-bold text-slate-300">
+                            <span>${key}</span>
+                            <span>${val} votos (${pct}%)</span>
+                        </div>
+                        <div class="w-full h-10 bg-slate-800 rounded-xl overflow-hidden p-1 border border-slate-700/50">
+                            <div class="h-full bg-gradient-to-r from-menti-purple to-menti-blue rounded-lg transition-all duration-500" style="width: ${pct}%"></div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            return `
+                <div class="flex-grow flex flex-col justify-center px-6 py-4 bg-slate-900/60 rounded-3xl border border-slate-800 backdrop-blur-md shadow-2xl space-y-4">
+                    ${barsHtml}
+                </div>
+            `;
+        }
+
+        function renderScalesWidget(data) {
+            let scalesHtml = data.map((item, idx) => {
+                const pct = (item.val / 5) * 100;
+                return `
+                    <div class="space-y-2 cursor-pointer" onclick="adjustScale(${idx})">
+                        <div class="flex justify-between text-sm font-bold text-slate-200">
+                            <span>${item.label}</span>
+                            <span class="text-amber-400 font-extrabold text-base">${item.val.toFixed(1)} / 5.0</span>
+                        </div>
+                        <div class="w-full h-4 bg-slate-800 rounded-full overflow-hidden border border-slate-700">
+                            <div class="h-full bg-gradient-to-r from-amber-500 to-menti-purple rounded-full transition-all duration-500" style="width: ${pct}%"></div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            return `
+                <div class="flex-grow flex flex-col justify-center px-8 py-6 bg-slate-900/60 rounded-3xl border border-slate-800 backdrop-blur-md shadow-2xl space-y-6">
+                    ${scalesHtml}
+                </div>
+            `;
+        }
+
+        function renderQuizWidget(slide, data) {
+            let optionsHtml = slide.options.map((opt, i) => {
+                const isCorrect = opt === slide.correct;
+                return `
+                    <div class="p-4 rounded-2xl bg-slate-800/80 border border-slate-700/80 flex items-center justify-between font-bold text-slate-100 transition hover:border-purple-500">
+                        <span>${opt}</span>
+                        <span id="quiz-correct-badge" class="hidden px-3 py-1 bg-emerald-500 text-slate-950 text-xs font-black rounded-full uppercase">Correta!</span>
+                    </div>
+                `;
+            }).join('');
+
+            return `
+                <div class="flex-grow flex flex-col justify-between p-6 bg-slate-900/60 rounded-3xl border border-slate-800 backdrop-blur-md shadow-2xl">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="flex items-center space-x-2 text-amber-400 font-bold text-sm">
+                            <i class="fa-solid fa-stopwatch text-lg"></i>
+                            <span>Tempo Restante: <span id="quiz-timer" class="text-xl font-black text-white">15</span>s</span>
+                        </div>
+                        <button onclick="revealQuizAnswer()" class="px-4 py-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs rounded-xl shadow transition">
+                            Revelar Resposta & Confetti
+                        </button>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        ${optionsHtml}
+                    </div>
+
+                    <div class="mt-4 pt-4 border-t border-slate-800 flex justify-between items-center text-xs text-slate-400">
+                        <span>Pontuação ativa por velocidade de resposta</span>
+                        <span class="font-bold text-purple-300">Liderança da Sala Ativa</span>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderOpenEndedWidget(answers) {
+            let cardsHtml = answers.map(ans => `
+                <div class="p-4 rounded-2xl bg-gradient-to-br from-slate-800 to-slate-850 border border-slate-700/80 text-slate-100 font-medium text-sm shadow-lg flex items-start space-x-3 pop-in">
+                    <i class="fa-solid fa-quote-left text-menti-purple text-lg mt-0.5"></i>
+                    <p class="leading-relaxed">${ans}</p>
+                </div>
+            `).join('');
+
+            return `
+                <div class="flex-grow p-6 bg-slate-900/60 rounded-3xl border border-slate-800 backdrop-blur-md shadow-2xl overflow-y-auto max-h-[50vh]">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        ${cardsHtml}
+                    </div>
+                </div>
+            `;
+        }
+
+        // LIVE INTERACTIONS & SIMULATION ACTIONS
+        function nextSlide() {
+            if (currentSlideIndex < currentGeneratedData.slides.length - 1) {
+                currentSlideIndex++;
+                renderLiveSlide();
+            }
+        }
+
+        function prevSlide() {
+            if (currentSlideIndex > 0) {
+                currentSlideIndex--;
+                renderLiveSlide();
+            }
+        }
+
+        function simulateStudentVotes() {
+            const slide = currentGeneratedData.slides[currentSlideIndex];
+            const data = liveVotes[currentSlideIndex];
+
+            if (slide.type === "Word Cloud") {
+                const extras = ["Aprendizado", "Transformação", "Agilidade", "Conexão", "Futuro", "Engajamento"];
+                const word = extras[Math.floor(Math.random() * extras.length)];
+                data.push(word);
+            } else if (slide.type === "Multiple Choice") {
+                const keys = Object.keys(data);
+                const randomKey = keys[Math.floor(Math.random() * keys.length)];
+                data[randomKey] += Math.floor(Math.random() * 3) + 1;
+            } else if (slide.type === "Scales") {
+                data.forEach(item => {
+                    item.val = Math.min(5.0, Math.max(1.0, item.val + (Math.random() * 0.4 - 0.2)));
+                });
+            } else if (slide.type === "Open Ended") {
+                const sampleIdeas = [
+                    "Criar comitês de ética nas escolas e faculdades.",
+                    "Focar em pensamento crítico e habilidades humanas únicas.",
+                    "Democratizar o acesso às ferramentas pagas.",
+                    "Transparência total no uso de conteúdos autorais."
+                ];
+                data.push(sampleIdeas[Math.floor(Math.random() * sampleIdeas.length)]);
+            }
+
+            renderLiveSlide();
+            showToast("Novas respostas simuladas adicionadas!", "info");
+        }
+
+        function bumpWord(word) {
+            const data = liveVotes[currentSlideIndex];
+            data.push(word);
+            renderLiveSlide();
+        }
+
+        function voteBar(key) {
+            const data = liveVotes[currentSlideIndex];
+            data[key] += 1;
+            renderLiveSlide();
+        }
+
+        function adjustScale(idx) {
+            const data = liveVotes[currentSlideIndex];
+            data[idx].val = Math.min(5.0, data[idx].val + 0.2);
+            renderLiveSlide();
+        }
+
+        function startQuizTimer() {
+            quizTimeLeft = 15;
+            const timerEl = document.getElementById('quiz-timer');
+            if (!timerEl) return;
+            
+            quizTimerInterval = setInterval(() => {
+                quizTimeLeft--;
+                if (timerEl) timerEl.innerText = quizTimeLeft;
+                if (quizTimeLeft <= 0) {
+                    clearInterval(quizTimerInterval);
+                    revealQuizAnswer();
+                }
+            }, 1000);
+        }
+
+        function revealQuizAnswer() {
+            if (quizTimerInterval) clearInterval(quizTimerInterval);
+            const badges = document.querySelectorAll('#quiz-correct-badge');
+            badges.forEach(b => b.classList.remove('hidden'));
+            
+            // Fire confetti
+            try {
+                confetti({
+                    particleCount: 80,
+                    spread: 70,
+                    origin: { y: 0.6 }
+                });
+            } catch(e) {}
+        }
+
+        function updateVoteCountDisplay() {
+            const votesCounter = document.getElementById('votes-counter');
+            if (votesCounter) {
+                const count = Math.floor(28 + Math.random() * 15);
+                votesCounter.innerText = count;
+            }
+        }
+
+        function toggleTeacherNotes() {
+            const panel = document.getElementById('teacher-notes-panel');
+            panel.classList.toggle('hidden');
+        }
+
+        function toggleQRModal() {
+            const modal = document.getElementById('modal-qr');
+            modal.classList.toggle('hidden');
+        }
+
+        function generateQRCode() {
+            const qrContainer = document.getElementById('qrcode-canvas');
+            qrContainer.innerHTML = "";
+            new QRCode(qrContainer, {
+                text: `https://menti.com/${activePin.replace(/\s+/g, '')}`,
+                width: 160,
+                height: 160,
+                colorDark : "#0e1726",
+                colorLight : "#ffffff",
+                correctLevel : QRCode.CorrectLevel.H
+            });
+        }
+
+        function setupKeyboardListeners() {
+            document.addEventListener('keydown', (e) => {
+                const liveOverlay = document.getElementById('live-presentation-overlay');
+                if (!liveOverlay.classList.contains('hidden')) {
+                    if (e.key === 'ArrowRight' || e.key === ' ') {
+                        nextSlide();
+                    } else if (e.key === 'ArrowLeft') {
+                        prevSlide();
+                    } else if (e.key === 'Escape') {
+                        closeLivePresentation();
+                    }
+                }
+            });
+        }
+
+        // UTILITY HELPERS
+        function copyToClipboard(text) {
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(text);
+            } else {
+                const textarea = document.createElement('textarea');
+                textarea.value = text;
+                document.body.appendChild(textarea);
+                textarea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textarea);
+            }
+        }
+
+        function showToast(message, type = "success") {
+            const toast = document.getElementById('toast');
+            const toastText = document.getElementById('toast-text');
+            const toastIcon = document.getElementById('toast-icon');
+
+            toastText.innerText = message;
+            
+            if (type === "success") {
+                toastIcon.className = "fa-solid fa-circle-check text-emerald-400 text-lg";
+            } else if (type === "info") {
+                toastIcon.className = "fa-solid fa-circle-info text-blue-400 text-lg";
+            } else if (type === "warning") {
+                toastIcon.className = "fa-solid fa-triangle-exclamation text-amber-400 text-lg";
+            }
+
+            toast.classList.remove('translate-y-20', 'opacity-0');
+            
+            setTimeout(() => {
+                toast.classList.add('translate-y-20', 'opacity-0');
+            }, 3000);
+        }
+    </script>
+</body>
+</html>
