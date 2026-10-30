@@ -1,0 +1,826 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Passa ou Repassa — Elementos de Máquinas & Chão de Fábrica</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- PeerJS para Conexão em Rede P2P -->
+    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&family=Montserrat:wght@800;900&display=swap');
+
+        body {
+            font-family: 'Fredoka', sans-serif;
+            background: radial-gradient(circle at center, #1e1b4b 0%, #0f172a 100%);
+            color: #ffffff;
+            min-height: 100vh;
+        }
+
+        .font-impact {
+            font-family: 'Montserrat', sans-serif;
+        }
+
+        /* Botão Buzzer Gigante de Bater */
+        .btn-buzzer {
+            background: radial-gradient(circle at 30% 30%, #ef4444, #991b1b);
+            border: 6px solid #f87171;
+            box-shadow: 0 12px 0 #7f1d1d, 0 20px 25px rgba(0, 0, 0, 0.6);
+            transition: all 0.1s ease;
+        }
+
+        .btn-buzzer:active:not(:disabled) {
+            transform: translateY(8px);
+            box-shadow: 0 4px 0 #7f1d1d, 0 10px 15px rgba(0, 0, 0, 0.4);
+        }
+
+        .btn-buzzer:disabled {
+            background: #475569 !important;
+            border-color: #64748b !important;
+            box-shadow: none !important;
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
+        /* Cards das 2 Equipes */
+        .team-card-blue { background: rgba(30, 58, 138, 0.6); border: 2px solid #3b82f6; }
+        .team-card-red { background: rgba(153, 27, 27, 0.6); border: 2px solid #ef4444; }
+
+        /* Estilo das Opções / Alternativas */
+        .opt-card {
+            background: #0f172a;
+            border: 1.5px solid #334155;
+            transition: all 0.2s ease;
+        }
+
+        .opt-card.selected-highlight {
+            border-color: #f59e0b !important;
+            background-color: rgba(245, 158, 11, 0.2) !important;
+            color: #fbbf24 !important;
+        }
+
+        .opt-card.correct-highlight {
+            border-color: #22c55e !important;
+            background-color: rgba(34, 197, 94, 0.2) !important;
+            color: #4ade80 !important;
+        }
+
+        /* Animação Torta na Cara */
+        @keyframes pie-splat {
+            0% { transform: scale(0) rotate(-20deg); opacity: 0; }
+            50% { transform: scale(1.2) rotate(10deg); opacity: 1; }
+            100% { transform: scale(1) rotate(0deg); opacity: 1; }
+        }
+
+        .splat-animation {
+            animation: pie-splat 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        }
+    </style>
+</head>
+<body class="p-3 md:p-6 flex flex-col justify-between items-center min-h-screen">
+
+    <!-- CABEÇALHO -->
+    <header class="text-center w-full max-w-6xl mb-3">
+        <h1 class="text-2xl md:text-4xl font-black font-impact text-transparent bg-clip-text bg-gradient-to-r from-amber-400 via-orange-500 to-yellow-300 tracking-wider uppercase drop-shadow-md">
+            🥧 PASSA OU REPASSA — ELEMENTOS DE MÁQUINAS
+        </h1>
+        <p class="text-xs md:text-sm text-slate-300 font-semibold">Desafio de Engenharia Mecânica & Chão de Fábrica • Conexão em Tempo Real P2P</p>
+    </header>
+
+    <!-- TELA DE CONEXÃO E SELEÇÃO DE PAPEL -->
+    <div id="screen-network" class="w-full max-w-xl bg-slate-900/90 border-2 border-amber-500/60 rounded-3xl p-6 text-center shadow-2xl my-auto">
+        <div class="text-5xl mb-3">🎙️</div>
+        <h2 class="text-2xl font-bold text-amber-400 mb-2">Entrar no Programa</h2>
+        <p class="text-slate-300 text-xs md:text-sm mb-5">Escolha se você será o Apresentador (Controlador) ou um Jogador de uma das equipes.</p>
+
+        <!-- BANNER DE DESTAQUE: GUIA DE ESTUDOS SWAY -->
+        <div class="mb-6 bg-gradient-to-r from-blue-950 via-slate-900 to-indigo-950 border-2 border-cyan-400/80 rounded-2xl p-4 text-left shadow-xl relative overflow-hidden group">
+            <div class="flex flex-col sm:flex-row items-center justify-between gap-3 relative z-10">
+                <div class="space-y-1 text-center sm:text-left">
+                    <span class="bg-cyan-500/20 border border-cyan-400/50 text-cyan-300 text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full inline-block mb-1">
+                        📚 Treinamento das Equipes
+                    </span>
+                    <h3 class="text-sm md:text-base font-black text-cyan-300 leading-snug">
+                        Torne-se um especialista, estude e forme sua equipe para competir e ganhar!
+                    </h3>
+                    <p class="text-[11px] text-slate-300">
+                        Acesse o material de apoio no Sway com questões resolvidas e conceitos essenciais de Elementos de Máquinas.
+                    </p>
+                </div>
+                <a href="https://sway.cloud.microsoft/tZwwjNiRw2FxeFqx?ref=Link" target="_blank" rel="noopener noreferrer" class="shrink-0 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 font-black px-4 py-2.5 rounded-xl text-xs uppercase tracking-wider transition-all transform hover:scale-105 shadow-lg flex items-center gap-2 cursor-pointer border border-cyan-300">
+                    <span>Acessar Sway</span>
+                    <span>↗️</span>
+                </a>
+            </div>
+        </div>
+
+        <div class="space-y-4">
+            <!-- Criar Sala (Apresentador) -->
+            <div class="bg-slate-950 p-4 rounded-2xl border border-slate-800">
+                <button onclick="createRoom()" class="w-full bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 font-black py-3 rounded-xl text-base uppercase tracking-wider transition-all shadow-lg cursor-pointer">
+                    🎤 Criar Sala como Apresentador
+                </button>
+            </div>
+
+            <div class="text-xs text-slate-500 font-bold">--- OU ENTRAR COMO JOGADOR ---</div>
+
+            <!-- Entrar como Jogador -->
+            <div class="bg-slate-950 p-4 rounded-2xl border border-slate-800 space-y-3">
+                <input type="text" id="input-player-name" placeholder="Seu Nome / Apelido" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-center text-sm font-bold text-white placeholder-slate-500 focus:outline-none focus:border-amber-500">
+                <input type="text" id="input-room-code" placeholder="Código do Token (ex: TORTA-1234)" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-center text-sm font-bold uppercase tracking-widest text-amber-400 placeholder-slate-600 focus:outline-none focus:border-amber-500">
+                
+                <p class="text-xs text-slate-400 font-semibold mb-1">Selecione a sua Equipe:</p>
+                <div class="grid grid-cols-2 gap-3">
+                    <button onclick="joinAsPlayer('blue')" class="bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded-xl text-sm cursor-pointer shadow-md">Equipe Azul</button>
+                    <button onclick="joinAsPlayer('red')" class="bg-red-600 hover:bg-red-500 text-white font-bold py-3 rounded-xl text-sm cursor-pointer shadow-md">Equipe Vermelha</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- TELA PRINCIPAL DO JOGO -->
+    <div id="screen-game" class="hidden w-full max-w-6xl flex-col gap-4 my-auto">
+
+        <!-- PAINEL SUPERIOR: TOKEN DA SALA, PLACAR E PROGRESSO DO BANCO -->
+        <div class="bg-slate-900/90 border border-slate-800 rounded-3xl p-4 shadow-xl">
+            <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800 pb-3 mb-3">
+                <div class="flex items-center gap-2">
+                    <span class="text-xs text-slate-400">Token da Sala:</span>
+                    <span id="room-code-display" class="bg-amber-500/20 border border-amber-500/40 text-amber-400 font-mono font-black text-xs md:text-sm px-3 py-1 rounded-lg">---</span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <span id="question-progress-display" class="bg-slate-800 text-amber-400 text-xs font-bold px-3 py-1 rounded-lg border border-slate-700">📋 Questão 1 / 80</span>
+                    <div id="role-display" class="text-xs font-bold px-3 py-1 rounded-lg bg-slate-800 text-cyan-400">Apresentador</div>
+                </div>
+            </div>
+
+            <!-- Placar Geral das 2 Equipes -->
+            <div class="grid grid-cols-2 gap-4 text-center mb-3">
+                <div class="team-card-blue p-4 rounded-2xl">
+                    <div class="text-xs md:text-sm font-black text-blue-400 uppercase">Equipe Azul</div>
+                    <div id="score-blue" class="text-3xl md:text-5xl font-black text-white">0</div>
+                </div>
+                <div class="team-card-red p-4 rounded-2xl">
+                    <div class="text-xs md:text-sm font-black text-red-400 uppercase">Equipe Vermelha</div>
+                    <div id="score-red" class="text-3xl md:text-5xl font-black text-white">0</div>
+                </div>
+            </div>
+
+            <!-- PLACAR DE DESEMPENHO INDIVIDUAL DOS JOGADORES -->
+            <div class="bg-slate-950 p-3 rounded-2xl border border-slate-800/80">
+                <h4 class="text-xs font-bold text-amber-400 uppercase tracking-wider mb-2 text-center">
+                    📊 Desempenho dos Jogadores (Acionamentos do Botão)
+                </h4>
+                <div id="player-stats-list" class="flex flex-wrap justify-center gap-2 text-xs font-bold">
+                    <span class="text-slate-500">Nenhum jogador conectado no momento...</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- LAYOUT DE 2 COLUNAS: PAINEL LATERAL DE ALTERNATIVAS + PAINEL DE AÇÃO -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+            
+            <!-- LATERAL ESQUERDA: ALTERNATIVAS DA PERGUNTA -->
+            <div class="lg:col-span-1 bg-slate-900/90 border border-slate-800 rounded-3xl p-4 shadow-xl flex flex-col justify-between">
+                <div>
+                    <h4 class="text-xs font-black text-amber-400 uppercase tracking-wider mb-3 pb-2 border-b border-slate-800 text-center">
+                        📋 Alternativas da Pergunta
+                    </h4>
+
+                    <!-- MENSAGEM QUANDO AS ALTERNATIVAS ESTÃO BLOQUEADAS -->
+                    <div id="options-locked-msg" class="p-6 text-center text-xs text-slate-400 border border-dashed border-slate-800 rounded-2xl">
+                        🔒 Aperte o botão <strong class="text-amber-400">"BATER!"</strong> primeiro para liberar as alternativas da pergunta!
+                    </div>
+
+                    <!-- CONTAINER DAS ALTERNATIVAS (LIBERADO APÓS BATER) -->
+                    <div id="options-container" class="hidden flex flex-col gap-2">
+                        <!-- Alternativas injetadas via JS -->
+                    </div>
+                </div>
+
+                <div id="answer-reveal" class="hidden mt-3 p-3 bg-slate-950 border border-green-500/50 rounded-xl text-green-400 text-xs font-bold text-center">
+                    💡 Gabarito: <span id="answer-text">---</span>
+                </div>
+            </div>
+
+            <!-- LATERAL DIREITA: PERGUNTA + BUZZER + CONTROLES DO APRESENTADOR -->
+            <div class="lg:col-span-2 bg-slate-900/90 border-2 border-amber-500/80 rounded-3xl p-6 shadow-2xl flex flex-col items-center justify-between min-h-[360px] text-center relative overflow-hidden">
+                
+                <!-- Banner de Alerta / Quem Bateu Primeiro -->
+                <div id="status-banner" class="bg-amber-500 text-slate-950 font-black text-xs md:text-sm px-4 py-1.5 rounded-full uppercase tracking-wider mb-3">
+                    Aguardando Pergunta do Apresentador
+                </div>
+
+                <!-- Pergunta Atual -->
+                <div id="question-box" class="my-auto w-full">
+                    <div id="question-meta" class="text-xs font-bold text-amber-400 mb-1">---</div>
+                    <h3 id="question-text" class="text-lg md:text-xl font-bold text-slate-100 leading-relaxed">
+                        O Apresentador irá liberar a pergunta!
+                    </h3>
+                </div>
+
+                <!-- VISÃO DO JOGADOR: BOTÃO BUZZER INDIVIDUAL -->
+                <div id="player-controls" class="hidden my-4 w-full flex flex-col items-center">
+                    <button id="btn-buzzer" onclick="pressBuzzer()" class="btn-buzzer w-44 h-44 md:w-52 md:h-52 rounded-full font-impact text-2xl md:text-3xl text-white uppercase tracking-wider flex items-center justify-center cursor-pointer">
+                        BATER! 🔔
+                    </button>
+                </div>
+
+                <!-- PAINEL DE CONTROLE EXCLUSIVO DO APRESENTADOR -->
+                <div id="host-controls" class="hidden w-full flex-col gap-3 mt-4 pt-4 border-t border-slate-800">
+                    
+                    <!-- Botões do Ciclo da Pergunta -->
+                    <div class="flex flex-wrap justify-center gap-2">
+                        <button onclick="nextQuestion()" class="bg-amber-500 hover:bg-amber-400 text-slate-950 font-black px-5 py-2.5 rounded-xl text-xs md:text-sm uppercase tracking-wider shadow-lg cursor-pointer">
+                            ▶️ Próxima Pergunta
+                        </button>
+                        <button onclick="toggleAnswer()" class="bg-indigo-600 hover:bg-indigo-500 text-white font-bold px-4 py-2.5 rounded-xl text-xs md:text-sm cursor-pointer">
+                            👁️ Revelar Gabarito
+                        </button>
+                        <button onclick="resetBuzzer()" class="bg-slate-700 hover:bg-slate-600 text-white font-bold px-4 py-2.5 rounded-xl text-xs md:text-sm cursor-pointer">
+                            🔄 Liberar Botões
+                        </button>
+                        <button onclick="restartFullGame()" class="bg-red-700 hover:bg-red-600 text-white font-black px-4 py-2.5 rounded-xl text-xs md:text-sm uppercase tracking-wider shadow-lg cursor-pointer border border-red-500">
+                            💥 Reiniciar Partida
+                        </button>
+                    </div>
+
+                    <!-- Botões de Decisão do Apresentador (Acerto, Torta, Passa) -->
+                    <div id="host-actions" class="flex flex-wrap justify-center gap-2 pt-2">
+                        <button onclick="handleCorrect()" class="bg-green-600 hover:bg-green-500 text-white font-bold px-4 py-2 rounded-xl text-xs md:text-sm cursor-pointer">
+                            ✅ Acertou (+100)
+                        </button>
+                        <button onclick="handleWrong()" class="bg-red-600 hover:bg-red-500 text-white font-bold px-4 py-2 rounded-xl text-xs md:text-sm cursor-pointer">
+                            🥧 Errou / Torta (-100)
+                        </button>
+                        <button id="btn-pass" onclick="handlePass()" class="bg-blue-600 hover:bg-blue-500 text-white font-bold px-4 py-2 rounded-xl text-xs md:text-sm cursor-pointer">
+                            ➡️ PASSA
+                        </button>
+                        <button id="btn-repass" onclick="handleRepass()" class="bg-purple-600 hover:bg-purple-500 text-white font-bold px-4 py-2 rounded-xl text-xs md:text-sm cursor-pointer hidden">
+                            🔄 REPASSA!
+                        </button>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL POPUP DE TORTA NA CARA -->
+    <div id="modal-splat" class="fixed inset-0 bg-black/80 backdrop-blur-sm hidden items-center justify-center p-4 z-50">
+        <div class="text-center splat-animation">
+            <div class="text-8xl md:text-9xl mb-2">🥧💥</div>
+            <h2 class="text-3xl md:text-5xl font-black font-impact text-amber-400 uppercase tracking-wider drop-shadow-lg">
+                TORTA NA CARA!
+            </h2>
+            <p id="splat-team-text" class="text-lg text-white font-bold mt-2">Equipe Penalizada!</p>
+            <button onclick="closeModal('modal-splat')" class="mt-6 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black px-6 py-3 rounded-xl text-sm uppercase cursor-pointer">
+                Continuar o Programa
+            </button>
+        </div>
+    </div>
+
+    <script>
+        /* SINTETIZADOR DE ÁUDIO WEB AUDIO API */
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        let audioCtx = null;
+
+        function initAudio() { if (!audioCtx) audioCtx = new AudioContext(); }
+
+        function playSound(freq, type, duration) {
+            try {
+                initAudio();
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = type;
+                osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+                gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start();
+                osc.stop(audioCtx.currentTime + duration);
+            } catch(e) {}
+        }
+
+        function playBuzzerSound() {
+            playSound(800, 'square', 0.3);
+            setTimeout(() => playSound(600, 'square', 0.4), 100);
+        }
+
+        function playSplatSound() {
+            playSound(150, 'sawtooth', 0.4);
+            setTimeout(() => playSound(100, 'sawtooth', 0.5), 100);
+        }
+
+        function playSuccessSound() {
+            playSound(523, 'triangle', 0.15);
+            setTimeout(() => playSound(659, 'triangle', 0.15), 150);
+            setTimeout(() => playSound(783, 'triangle', 0.3), 300);
+        }
+
+        /* BANCO COMPLETO DE 80 QUESTÕES (ELEMENTOS DE MÁQUINAS) */
+        const rawQuestionBank = [
+            // FIXAÇÃO
+            { q: "Uma união mecânica que precisa ser desmontada periodicamente para manutenção deve utilizar, preferencialmente, qual elemento?", topic: "Fixação", difficulty: "Fácil", options: ["Rebite", "Parafuso", "Solda", "Adesivo"], correct: 1 },
+            { q: "Qual elemento é utilizado para manter componentes alinhados e posicionados, podendo também atuar na transmissão de esforços?", topic: "Fixação", difficulty: "Fácil", options: ["Pino", "Arruela", "Mola helicoidal", "Retentor"], correct: 0 },
+            { q: "Qual é a principal função de uma arruela plana sob a cabeça de um parafuso ou sob uma porca?", topic: "Fixação", difficulty: "Fácil", options: ["Aumentar a rotação", "Distribuir a carga de aperto", "Reduzir o diâmetro do eixo", "Transmitir movimento"], correct: 1 },
+            { q: "Em uma montagem sujeita a vibração, qual solução pode ser empregada para reduzir o risco de afrouxamento da porca?", topic: "Fixação", difficulty: "Fácil", options: ["Aumentar a folga da rosca", "Utilizar elemento de travamento adequado", "Retirar a arruela", "Reduzir o comprimento do parafuso"], correct: 1 },
+            { q: "Uma rosca métrica é identificada principalmente por qual característica?", topic: "Fixação", difficulty: "Fácil", options: ["Passo e diâmetro nominal", "Comprimento do eixo apenas", "Massa do parafuso", "Tipo de rolamento"], correct: 0 },
+            { q: "Em uma união aparafusada, o aperto insuficiente pode provocar principalmente:", topic: "Fixação", difficulty: "Fácil", options: ["Maior precisão dimensional", "Afrouxamento e movimentação relativa", "Aumento automático da dureza", "Redução da temperatura do conjunto"], correct: 1 },
+            { q: "Um rebite é classificado como elemento de fixação:", topic: "Fixação", difficulty: "Fácil", options: ["Permanente", "Elástico", "De transmissão por engrenagem", "De vedação"], correct: 0 },
+            { q: "Qual ferramenta é destinada ao controle do torque aplicado em um parafuso?", topic: "Fixação", difficulty: "Fácil", options: ["Paquímetro", "Torquímetro", "Micrômetro", "Relógio comparador"], correct: 1 },
+            { q: "O torque de aperto especificado pelo fabricante deve ser aplicado para:", topic: "Fixação", difficulty: "Fácil", options: ["Garantir a condição adequada de aperto", "Eliminar qualquer necessidade de inspeção", "Aumentar sempre a velocidade do eixo", "Substituir a lubrificação"], correct: 0 },
+            { q: "Em uma montagem com parafuso, porca e arruela, a arruela corretamente instalada atua principalmente na interface de:", topic: "Fixação", difficulty: "Fácil", options: ["Distribuição da força de aperto", "Geração de potência", "Redução da rotação", "Medição de temperatura"], correct: 0 },
+
+            // TRANSMISSÃO
+            { q: "Qual elemento é utilizado para transmitir movimento e torque entre eixos por meio do engrenamento de dentes?", topic: "Transmissão", difficulty: "Médio", options: ["Engrenagem", "Retentor", "Arruela", "Mola"], correct: 0 },
+            { q: "Duas engrenagens cilíndricas de dentes externos engrenadas diretamente apresentam sentidos de rotação:", topic: "Transmissão", difficulty: "Médio", options: ["Iguais", "Opostos", "Aleatórios", "Sempre estacionários"], correct: 1 },
+            { q: "Uma transmissão por correia é especialmente útil quando se deseja:", topic: "Transmissão", difficulty: "Médio", options: ["Transmitir movimento entre eixos afastados", "Eliminar completamente o escorregamento", "Fixar permanentemente duas peças", "Vedar um eixo"], correct: 0 },
+            { q: "Em uma transmissão por corrente, o movimento é transmitido principalmente por:", topic: "Transmissão", difficulty: "Médio", options: ["Atrito entre superfícies lisas", "Engrenamento entre corrente e roda dentada", "Pressão hidráulica", "Soldagem"], correct: 1 },
+            { q: "Uma redução de velocidade por engrenagens normalmente produz, desconsiderando perdas, qual efeito no torque de saída?", topic: "Transmissão", difficulty: "Médio", options: ["Redução do torque", "Aumento do torque", "Torque sempre nulo", "Torque independente da relação"], correct: 1 },
+            { q: "A relação de transmissão de um par de engrenagens está diretamente relacionada ao número de:", topic: "Transmissão", difficulty: "Médio", options: ["Dentes das engrenagens", "Parafusos da carcaça", "Rolamentos do eixo", "Retentores"], correct: 0 },
+            { q: "Uma polia motora de menor diâmetro acionando uma polia movida de maior diâmetro tende a produzir:", topic: "Transmissão", difficulty: "Médio", options: ["Aumento da rotação", "Redução da rotação", "Rotação idêntica sempre", "Bloqueio do sistema"], correct: 1 },
+            { q: "Qual elemento é utilizado para transmitir torque entre um eixo e um cubo de engrenagem ou polia?", topic: "Transmissão", difficulty: "Médio", options: ["Chaveta", "Retentor", "Arruela", "O-ring"], correct: 0 },
+            { q: "Em uma transmissão mecânica, perdas por atrito provocam:", topic: "Transmissão", difficulty: "Médio", options: ["Potência de saída maior que a de entrada", "Redução da potência disponível na saída", "Torque infinito", "Velocidade sempre constante"], correct: 1 },
+            { q: "Uma corrente de rolos é normalmente utilizada em sistemas que exigem:", topic: "Transmissão", difficulty: "Médio", options: ["Transmissão positiva de movimento", "Vedação de óleo", "Fixação permanente", "Armazenamento de energia elástica"], correct: 0 },
+
+            // EIXOS E ÁRVORES
+            { q: "Qual é a função principal de um eixo em uma máquina rotativa?", topic: "Eixos e Árvores", difficulty: "Médio", options: ["Sustentar/transmitir esforços e, conforme a aplicação, torque", "Vedar fluidos exclusivamente", "Isolar eletricamente o motor", "Medir temperatura"], correct: 0 },
+            { q: "Um eixo submetido predominantemente a torque deve ser dimensionado considerando principalmente a tensão de:", topic: "Eixos e Árvores", difficulty: "Médio", options: ["Cisalhamento por torção", "Compressão térmica apenas", "Pressão de contato do ar", "Radiação"], correct: 0 },
+            { q: "Um eixo rotativo com uma descontinuidade geométrica pode apresentar:", topic: "Eixos e Árvores", difficulty: "Médio", options: ["Concentração de tensões", "Eliminação de tensões", "Massa nula", "Lubrificação automática"], correct: 0 },
+            { q: "Qual característica geométrica tende a reduzir a concentração de tensões em um ressalto de eixo?", topic: "Eixos e Árvores", difficulty: "Médio", options: ["Canto vivo", "Raio de concordância", "Furo irregular", "Entalhe profundo"], correct: 1 },
+            { q: "A fadiga em um eixo rotativo está associada principalmente a:", topic: "Eixos e Árvores", difficulty: "Médio", options: ["Carregamentos cíclicos repetidos", "Pintura superficial", "Cor da peça", "Identificação da máquina"], correct: 0 },
+            { q: "O desalinhamento de um eixo pode causar:", topic: "Eixos e Árvores", difficulty: "Médio", options: ["Vibração e carregamentos adicionais", "Redução obrigatória de todos os esforços", "Melhoria automática da vida útil", "Eliminação do desgaste"], correct: 0 },
+            { q: "Ao montar uma engrenagem em um eixo, a chaveta deve permitir principalmente:", topic: "Eixos e Árvores", difficulty: "Médio", options: ["Transmissão de torque entre eixo e cubo", "Vedação de óleo", "Medição do diâmetro", "Resfriamento do rolamento"], correct: 0 },
+            { q: "Um eixo com rotação elevada e desbalanceamento pode apresentar aumento de:", topic: "Eixos e Árvores", difficulty: "Médio", options: ["Vibração", "Vedação", "Dureza do aço", "Passo da rosca"], correct: 0 },
+            { q: "Na análise de um eixo, o diâmetro influencia diretamente sua capacidade de resistir a:", topic: "Eixos e Árvores", difficulty: "Médio", options: ["Esforços mecânicos", "Corrosão apenas", "Cor do revestimento", "Identificação do fabricante"], correct: 0 },
+            { q: "Em manutenção, uma trinca em eixo deve ser tratada como:", topic: "Eixos e Árvores", difficulty: "Médio", options: ["Condição que requer avaliação técnica antes de continuar a operação", "Condição normal de funcionamento", "Apenas problema estético", "Indicador de maior resistência"], correct: 0 },
+
+            // MANCAIS E ROLAMENTOS
+            { q: "Qual é a função principal de um rolamento?", topic: "Mancais e Rolamentos", difficulty: "Médio", options: ["Apoiar elementos rotativos e reduzir o atrito", "Fixar permanentemente uma carcaça", "Vedar todos os fluidos", "Aumentar a massa do eixo"], correct: 0 },
+            { q: "Um rolamento de esferas utiliza elementos rolantes com formato aproximadamente:", topic: "Mancais e Rolamentos", difficulty: "Médio", options: ["Esférico", "Cônico exclusivamente", "Plano", "Helicoidal"], correct: 0 },
+            { q: "A lubrificação adequada de um rolamento contribui para:", topic: "Mancais e Rolamentos", difficulty: "Médio", options: ["Reduzir atrito e desgaste", "Aumentar o atrito", "Eliminar qualquer inspeção", "Impedir a rotação"], correct: 0 },
+            { q: "Ruído e aquecimento anormais em um rolamento podem estar relacionados a:", topic: "Mancais e Rolamentos", difficulty: "Médio", options: ["Lubrificação inadequada ou dano", "Pintura correta", "Baixa iluminação", "Identificação da peça"], correct: 0 },
+            { q: "A montagem incorreta de um rolamento pode provocar:", topic: "Mancais e Rolamentos", difficulty: "Médio", options: ["Danos e redução da vida útil", "Aumento garantido da vida útil", "Eliminação da necessidade de lubrificação", "Precisão infinita"], correct: 0 },
+            { q: "Em um rolamento, a pista é a superfície destinada ao contato com:", topic: "Mancais e Rolamentos", difficulty: "Médio", options: ["Elementos rolantes", "Parafusos externos", "Retentores somente", "Correias"], correct: 0 },
+            { q: "A contaminação por partículas em um rolamento tende a:", topic: "Mancais e Rolamentos", difficulty: "Médio", options: ["Aumentar desgaste e danos", "Melhorar a lubrificação", "Aumentar a precisão", "Reduzir o atrito a zero"], correct: 0 },
+            { q: "Ao selecionar um rolamento, deve-se considerar, entre outros fatores:", topic: "Mancais e Rolamentos", difficulty: "Médio", options: ["Carga, rotação e condições de operação", "Somente a cor", "Somente o comprimento do eixo", "Apenas o fabricante da máquina"], correct: 0 },
+            { q: "Uma carga radial atua principalmente:", topic: "Mancais e Rolamentos", difficulty: "Médio", options: ["Perpendicularmente ao eixo", "Somente no sentido axial", "Apenas no sentido térmico", "No sentido da rosca"], correct: 0 },
+            { q: "Uma carga axial atua principalmente:", topic: "Mancais e Rolamentos", difficulty: "Médio", options: ["Paralelamente ao eixo", "Perpendicularmente ao eixo", "Tangencialmente à correia", "Somente na carcaça"], correct: 0 },
+
+            // ELEMENTOS ELÁSTICOS (MOLAS)
+            { q: "Qual é uma função típica de uma mola mecânica?", topic: "Elementos Elásticos", difficulty: "Médio", options: ["Armazenar e liberar energia", "Vedar óleo", "Transmitir sinal elétrico", "Medir diâmetro"], correct: 0 },
+            { q: "Uma mola helicoidal de compressão é projetada principalmente para trabalhar sob:", topic: "Elementos Elásticos", difficulty: "Médio", options: ["Compressão", "Torção hidráulica", "Vedação", "Corte térmico"], correct: 0 },
+            { q: "Uma mola de tração normalmente possui extremidades destinadas a:", topic: "Elementos Elásticos", difficulty: "Médio", options: ["Aplicação de força de tração", "Lubrificação do eixo", "Medição dimensional", "Fixação por solda"], correct: 0 },
+            { q: "A rigidez de uma mola está relacionada à relação entre:", topic: "Elementos Elásticos", difficulty: "Médio", options: ["Força aplicada e deformação", "Massa e cor", "Temperatura e pressão atmosférica apenas", "Diâmetro e pintura"], correct: 0 },
+            { q: "Um elemento elástico pode ser utilizado em uma máquina para:", topic: "Elementos Elásticos", difficulty: "Médio", options: ["Absorver impactos e compensar movimentos", "Eliminar toda vibração em qualquer condição", "Substituir todos os rolamentos", "Vedar qualquer fluido"], correct: 0 },
+            { q: "A deformação de uma mola dentro do seu regime elástico tende a ser:", topic: "Elementos Elásticos", difficulty: "Médio", options: ["Recuperável após retirada da carga", "Sempre permanente", "Independente da força", "Impossível de medir"], correct: 0 },
+
+            // ACOPLAMENTOS E VEDAÇÃO
+            { q: "Qual é a função principal de um acoplamento mecânico?", topic: "Aplicação Geral", difficulty: "Médio", options: ["Conectar e transmitir torque entre eixos", "Vedar uma tampa", "Medir a rotação", "Fixar uma chapa por rebite"], correct: 0 },
+            { q: "Um acoplamento flexível pode ser utilizado para:", topic: "Aplicação Geral", difficulty: "Médio", options: ["Compensar pequenos desalinhamentos e transmitir torque", "Eliminar qualquer carga", "Substituir o motor", "Medir o torque sem instrumento"], correct: 0 },
+            { q: "Uma junta mecânica é normalmente utilizada para:", topic: "Aplicação Geral", difficulty: "Médio", options: ["Auxiliar na vedação entre superfícies", "Aumentar a rotação", "Transmitir torque por dentes", "Armazenar energia"], correct: 0 },
+            { q: "Em um conjunto rotativo, um retentor é utilizado principalmente para:", topic: "Aplicação Geral", difficulty: "Médio", options: ["Reduzir vazamento de fluido e impedir entrada de contaminantes", "Aumentar o torque", "Apoiar radialmente o eixo como função principal", "Transmitir potência por dentes"], correct: 0 },
+            { q: "Qual elemento de vedação possui seção transversal geralmente circular e é instalado em um alojamento?", topic: "Aplicação Geral", difficulty: "Médio", options: ["O-ring", "Chaveta", "Engrenagem", "Rolamento"], correct: 0 },
+            { q: "A seleção de um elemento de vedação deve considerar, entre outros fatores:", topic: "Aplicação Geral", difficulty: "Médio", options: ["Fluido, temperatura, pressão e velocidade", "Somente a cor", "Apenas a massa da máquina", "Somente o comprimento do parafuso"], correct: 0 },
+            { q: "Uma falha de vedação pode provocar:", topic: "Aplicação Geral", difficulty: "Médio", options: ["Vazamento e contaminação do sistema", "Aumento garantido da eficiência", "Redução automática do desgaste", "Aumento da vida útil"], correct: 0 },
+            { q: "Em uma caixa de transmissão, o conjunto engrenagem-eixo-mancal deve ser analisado considerando:", topic: "Aplicação Geral", difficulty: "Médio", options: ["Transmissão de torque, apoio e lubrificação", "Apenas aparência", "Somente fixação da carcaça", "Apenas temperatura ambiente"], correct: 0 },
+            { q: "Ao substituir um elemento de máquina, uma boa prática é:", topic: "Aplicação Geral", difficulty: "Médio", options: ["Verificar especificação, dimensões e condições de operação", "Escolher somente pelo menor preço", "Ignorar o manual", "Alterar o componente sem inspeção"], correct: 0 },
+            { q: "Em uma manutenção preventiva, a inspeção de elementos de máquinas deve buscar:", topic: "Aplicação Geral", difficulty: "Médio", options: ["Desgaste, folgas, trincas, ruídos e condições de lubrificação", "Somente a cor da peça", "Apenas a limpeza externa", "Somente a etiqueta"], correct: 0 },
+            { q: "Quando dois componentes precisam transmitir torque e permanecer desmontáveis, uma solução comum é:", topic: "Aplicação Geral", difficulty: "Médio", options: ["Eixo com cubo e chaveta", "Solda integral", "Adesivo permanente sempre", "Rebite sem possibilidade de remoção"], correct: 0 },
+            { q: "A escolha de um elemento de máquina deve estar relacionada principalmente:", topic: "Aplicação Geral", difficulty: "Médio", options: ["À função e às condições de serviço", "Apenas à aparência", "Apenas ao peso", "Somente à disponibilidade imediata"], correct: 0 },
+            { q: "Na seleção de um elemento de máquina, quais fatores são relevantes?", topic: "Aplicação Geral", difficulty: "Médio", options: ["Cargas, velocidade, ambiente, montagem e função", "Somente cor e marca", "Apenas comprimento", "Somente custo"], correct: 0 },
+            { q: "Na análise de uma falha de elemento de máquina, é importante considerar:", topic: "Aplicação Geral", difficulty: "Médio", options: ["Modo de falha, causas, condições de operação e histórico", "Somente o aspecto visual", "Apenas o fabricante", "Somente o tempo de montagem"], correct: 0 },
+
+            // CÁLCULOS QUANTITATIVOS
+            { q: "Uma linha de transmissão recebe torque de 120 N·m. Se o raio efetivo de atuação é 20 mm (0,020 m), qual força tangencial aproximada é transmitida?", topic: "Quantitativas", difficulty: "Difícil", options: ["600 N", "1.200 N", "6.000 N", "60.000 N"], correct: 2 },
+            { q: "Um motor gira a 1.800 rpm e aciona uma polia de 100 mm. A polia movida possui 300 mm. Desconsiderando escorregamento, qual é a rotação da movida?", topic: "Quantitativas", difficulty: "Difícil", options: ["300 rpm", "600 rpm", "1.200 rpm", "5.400 rpm"], correct: 1 },
+            { q: "Uma engrenagem motora possui 20 dentes e aciona uma movida de 60 dentes. Se a motora gira a 1.200 rpm, qual é a rotação da movida?", topic: "Quantitativas", difficulty: "Difícil", options: ["200 rpm", "400 rpm", "800 rpm", "3.600 rpm"], correct: 1 },
+            { q: "Uma transmissão recebe 10 kW e apresenta rendimento de 90% (0,90). Qual potência chega ao eixo de saída?", topic: "Quantitativas", difficulty: "Difícil", options: ["0,9 kW", "9 kW", "10,9 kW", "90 kW"], correct: 1 },
+            { q: "Um eixo recebe torque de 80 N·m e gira a 1.500 rpm (ω ≈ 157,1 rad/s). Usando P = T × ω, qual potência mecânica aproximada é transmitida?", topic: "Quantitativas", difficulty: "Difícil", options: ["1,26 kW", "6,28 kW", "12,57 kW", "125,7 kW"], correct: 2 },
+            { q: "Um parafuso deve receber torque de 60 N·m. Um torquímetro possui braço efetivo de 0,50 m. Qual força aproximada deve ser aplicada perpendicularmente ao braço?", topic: "Quantitativas", difficulty: "Difícil", options: ["30 N", "60 N", "120 N", "300 N"], correct: 2 },
+            { q: "Dois rolamentos idênticos compartilhando igualmente uma carga radial total de 2.000 N. Qual carga aproximada atua em cada rolamento?", topic: "Quantitativas", difficulty: "Difícil", options: ["500 N", "1.000 N", "2.000 N", "4.000 N"], correct: 1 },
+            { q: "Uma engrenagem motora tem 18 dentes e a movida 54 dentes. Se o torque na motora é 50 N·m e as perdas são desprezadas, qual torque ideal aparece na movida?", topic: "Quantitativas", difficulty: "Difícil", options: ["16,7 N·m", "50 N·m", "100 N·m", "150 N·m"], correct: 3 },
+            { q: "Uma correia transmite 4 kW (4.000 W) a uma velocidade linear de 8 m/s. Qual força tangencial efetiva aproximada é necessária?", topic: "Quantitativas", difficulty: "Difícil", options: ["32 N", "500 N", "4.000 N", "32.000 N"], correct: 1 },
+            { q: "Uma força de 300 N atua a 0,25 m do centro de um eixo. Qual torque é produzido?", topic: "Quantitativas", difficulty: "Difícil", options: ["12,5 N·m", "75 N·m", "120 N·m", "750 N·m"], correct: 1 },
+            { q: "Uma mola possui constante de 2.000 N/m e sofre compressão de 10 mm (0,010 m). Qual força elástica é gerada?", topic: "Quantitativas", difficulty: "Difícil", options: ["2 N", "20 N", "200 N", "2.000 N"], correct: 1 },
+            { q: "Uma mola sofre força de 150 N e possui constante de 3.000 N/m. Qual deformação ocorre?", topic: "Quantitativas", difficulty: "Difícil", options: ["5 mm", "20 mm", "50 mm", "500 mm"], correct: 2 },
+            { q: "Uma força radial de 1.500 N atua a 0,20 m de um apoio. Considerando esse braço para uma estimativa de momento fletor, qual valor é obtido?", topic: "Quantitativas", difficulty: "Difícil", options: ["75 N·m", "300 N·m", "750 N·m", "3.000 N·m"], correct: 1 },
+            { q: "Uma transmissão reduz a rotação de 1.500 rpm para 500 rpm. Se o torque de entrada é 40 N·m e as perdas são desprezadas, qual torque ideal de saída?", topic: "Quantitativas", difficulty: "Difícil", options: ["13,3 N·m", "40 N·m", "120 N·m", "750 N·m"], correct: 2 },
+            { q: "Um acoplamento transmite 25 kW (25.000 W) a 1.000 rpm (ω ≈ 104,72 rad/s). Usando P = T × ω, qual torque aproximado deve transmitir?", topic: "Quantitativas", difficulty: "Difícil", options: ["23,9 N·m", "119,4 N·m", "238,7 N·m", "2.500 N·m"], correct: 2 },
+            { q: "Uma engrenagem possui diâmetro primitivo de 200 mm (raio r = 0,10 m) e recebe força tangencial de 1.000 N. Qual torque aproximado no eixo?", topic: "Quantitativas", difficulty: "Difícil", options: ["50 N·m", "100 N·m", "200 N·m", "2.000 N·m"], correct: 1 },
+            { q: "Uma máquina opera 8 h/dia e exige inspeção de lubrificação a cada 160 h. Após quantos dias de operação ocorre a inspeção?", topic: "Quantitativas", difficulty: "Difícil", options: ["10 dias", "20 dias", "40 dias", "160 dias"], correct: 1 },
+            { q: "Um rolamento apresenta 65 °C antes da intervenção e 52 °C depois da correção da lubrificação. Qual a redução percentual em relação à temperatura inicial?", topic: "Quantitativas", difficulty: "Difícil", options: ["10%", "15%", "20%", "25%"], correct: 2 },
+            { q: "Uma linha utiliza 10 elementos de fixação, cada um especificado para torque de 40 N·m. Qual a soma aritmética dos valores aplicados?", topic: "Quantitativas", difficulty: "Difícil", options: ["40 N·m", "100 N·m", "400 N·m", "4.000 N·m"], correct: 2 },
+            { q: "Uma engrenagem motora tem 24 dentes e a movida 72 dentes. A motora recebe 90 N·m a 900 rpm. Desconsiderando perdas, quais o torque e a rotação de saída?", topic: "Quantitativas", difficulty: "Difícil", options: ["30 N·m e 2.700 rpm", "90 N·m e 900 rpm", "270 N·m e 300 rpm", "360 N·m e 600 rpm"], correct: 2 }
+        ];
+
+        /* ESTADO DO JOGO E REDE P2P */
+        let peer = null;
+        let connections = [];
+        let hostConn = null;
+        let isHost = false;
+        let isAnswerRevealed = false;
+        let selectedOptionIdx = null;
+        
+        let myPlayerName = "";
+        let myTeam = null; // 'blue', 'red'
+
+        let shuffledQuestions = []; // Baralho sorteado sem repetição
+        let currentQuestionIndex = 0; // Índice da pergunta ativa na lista sorteada
+        
+        let scores = { blue: 0, red: 0 };
+        let playerStats = {}; // { "NomeDoJogador": { team: 'blue', buzzes: 3 } }
+        let activeBuzzer = null; // { player: 'Nome', team: 'blue' }
+        let passState = 0; // 0: Normal, 1: Passou, 2: Repassou
+
+        const teamNames = { 
+            blue: "Equipe Azul", 
+            red: "Equipe Vermelha"
+        };
+
+        const teamsList = ['blue', 'red'];
+
+        /* FUNÇÃO PARA EMBARALHAR QUESTÕES (ALGORITMO FISHER-YATES) */
+        function shuffleArray(array) {
+            let shuffled = [...array];
+            for (let i = shuffled.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+            }
+            return shuffled;
+        }
+
+        /* VERIFICA E EXECUTA AUTOCONEXÃO AO CARREGAR A PÁGINA */
+        window.addEventListener('load', () => {
+            const savedData = sessionStorage.getItem('elem_torta_session');
+            if (savedData) {
+                const session = JSON.parse(savedData);
+                if (session.role === 'player' && session.roomCode && session.team) {
+                    document.getElementById('input-player-name').value = session.name || "";
+                    document.getElementById('input-room-code').value = session.roomCode || "";
+                    joinAsPlayer(session.team, true);
+                }
+            }
+        });
+
+        /* CRIAR SALA (APRESENTADOR) */
+        function createRoom() {
+            isHost = true;
+            const roomCode = "TORTA-" + Math.floor(1000 + Math.random() * 9000);
+            peer = new Peer(roomCode);
+
+            // Sorteia o baralho de 80 questões inicialmente
+            shuffledQuestions = shuffleArray(rawQuestionBank);
+            currentQuestionIndex = 0;
+
+            peer.on('open', id => {
+                document.getElementById('screen-network').classList.add('hidden');
+                document.getElementById('screen-game').classList.remove('hidden');
+                document.getElementById('screen-game').classList.add('flex');
+                document.getElementById('room-code-display').innerText = id;
+                document.getElementById('role-display').innerText = "🎙️ Apresentador";
+                document.getElementById('host-controls').classList.remove('hidden');
+                document.getElementById('host-controls').classList.add('flex');
+                broadcastState();
+            });
+
+            peer.on('connection', conn => {
+                connections.push(conn);
+                conn.on('data', data => handleNetworkData(data));
+                conn.on('open', () => {
+                    broadcastState();
+                });
+            });
+        }
+
+        /* ENTRAR COMO JOGADOR (COM AUTOCONEXÃO) */
+        function joinAsPlayer(team, isAutoReconnect = false) {
+            myPlayerName = document.getElementById('input-player-name').value.trim() || "Jogador";
+            myTeam = team;
+            isHost = false;
+            
+            const roomCode = document.getElementById('input-room-code').value.trim().toUpperCase();
+
+            if (!roomCode) {
+                alert("Por favor, insira o código da sala!");
+                return;
+            }
+
+            sessionStorage.setItem('elem_torta_session', JSON.stringify({
+                role: 'player',
+                name: myPlayerName,
+                team: myTeam,
+                roomCode: roomCode
+            }));
+
+            peer = new Peer();
+            peer.on('open', () => {
+                hostConn = peer.connect(roomCode);
+                hostConn.on('open', () => {
+                    document.getElementById('screen-network').classList.add('hidden');
+                    document.getElementById('screen-game').classList.remove('hidden');
+                    document.getElementById('screen-game').classList.add('flex');
+                    document.getElementById('room-code-display').innerText = roomCode;
+                    document.getElementById('role-display').innerText = `🎮 ${myPlayerName} (${teamNames[team]})`;
+                    document.getElementById('player-controls').classList.remove('hidden');
+
+                    hostConn.send({ type: 'JOIN', name: myPlayerName, team: myTeam });
+                });
+
+                hostConn.on('data', data => handleNetworkData(data));
+            });
+        }
+
+        function handleNetworkData(data) {
+            if (data.type === 'STATE_UPDATE') {
+                scores = data.scores;
+                shuffledQuestions = data.shuffledQuestions || rawQuestionBank;
+                currentQuestionIndex = data.qIndex;
+                activeBuzzer = data.activeBuzzer;
+                passState = data.passState;
+                isAnswerRevealed = data.isAnswerRevealed;
+                selectedOptionIdx = data.selectedOptionIdx;
+                playerStats = data.playerStats || {};
+
+                updateUI();
+            } else if (data.type === 'JOIN' && isHost) {
+                if (!playerStats[data.name]) {
+                    playerStats[data.name] = { team: data.team, buzzes: 0 };
+                }
+                broadcastState();
+            } else if (data.type === 'BUZZER_PRESSED' && isHost) {
+                if (!activeBuzzer) {
+                    activeBuzzer = { player: data.name, team: data.team };
+                    if (playerStats[data.name]) {
+                        playerStats[data.name].buzzes += 1;
+                    } else {
+                        playerStats[data.name] = { team: data.team, buzzes: 1 };
+                    }
+                    playBuzzerSound();
+                    broadcastState();
+                }
+            } else if (data.type === 'SELECT_OPTION') {
+                if (isHost && activeBuzzer && data.team === activeBuzzer.team) {
+                    selectedOptionIdx = data.optionIdx;
+                    broadcastState();
+                }
+            } else if (data.type === 'SPLAT_ANIM') {
+                showSplatModal(data.team, data.player);
+            }
+        }
+
+        function broadcastState() {
+            const state = {
+                scores: scores,
+                shuffledQuestions: shuffledQuestions,
+                qIndex: currentQuestionIndex,
+                activeBuzzer: activeBuzzer,
+                passState: passState,
+                isAnswerRevealed: isAnswerRevealed,
+                selectedOptionIdx: selectedOptionIdx,
+                playerStats: playerStats
+            };
+            updateUI();
+            connections.forEach(c => c.open && c.send({ type: 'STATE_UPDATE', ...state }));
+        }
+
+        function pressBuzzer() {
+            if (!activeBuzzer) {
+                playBuzzerSound();
+                if (isHost) {
+                    activeBuzzer = { player: "Apresentador", team: "blue" };
+                    broadcastState();
+                } else if (hostConn && hostConn.open) {
+                    hostConn.send({ type: 'BUZZER_PRESSED', name: myPlayerName, team: myTeam });
+                }
+            }
+        }
+
+        function selectOption(idx) {
+            if (!activeBuzzer) return;
+            if (!isHost && myTeam !== activeBuzzer.team) return;
+
+            selectedOptionIdx = idx;
+            playSound(400, 'sine', 0.08);
+
+            if (isHost) {
+                broadcastState();
+            } else if (hostConn && hostConn.open) {
+                hostConn.send({ type: 'SELECT_OPTION', team: myTeam, optionIdx: idx });
+            }
+        }
+
+        function updateUI() {
+            // Atualiza Placar Geral das 2 Equipes
+            document.getElementById('score-blue').innerText = scores.blue;
+            document.getElementById('score-red').innerText = scores.red;
+
+            // Atualiza Progresso das Questões no Topo
+            const totalQ = shuffledQuestions.length > 0 ? shuffledQuestions.length : rawQuestionBank.length;
+            document.getElementById('question-progress-display').innerText = `📋 Questão ${currentQuestionIndex + 1} / ${totalQ}`;
+
+            // Atualiza Placar de Desempenho Individual dos Jogadores
+            const statsList = document.getElementById('player-stats-list');
+            const playerKeys = Object.keys(playerStats);
+            if (playerKeys.length > 0) {
+                statsList.innerHTML = '';
+                playerKeys.forEach(pName => {
+                    const pData = playerStats[pName];
+                    const badgeColor = pData.team === 'blue' ? 'bg-blue-900/80 border-blue-500 text-blue-300' : 'bg-red-900/80 border-red-500 text-red-300';
+                    statsList.innerHTML += `
+                        <div class="border px-3 py-1 rounded-xl flex items-center gap-2 ${badgeColor}">
+                            <span>👤 ${pName}</span>
+                            <span class="bg-black/40 px-2 py-0.5 rounded-lg text-[10px]">🔔 ${pData.buzzes}</span>
+                        </div>
+                    `;
+                });
+            } else {
+                statsList.innerHTML = `<span class="text-slate-500">Nenhum jogador conectado no momento...</span>`;
+            }
+
+            // Atualiza Pergunta Atual Sorteada
+            const q = shuffledQuestions[currentQuestionIndex];
+            if (q) {
+                document.getElementById('question-meta').innerText = `Tópico: ${q.topic || 'Geral'} | Nível: ${q.difficulty || 'Normal'}`;
+                document.getElementById('question-text').innerText = q.q;
+            } else {
+                document.getElementById('question-meta').innerText = '---';
+                document.getElementById('question-text').innerText = "Fim das Perguntas! O banco de 80 questões foi concluído.";
+            }
+
+            const optionsContainer = document.getElementById('options-container');
+            const optionsLockedMsg = document.getElementById('options-locked-msg');
+
+            // LIBERA AS ALTERNATIVAS SOMENTE APÓS ALGUMA EQUIPE BATER NO BOTÃO
+            if (!activeBuzzer) {
+                optionsLockedMsg.classList.remove('hidden');
+                optionsContainer.classList.add('hidden');
+            } else {
+                optionsLockedMsg.classList.remove('hidden');
+                optionsContainer.classList.remove('hidden');
+                optionsContainer.innerHTML = '';
+
+                if (q) {
+                    const letters = ['A', 'B', 'C', 'D'];
+                    q.options.forEach((optText, idx) => {
+                        const optDiv = document.createElement('div');
+                        
+                        let isSelectedClass = (selectedOptionIdx === idx) ? 'selected-highlight' : '';
+                        let isCorrectClass = (isAnswerRevealed && idx === q.correct) ? 'correct-highlight' : '';
+
+                        optDiv.onclick = () => selectOption(idx);
+                        optDiv.className = `opt-card p-3 rounded-xl text-xs font-bold text-slate-200 flex items-start gap-2 cursor-pointer ${isSelectedClass} ${isCorrectClass}`;
+                        optDiv.innerHTML = `<span class="bg-amber-500 text-slate-950 px-2 py-0.5 rounded font-black shrink-0">${letters[idx]}</span> <span>${optText}</span>`;
+                        optionsContainer.appendChild(optDiv);
+                    });
+
+                    document.getElementById('answer-text').innerText = `${letters[q.correct]}) ${q.options[q.correct]}`;
+                }
+            }
+
+            // Exibição do Gabarito
+            const ansReveal = document.getElementById('answer-reveal');
+            if (isAnswerRevealed) {
+                ansReveal.classList.remove('hidden');
+            } else {
+                ansReveal.classList.add('hidden');
+            }
+
+            // Banner de Status
+            const banner = document.getElementById('status-banner');
+            const buzzerBtn = document.getElementById('btn-buzzer');
+
+            if (!activeBuzzer) {
+                banner.innerText = "🔔 VALENDO! APERTE O BOTÃO PARA BATER!";
+                banner.className = "bg-amber-500 text-slate-950 font-black text-xs md:text-sm px-4 py-1.5 rounded-full uppercase tracking-wider mb-3 animate-pulse";
+                if (buzzerBtn) buzzerBtn.disabled = false;
+            } else {
+                banner.innerText = `🚨 ${activeBuzzer.player.toUpperCase()} (${teamNames[activeBuzzer.team].toUpperCase()}) BATEU PRIMEIRO!`;
+                banner.className = "bg-green-500 text-slate-950 font-black text-xs md:text-sm px-4 py-1.5 rounded-full uppercase tracking-wider mb-3";
+                if (buzzerBtn) buzzerBtn.disabled = true;
+            }
+
+            // Ajusta botões de Passa/Repassa no painel do mestre
+            const btnPass = document.getElementById('btn-pass');
+            const btnRepass = document.getElementById('btn-repass');
+
+            if (passState === 0) {
+                btnPass.classList.remove('hidden');
+                btnRepass.classList.add('hidden');
+            } else if (passState === 1) {
+                btnPass.classList.add('hidden');
+                btnRepass.classList.remove('hidden');
+            } else {
+                btnPass.classList.add('hidden');
+                btnRepass.classList.add('hidden');
+            }
+        }
+
+        /* AÇÕES DO APRESENTADOR */
+        function toggleAnswer() {
+            isAnswerRevealed = !isAnswerRevealed;
+            broadcastState();
+        }
+
+        function handleCorrect() {
+            if (!activeBuzzer) return;
+            playSuccessSound();
+            scores[activeBuzzer.team] += 100;
+            resetRound();
+        }
+
+        function handleWrong() {
+            if (!activeBuzzer) return;
+            playSplatSound();
+            scores[activeBuzzer.team] -= 100;
+            
+            const targetTeam = activeBuzzer.team;
+            const targetPlayer = activeBuzzer.player;
+            
+            broadcastSplat(targetTeam, targetPlayer);
+            resetRound();
+        }
+
+        function handlePass() {
+            if (passState === 0 && activeBuzzer) {
+                passState = 1;
+                let nextIdx = (teamsList.indexOf(activeBuzzer.team) + 1) % teamsList.length;
+                activeBuzzer = { player: "Equipe Desafiada", team: teamsList[nextIdx] };
+                selectedOptionIdx = null;
+                broadcastState();
+            }
+        }
+
+        function handleRepass() {
+            if (passState === 1 && activeBuzzer) {
+                passState = 2;
+                let prevIdx = (teamsList.indexOf(activeBuzzer.team) + teamsList.length - 1) % teamsList.length;
+                activeBuzzer = { player: "Equipe Obrigada a Responder", team: teamsList[prevIdx] };
+                selectedOptionIdx = null;
+                broadcastState();
+            }
+        }
+
+        /* AVANÇAR PARA A PRÓXIMA PERGUNTA SEM REPETIÇÃO */
+        function nextQuestion() {
+            if (!isHost) return;
+
+            // Se ainda não cobriu todo o banco, avança para a próxima da lista sorteada
+            if (currentQuestionIndex < shuffledQuestions.length - 1) {
+                currentQuestionIndex++;
+            } else {
+                // Ao fim das perguntas, reembaralha o banco para uma nova rodada
+                alert("🎉 Todas as 80 perguntas do banco foram respondidas! O banco foi reembaralhado automaticamente para um novo ciclo.");
+                shuffledQuestions = shuffleArray(rawQuestionBank);
+                currentQuestionIndex = 0;
+            }
+
+            isAnswerRevealed = false;
+            resetRound();
+        }
+
+        function resetBuzzer() {
+            resetRound();
+        }
+
+        /* REINICIAR COMPLETAMENTE O JOGO (REEMBARALHA O BANCO DE PERGUNTAS) */
+        function restartFullGame() {
+            if (!isHost) return;
+            if (confirm("Tem certeza que deseja reiniciar o placar e reembaralhar todas as 80 perguntas do zero?")) {
+                scores = { blue: 0, red: 0 };
+                shuffledQuestions = shuffleArray(rawQuestionBank);
+                currentQuestionIndex = 0;
+                activeBuzzer = null;
+                passState = 0;
+                isAnswerRevealed = false;
+                selectedOptionIdx = null;
+                Object.keys(playerStats).forEach(p => playerStats[p].buzzes = 0);
+                broadcastState();
+            }
+        }
+
+        function resetRound() {
+            activeBuzzer = null;
+            passState = 0;
+            selectedOptionIdx = null;
+            if (isHost) broadcastState();
+        }
+
+        function broadcastSplat(team, player) {
+            showSplatModal(team, player);
+            connections.forEach(c => c.open && c.send({ type: 'SPLAT_ANIM', team, player }));
+        }
+
+        function showSplatModal(team, player) {
+            document.getElementById('splat-team-text').innerText = `${player || teamNames[team]} (${teamNames[team]}) tomou Torta na Cara (-100 pts)!`;
+            openModal('modal-splat');
+        }
+
+        function openModal(id) { document.getElementById(id).classList.remove('hidden'); document.getElementById(id).classList.add('flex'); }
+        function closeModal(id) { document.getElementById(id).classList.add('hidden'); document.getElementById(id).classList.remove('flex'); }
+    </script>
+</body>
+</html>
