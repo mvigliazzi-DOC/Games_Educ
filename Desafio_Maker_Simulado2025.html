@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Desafio SENAI: CAD/CAM ao Chão de Fábrica</title>
+<style>
+:root {
+  --senai-blue: #0046ad;
+  --senai-red: #e30613;
+  --bg-color: #eef5ff;
+  --card-bg: #ffffff;
+  --text-color: #17233c;
+  --border-color: #d7e4f8;
+  --accent-green: #2e7d32;
+  --accent-green-bg: #edf7ed;
+  --answered-blue: #0046ad;
+  --answered-blue-bg: #e6f0ff;
+}
+
+*{box-sizing:border-box}
+body{margin:0;font-family:Arial,Helvetica,sans-serif;background:var(--bg-color);color:var(--text-color)}
+
+header{background:var(--senai-blue);color:#fff;padding:16px 20px;display:flex;align-items:center;justify-content:center;gap:15px;box-shadow:0 3px 8px rgba(0,0,0,0.15)}
+.logo{background:var(--senai-red);color:#fff;font-weight:900;font-style:italic;font-size:22px;padding:4px 10px;border-radius:4px}
+h1{margin:0;font-size:22px}
+
+main{max-width:1250px;margin:20px auto;padding:0 15px}
+
+/* HUD / Placar Superior */
+.hud{display:flex;justify-space-between;align-items:center;background:#fff;padding:12px 20px;border-radius:10px;box-shadow:0 2px 8px rgba(0,0,0,0.06);margin-bottom:20px;font-weight:bold;color:var(--senai-blue);flex-wrap:wrap;gap:10px}
+.hud-stats{display:flex;gap:15px}
+.stat-correct{color:var(--accent-green);}
+.stat-wrong{color:var(--senai-red);}
+
+/* Layout Principal com Painel Lateral */
+.main-layout{display:grid;grid-template-columns:1fr 280px;gap:20px;align-items:start}
+
+/* Layout Interno do Jogo (Lado a Lado) */
+.game-container{display:grid;grid-template-columns:1fr 1fr;gap:20px;align-items:start}
+
+/* Estilo das Cartas */
+.card{background:#fff;border-radius:12px;border:2px solid var(--border-color);padding:20px;box-shadow:0 4px 12px rgba(0,0,0,0.08);position:relative;display:flex;flex-direction:column}
+.card-header{font-size:12px;font-weight:bold;color:var(--senai-red);text-transform:uppercase;margin-bottom:8px;letter-spacing:1px}
+.card-title{font-size:18px;font-weight:bold;color:var(--senai-blue);margin-bottom:12px}
+.card-body{font-size:15px;line-height:1.4;color:var(--text-color);flex-grow:1}
+
+/* Coluna de Opções */
+.options-container{display:flex;flex-direction:column;gap:10px}
+.option-card{background:#fff;border:2px solid var(--border-color);border-radius:10px;padding:14px;cursor:pointer;transition:all 0.2s ease;display:flex;flex-direction:column}
+.option-card:hover:not(.disabled){border-color:var(--senai-blue);transform:translateY(-2px);box-shadow:0 4px 10px rgba(0,70,173,0.15)}
+
+/* Estilos de Opção Selecionada/Correta */
+.option-card.correct-selected {
+  border: 2px solid var(--accent-green) !important;
+  background-color: var(--accent-green-bg) !important;
+  color: #1b5e20 !important;
+}
+.option-card.wrong-selected {
+  border: 2px solid var(--senai-red) !important;
+  background-color: #fff0ed !important;
+  color: #9b3425 !important;
+}
+
+/* Banner de Resultado */
+.result-banner{display:none;margin-top:15px;padding:12px;border-radius:8px;font-weight:bold;font-size:16px;text-align:center}
+.result-banner.correct{background:var(--accent-green-bg);color:var(--accent-green);border:1px solid var(--accent-green)}
+.result-banner.wrong{background:#fff0ed;color:var(--senai-red);border:1px solid var(--senai-red)}
+
+/* Explicação Pós-Resposta */
+.explanation-box{display:none;margin-top:10px;padding:12px;background:#f8fafc;border-left:4px solid var(--senai-blue);border-radius:4px;font-size:14px;color:var(--text-color)}
+
+/* Botões de Navegação */
+.nav-buttons{display:flex;justify-content:space-between;gap:12px;margin-top:20px;flex-wrap:wrap}
+.btn-nav{padding:12px 20px;border-radius:8px;border:0;font-weight:bold;font-size:15px;cursor:pointer;transition:all 0.2s}
+.btn-prev{background:#e2e8f0;color:var(--text-color)}
+.btn-next{background:var(--senai-blue);color:#fff}
+.btn-finish{background:var(--accent-green);color:#fff}
+.btn-nav:disabled{opacity:0.4;cursor:not-allowed}
+
+/* PAINEL LATERAL DE PROGRESSO */
+.sidebar{background:#fff;border-radius:12px;border:2px solid var(--border-color);padding:16px;box-shadow:0 4px 12px rgba(0,0,0,0.08)}
+.sidebar-title{font-size:16px;font-weight:bold;color:var(--senai-blue);margin-bottom:6px;border-bottom:2px solid var(--border-color);padding-bottom:8px}
+.sidebar-counter{font-size:14px;font-weight:bold;color:var(--senai-blue);margin-bottom:12px;background:var(--answered-blue-bg);padding:8px;border-radius:6px;text-align:center}
+.question-grid{display:grid;grid-template-columns:repeat(5, 1fr);gap:6px;margin-bottom:15px;max-height:360px;overflow-y:auto;padding-right:2px}
+
+/* Badges do Painel Lateral */
+.q-badge{height:34px;border-radius:6px;border:1px solid var(--border-color);background:#f1f5f9;display:flex;align-items:center;justify-content:center;font-weight:bold;font-size:12px;cursor:pointer;transition:all 0.2s;color:var(--text-color)}
+.q-badge:hover{border-color:var(--senai-blue)}
+.q-badge.current{border:2px solid var(--senai-red);box-shadow:0 0 0 2px rgba(227,6,19,0.2)}
+
+.q-badge.answered{
+  background-color: var(--answered-blue) !important;
+  color: #ffffff !important;
+  border-color: var(--answered-blue) !important;
+  font-weight: 900;
+}
+
+.btn-sidebar-check {
+  width: 100%;
+  padding: 10px;
+  background: var(--accent-green);
+  color: #fff;
+  border: 0;
+  border-radius: 8px;
+  font-weight: bold;
+  font-size: 14px;
+  cursor: pointer;
+  transition: filter 0.2s;
+}
+.btn-sidebar-check:hover { filter: brightness(1.1); }
+
+/* Modal de Confirmação (Popup) */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:1000;align-items:center;justify-content:center}
+.modal-overlay.active{display:flex}
+.modal-box{background:#fff;padding:24px;border-radius:12px;width:90%;max-width:440px;text-align:center;box-shadow:0 10px 25px rgba(0,0,0,0.2)}
+.modal-title{font-size:18px;font-weight:bold;color:var(--senai-blue);margin-bottom:12px}
+.modal-buttons{display:flex;justify-content:center;gap:12px;margin-top:20px}
+.btn{padding:10px 20px;border-radius:6px;border:0;font-weight:bold;cursor:pointer;font-size:14px}
+.btn-ok{background:var(--senai-blue);color:#fff}
+.btn-cancel{background:#e2e8f0;color:var(--text-color)}
+
+@media(max-width:900px){
+  .main-layout{grid-template-columns:1fr}
+  .game-container{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">SENAI</div>
+  <h1>Desafio Maker: Do CAD/CAM ao Chão de Fábrica</h1>
+</header>
+
+<main>
+  <div class="hud">
+    <span id="questionNum">Questão 1 de 40</span>
+    <div class="hud-stats">
+      <span class="stat-correct" id="correctCount">✅ Acertos: 0</span>
+      <span class="stat-wrong" id="wrongCount">❌ Erros: 0</span>
+      <span id="score">Pontos: 0</span>
+    </div>
+  </div>
+
+  <div class="main-layout">
+    <!-- Área do Jogo -->
+    <div class="left-content">
+      <div class="game-container">
+        <!-- Carta do Desafio -->
+        <div class="card" id="challengeCard">
+          <div class="card-header" id="challengeCategory">TEMA</div>
+          <div class="card-title" id="challengeTitle">Desafio Fabril N° 01</div>
+          <div class="card-body" id="challengeText">Carregando desafio...</div>
+        </div>
+
+        <!-- Opções de Resposta -->
+        <div class="options-container" id="optionsContainer"></div>
+      </div>
+
+      <!-- Banner de Resultado -->
+      <div class="result-banner" id="resultBanner"></div>
+
+      <!-- Explicação Técnica -->
+      <div class="explanation-box" id="explanationBox">
+        <strong>💡 Explicação Técnica:</strong>
+        <p id="explanationText" style="margin:5px 0 0 0;"></p>
+      </div>
+
+      <!-- Navegação -->
+      <div class="nav-buttons">
+        <button class="btn-nav btn-prev" id="btnPrev" onclick="prevQuestion()">◀ Anterior</button>
+        <button class="btn-nav btn-next" id="btnNext" onclick="nextQuestion()">Próxima ▶</button>
+        <button class="btn-nav btn-finish" id="btnFinish" onclick="checkFinalResult()">📊 Verificar Resultado Final</button>
+      </div>
+    </div>
+
+    <!-- Painel Lateral -->
+    <aside class="sidebar">
+      <div class="sidebar-title">📋 Progresso</div>
+      <div class="sidebar-counter" id="answeredCount">Respondidas: 0 / 40</div>
+      <div class="question-grid" id="questionGrid"></div>
+      <button class="btn-sidebar-check" onclick="checkFinalResult()">🏆 Concluir & Ver Acertos</button>
+    </aside>
+  </div>
+</main>
+
+<!-- Modal de Confirmação (Popup) -->
+<div class="modal-overlay" id="confirmModal">
+  <div class="modal-box">
+    <div class="modal-title">Está certo de sua escolha?</div>
+    <p id="selectedOptionText" style="font-weight:bold; color:var(--senai-blue);"></p>
+    <div class="modal-buttons">
+      <button class="btn btn-cancel" onclick="closeModal()">Cancelar</button>
+      <button class="btn btn-ok" onclick="confirmSelection()">OK</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const questionsData = [
+  { id: 1, cat: "Ferramentas ISO", qNum: "01", q: "Na classificação ISO de ferramentas de usinagem, qual cor padrão e letra identificam o grupo de materiais:Aços em geral)?", options: ["Azul (P)", "Amarelo (M)", "Vermelho (K)", "Verde (N)"], answerIdx: 0, rExp: "Pela norma ISO, a letra P e a cor azul identificam o grupo dos aços carbono e aços liga." },
+  { id: 2, cat: "Gestão da Qualidade", qNum: "02", q: "No ciclo PDCA aplicável à melhoria contínua dos processos de fabricação, o que representa a etapa 'D'?", options: ["Develop (Desenvolver)", "Do (Executar / Fazer)", "Direct (Direcionar)", "Design (Projetar)"], answerIdx: 1, rExp: "A sigla PDCA significa Plan (Planear), Do (Executar/Fazer), Check (Checar) e Act (Agir)." },
+  { id: 3, cat: "Materiais (SAE)", qNum: "03", q: "Na codificação SAE/AISI para aços carbono, o que indicam os dois últimos dígitos na especificação de um aço SAE 1045?", options: ["O teor de cromo em (0,45%)", "O teor médio de carbono (0,45%)", "A resistência à tração em MPa", "A temperatura de têmpera(45ºC)"], answerIdx: 1, rExp: "Nos aços SAE/AISI de 4 dígitos, os dois primeiros indicam a liga e os dois últimos indicam a porcentagem média de carbono dividida por 100 (1045 = 0,45% C)." },
+  { id: 4, cat: "Manufatura Integrada", qNum: "04", q: "Qual é a sequência lógica no fluxo de manufatura digital desde a concepção geométrica até o usinamento da peça?", options: ["CAM -> CAD -> CNC", "CAD -> CAM -> CNC", "CNC -> CAM -> CAD", "CAM -> CNC -> CAD"], answerIdx: 1, rExp: "O projeto geométrico é gerado no CAD, o código de usinagem é gerado no CAM e executado no comando CNC." },
+  { id: 5, cat: "TPM / Manutenção", qNum: "05", q: "Em um turno de 8 horas (480 min), uma máquina operou por 400 minutos devido a paradas não planejadas. Qual a sua Disponibilidade?", options: ["75%", "83,3%", "90%", "95%"], answerIdx: 1, rExp: "Disponibilidade = Tempo Operacional / Tempo Planejado = 400 / 480 = 0,8333 (83,3%)." },
+  { id: 6, cat: "Programação CNC", qNum: "06", q: "Em programação CNC ISO, qual função M é padronizada para ligar o eixo-árvore no sentido horário (CW)?", options: ["M03", "M04", "M05", "M08"], answerIdx: 0, rExp: "A função M03 ativa a rotação do cabeçote principal no sentido horário." },
+  { id: 7, cat: "Segurança (NR1)", qNum: "07", q: "Segundo a NR 1, qual documento é o pilar estrutural do gerenciamento dos riscos ocupacionais nas indústrias?", options: ["CIPA", "PGR (Programa de Gerenciamento de Riscos)", "PPRA", "CAT"], answerIdx: 1, rExp: "O PGR (Programa de Gerenciamento de Riscos) é a estrutura obrigatória estabelecida pela NR 1." },
+  { id: 8, cat: "Metrologia", qNum: "08", q: "Em um micrômetro centesimal (0,01 mm), a bainha indica 12,5 mm e o tambor marca a divisão 34. Qual é a leitura final?", options: ["12,34 mm", "12,84 mm", "12,534 mm", "13,34 mm"], answerIdx: 1, rExp: "Leitura = 12,50 mm (bainha) + 0,34 mm (tambor) = 12,84 mm." },
+  { id: 9, cat: "Cálculo de Massa", qNum: "09", q: "Um tora cilíndrica de aço (massa específica = 7,85 g/cm³) possui diâmetro D = 100 mm (raio r = 5 cm) e comprimento L = 200 mm (20 cm). Qual é a sua massa em kg? (Considere π = 3,14)", options: ["12,32 kg", "15,70 kg", "24,65 kg", "31,40 kg"], answerIdx: 0, rExp: "Volume = π × r² × L = 3,14 × 5² × 20 = 1570 cm³. Massa = 1570 cm³ × 7,85 g/cm³ = 12324,5 g ≈ 12,32 kg." },
+  { id: 10, cat: "Conformação", qNum: "10", q: "No processo de forjamento em matriz fechada, qual a função primária da calha ou canal de rebarba?", options: ["Refrigerar a matriz", "Aumentar a pressão interna garantindo o preenchimento total dos cantos da cavidade", "Facilitar a extração mecânica", "Evitar o aquecimento do fundido"], answerIdx: 1, rExp: "O restritor no canal de rebarba aumenta a resistência ao escoamento para fora, forçando o metal a preencher totalmente a cavidade." },
+  { id: 11, cat: "Programação CNC", qNum: "11", q: "Qual parâmetro define o avanço em milímetros por rotação (mm/rot) no torneamento CNC?", options: ["G94", "G95", "G96", "G97"], answerIdx: 1, rExp: "A função G95 estabelece o avanço do eixo em milímetros por rotação (mm/rot)." },
+  { id: 12, cat: "Processos de Usinagem", qNum: "12", q: "Para obter uma superfície espelhada e de baixíssima rugosidade no torneamento, qual combinação de corte é recomendada?", options: ["Grande avanço e raio de ponta pequeno", "Pequeno avanço (f) e grande raio de ponta (rε)", "Grande profundidade de corte (ap) e baixo corte", "Baixa velocidade de corte sem fluido"], answerIdx: 1, rExp: "O acabamento melhora com o aumento do raio de ponta e com a redução drástica do avanço por rotação." },
+  { id: 13, cat: "Rugosidade Superficial", qNum: "13", q: "O parâmetro universal de rugosidade Ra representa:", options: ["A altura máxima pico-a-vale", "O desvio médio aritmético do perfil de rugosidade", "A rugosidade total do material", "A profundidade do sulco de corte"], answerIdx: 1, rExp: "Ra é a média aritmética dos valores absolutos dos desvios do perfil em relação à linha média." },
+  { id: 14, cat: "Cálculo de Rugosidade", qNum: "14", q: "Dada a fórmula aproximada da rugosidade teórica Ra ≈ f² / (32 × rε), se o avanço f = 0,2 mm/rot e o raio de ponta rε = 0,8 mm, qual o valor estimado de Ra em µm?", options: ["0,8 µm", "1,56 µm", "3,12 µm", "6,25 µm"], answerIdx: 1, rExp: "Ra ≈ (0,2)² / (32 × 0,8) = 0,04 / 25,6 = 0,0015625 mm = 1,56 µm." },
+  { id: 15, cat: "Sistemas CAM", qNum: "15", q: "Em um software CAM, o pós-processamento tem como objetivo:", options: ["Desenhar a geometria 3D da peça", "Converter as trajetórias de ferramenta no código G específico do comando da máquina CNC", "Simular a análise de elementos finitos", "Calcular a tolerância dimensional"], answerIdx: 1, rExp: "O pós-processador traduz a trajetória genérica de ferramenta (CL-File) na linguagem G/M específica do CNC." },
+  { id: 16, cat: "Ferramentas ISO", qNum: "16", q: "Na especificação ISO de suportes para torneamento (ex: PCLNR 2525 M12), a letra 'C' indica:", options: ["O ângulo de posição da ferramenta", "O sistema de fixação da pastilha por grampo (Clamping)", "O formato da pastilha (Rómbica 80°)", "A direção de corte"], answerIdx: 1, rExp: "No sistema ISO de suportes, a 2ª letra define a fixação: C = Grampo superior, M = Topo e furo, S = Parafuso." },
+  { id: 17, cat: "Programação CNC", qNum: "17", q: "Quais são as funções ISO responsáveis pela interpolação circular no sentido horário e anti-horário, respectivamente?", options: ["G00 e G01", "G02 e G03", "G03 e G02", "G90 e G91"], answerIdx: 1, rExp: "G02 realiza interpolação circular no sentido horário (CW) e G03 no sentido anti-horário (CCW)." },
+  { id: 18, cat: "Lean Manufacturing", qNum: "18", q: "Qual o principal benefício do arranjo físico (layout) em célula de fabricação (em formato 'U')?", options: ["Aumentar o estoque intermediário (WIP)", "Facilitar a movimentação do operador e a flexibilidade do fluxo contínuo", "Maximizar o percurso de empilhadeiras", "Isolar os processos de inspeção"], answerIdx: 1, rExp: "O layout em U reduz caminhadas desnecessárias e permite o fluxo de uma peça por vez com equipe reduzida." },
+  { id: 19, cat: "Programação CNC", qNum: "19", q: "O código G96 aciona a Velocidade de Corte Constante (VCC). O que ocorre com a rotação (RPM) à medida que a ferramenta se aproxima do centro da peça (diâmetro menor)?", options: ["A rotação diminui proporcionalmente", "A rotação aumenta para manter a VCC", "A rotação permanece rigorosamente constante", "O avanço é reduzido a zero"], answerIdx: 1, rExp: "Como Vc = (π × D × N) / 1000, ao reduzir o diâmetro (D), a rotação (N) precisa subir para manter a Vc constante." },
+  { id: 20, cat: "Segurança do Trabalho", qNum: "20", q: "Qual Equipamento de Proteção Individual (EPI) é RIGOROSAMENTE PROIBIDO ao operar furadeiras de coluna ou tornos mecânicos manuais devido ao risco de enroscamento?", options: ["Óculos de proteção", "Luvas de proteção em malha ou couro", "Calçado de segurança", "Protetor auditivo tipo concha"], answerIdx: 1, rExp: "Partes rotativas de máquinas (como eixos de torno e brocas) podem agarrar as luvas e puxar a mão do operador." },
+  { id: 21, cat: "Metrologia / GD&T", qNum: "21", q: "O desvio de Planicidade de uma superfície usinada é uma tolerância geométrica classificada no grupo de:", options: ["Tolerâncias de Posição", "Tolerâncias de Forma", "Tolerâncias de Orientação", "Tolerâncias Batimento"], answerIdx: 1, rExp: "Planicidade, retilineidade, circularidade e cilindricidade são tolerâncias geométricas puras de Forma." },
+  { id: 22, cat: "Metrologia", qNum: "22", q: "Qual instrumento mecânico de controle comparativo é utilizado em conjunto com um esquadro de precisão para verificar a perpendicularidade de faces usinadas?", options: ["Micrômetro externo", "Relógio comparador com suporte magnético", "Paquímetro universal", "Calibrador tampão"], answerIdx: 1, rExp: "O relógio comparador mede pequenas variações dimensionais/geométricas em relação a um padrão de referência." },
+  { id: 23, cat: "Conformação", qNum: "23", q: "As matrizes de forjamento a quente sofrem intenso desgaste severo decorrente de quais solicitações combinadas?", options: ["Pressões elevadas, choque térmico e abrasão", "Baixas pressões e corrosão por água", "Tração pura e cavitação", "Ruptura dielétrica"], answerIdx: 0, rExp: "No forjamento a quente, as matrizes suportam grandes esforços mecânicos sob variação severa de temperatura e atrito." },
+  { id: 24, cat: "Gestão da Produção", qNum: "24", q: "Qual dos fatores abaixo NÃO causa perda de produtividade em um centro de usinagem CNC?", options: ["Setup demorado de ferramentas", "Execução de manutenção preventiva em períodos programados", "Quebra não planejada de insertos", "Falta de matéria-prima no posto de trabalho"], answerIdx: 1, rExp: "A manutenção preventiva programada visa evitar falhas catastróficas, otimizando a disponibilidade global." },
+  { id: 25, cat: "Metrologia", qNum: "25", q: "Converta a medida nominal de 1/2 polegada para milímetros:", options: ["6,35 mm", "12,70 mm", "19,05 mm", "25,40 mm"], answerIdx: 1, rExp: "Como 1 polegada = 25,4 mm, meia polegada equivale a 25,4 / 2 = 12,70 mm." },
+  { id: 26, cat: "Usinagem de Eixos", qNum: "26", q: "Ao usinar um eixo longo de pequeno diâmetro no torno, qual elemento auxiliar é indispensável para evitar a deflexão (envergadura) por força de corte?", options: ["Placa universal de 3 castanhas", "Luneta (fixa ou móvel)", "Contraponto cônico simples", "Castanha mole"], answerIdx: 1, rExp: "A luneta apoia a peça ao longo do comprimento, impedindo flexão por ação da ferramenta de corte." },
+  { id: 27, cat: "Programação CNC", qNum: "27", q: "No bloco CNC 'G01 X50.0 Z-20.0 F0.15', o parâmetro F0.15 especifica:", options: ["A rotação da ferramenta", "O valor do avanço de usinagem (0,15 mm/rot ou mm/min)", "A profundidade do passe", "O raio da ferramenta"], answerIdx: 1, rExp: "A letra F (Feedrate) especifica o avanço de corte programado para o deslocamento." },
+  { id: 28, cat: "Metrologia", qNum: "28", q: "Para medir o diâmetro interno de um furo rebaixado com tolerância H7 (alta precisão), qual instrumento é o mais indicado?", options: ["Paquímetro com escala vernier de 0,05 mm", "Micrômetro interno de três pontas (Imicro)", "Régua graduada de aço", "Suta ajustável"], answerIdx: 1, rExp: "O micrômetro interno de três contatos oferece a precisão necessária para furos com tolerância estreita H7." },
+  { id: 29, cat: "Metrologia / GD&T", qNum: "29", q: "A tolerância geométrica de Paralelismo exige que uma superfície esteja contida entre dois planos paralelos a uma superfície de:", options: ["Forma livre", "Referência (Datum)", "Simetria radial", "Massa concentrada"], answerIdx: 1, rExp: "Tolerâncias de orientação (paralelismo, perpendicularidade, inclinação) requerem obrigatoriamente um elemento de referência (Datum)." },
+  { id: 30, cat: "Metrologia", qNum: "30", q: "O projetor de perfil é um equipamento óptico de medição recomendado prioritariamente para:", options: ["Medição de peças brutas de fundição", "Inspeção dimensional de contornos complexos, roscas e pequenas peças por ampliação de sombra", "Medir dureza Brinell", "Verificar estanqueidade"], answerIdx: 1, rExp: "O projetor amplia a sombra de pequenos componentes mecânicos (como roscas e engrenagens) para conferência de perfil sem contato." },
+  { id: 31, cat: "Cálculo de Avanço CNC", qNum: "31", q: "Uma fresa de diâmetro D = 50 mm possui Z = 4 dentes. Sabendo que o avanço por dente é fz = 0,1 mm/dente e a rotação é N = 1000 RPM, qual a velocidade de avanço da mesa (Vf)?", options: ["100 mm/min", "400 mm/min", "800 mm/min", "4000 mm/min"], answerIdx: 1, rExp: "Vf = fz × Z × N = 0,1 × 4 × 1000 = 400 mm/min." },
+  { id: 32, cat: "Gestão da Produção", qNum: "32", q: "Em uma linha de produção balanceada, a etapa que dita o ritmo produtivo por apresentar a menor capacidade nominal é denominada:", options: ["Gargalo", "Takt Time", "Lead Time", "Kanban"], answerIdx: 0, rExp: "O gargalo é o recurso com a menor capacidade na cadeia produtiva, determinando o tempo máximo de ciclo." },
+  { id: 33, cat: "Desenho Técnico", qNum: "33", q: "No Brasil e na Europa, a representação de vistas ortográficas no desenho técnico utiliza predominantemente qual diedro?", options: ["1º Diedro", "3º Diedro", "2º Diedro", "4º Diedro"], answerIdx: 0, rExp: "A norma ABNT fixa a representação de vistas ortográficas no 1º Diedro como padrão nacional." },
+  { id: 34, cat: "Troca Rápida (SMED)", qNum: "34", q: "Na metodologia de Troca Rápida de Ferramentas (SMED/TRF), o que caracteriza uma 'atividade externa'?", options: ["Operações que só podem ser feitas com a máquina parada", "Tarefas de preparação executadas com a máquina em pleno funcionamento produtivo", "Manutenções corretivas no motor", "Atividades terceirizadas"], answerIdx: 1, rExp: "Atividades externas são pré-preparações efetuadas enquanto a máquina ainda está produzindo o lote anterior." },
+  { id: 35, cat: "Segurança (NR12)", qNum: "35", q: "Segundo a NR 12, a proteção intertravada de uma máquina opera de forma que a sua abertura implica obrigatoriamente em:", options: ["Aumento da rotação do spindle", "Interrupção imediata das funções perigosas da máquina", "Envio de um sinal de alerta sonoro apenas", "Parada do compressor de ar"], answerIdx: 1, rExp: "Sistemas de intertravamento cortam a energia do circuito de potência parando movimentos perigosos ao abrir a proteção." },
+  { id: 36, cat: "Cálculo de Rotação", qNum: "36", q: "Para usinar um diâmetro D = 50 mm com velocidade de corte Vc = 157 m/min, qual deve ser a rotação N em RPM? (Considere π = 3,14)", options: ["500 RPM", "1000 RPM", "1500 RPM", "2000 RPM"], answerIdx: 1, rExp: "N = (Vc × 1000) / (π × D) = (157 × 1000) / (3,14 × 50) = 157000 / 157 = 1000 RPM." },
+  { id: 37, cat: "Retificação Mecânica", qNum: "37", q: "O surgimento de trincas térmicas ou queimaduras na superfície de uma peça retificada indica geralmente:", options: ["Velocidade da rebola muito baixa", "Calor excessivo na zona de corte por rebolo empastado/cego ou refrigeração insuficiente", "Pressão de ar insuficiente", "Dureza da peça muito baixa"], answerIdx: 1, rExp: "O atrito excessivo com rebolos empastados gera sobreaquecimento local acima do ponto crítico de têmpera, provocando queimaduras." },
+  { id: 38, cat: "Acabamento Interno", qNum: "38", q: "Qual o processo de usinagem por abrasão empregado especificamente no acabamento final de camisas de cilindros de motores a combustão?", options: ["Torneamento", "Brunimento", "Aplainamento", "Brochamento"], answerIdx: 1, rExp: "O brunimento cria ranhuras cruzadas micrônicas necessárias para retenção do filme de óleo nos cilindros." },
+  { id: 39, cat: "Usinagem Convencional", qNum: "39", q: "Ao utilizar o cabeçote divisor universal em uma fresadora mecânica, uma volta completa na manivela corresponde usualmente a qual giro da peça (relação padrão)?", options: ["1/40 de volta (9°)", "1/10 de volta (36°)", "1/2 volta (180°)", "1 volta (360°)"], answerIdx: 0, rExp: "A relação de transmissão sem-fim/coroa dos cabeçotes divisores universais padrão é 40:1 (1 volta na manivela = 1/40 de volta na peça)." },
+  { id: 40, cat: "Programação CNC", qNum: "40", q: "Qual a finalidade da função especial G04 no código G de comandos CNC?", options: ["Trocar de ferramenta", "Programar uma pausa ou tempo de permanência (dwell) na usinagem", "Cancelar a compensação de raio", "Ativar o segundo zero máquina"], answerIdx: 1, rExp: "G04 programa uma temporização (pausa) na trajetória para limpeza de fundo de furos ou alívio de tensões de corte." }
+];
+
+let currentIndex = 0;
+let score = 0;
+let correctAnswers = 0;
+let wrongAnswers = 0;
+let pendingOption = null;
+
+// Armazena o estado das escolhas
+let userState = questionsData.map(() => ({
+  userChoice: null,
+  isCorrect: null
+}));
+
+function updateHUD() {
+  document.getElementById("questionNum").textContent = `Questão ${currentIndex + 1} de ${questionsData.length}`;
+  document.getElementById("correctCount").textContent = `✅ Acertos: ${correctAnswers}`;
+  document.getElementById("wrongCount").textContent = `❌ Erros: ${wrongAnswers}`;
+  document.getElementById("score").textContent = `Pontos: ${score}`;
+
+  const answeredTotal = userState.filter(s => s.isCorrect !== null).length;
+  document.getElementById("answeredCount").textContent = `Respondidas: ${answeredTotal} / ${questionsData.length}`;
+  
+  renderSidebarGrid();
+}
+
+function renderSidebarGrid() {
+  const grid = document.getElementById("questionGrid");
+  grid.innerHTML = "";
+  
+  questionsData.forEach((q, idx) => {
+    const badge = document.createElement("div");
+    badge.className = "q-badge";
+    if (idx === currentIndex) badge.classList.add("current");
+    
+    const state = userState[idx];
+    if (state.isCorrect !== null) {
+      badge.classList.add("answered");
+      badge.textContent = `${idx + 1} ✓`;
+    } else {
+      badge.textContent = idx + 1;
+    }
+
+    badge.onclick = () => goToQuestion(idx);
+    grid.appendChild(badge);
+  });
+}
+
+function loadQuestion() {
+  const qData = questionsData[currentIndex];
+  const currentState = userState[currentIndex];
+
+  updateHUD();
+
+  document.getElementById("btnPrev").disabled = (currentIndex === 0);
+  document.getElementById("btnNext").disabled = (currentIndex === questionsData.length - 1);
+
+  document.getElementById("challengeCategory").textContent = qData.cat;
+  document.getElementById("challengeTitle").textContent = `Desafio Fabril N° ${qData.qNum}`;
+  document.getElementById("challengeText").textContent = qData.q;
+
+  const container = document.getElementById("optionsContainer");
+  container.innerHTML = "";
+
+  const correctText = qData.options[qData.answerIdx];
+
+  qData.options.forEach((optText, optIdx) => {
+    const optDiv = document.createElement("div");
+    optDiv.className = "option-card";
+    optDiv.innerHTML = `
+      <div style="font-size:11px; font-weight:bold; color:var(--senai-blue); margin-bottom:4px;">OPÇÃO ${String.fromCharCode(65 + optIdx)}</div>
+      <div style="font-size:15px; font-weight:bold;">${optText}</div>
+    `;
+
+    if (currentState.isCorrect !== null) {
+      optDiv.classList.add("disabled");
+      optDiv.style.cursor = "default";
+      
+      if (optText === correctText) {
+        optDiv.classList.add("correct-selected");
+      } else if (optText === currentState.userChoice && !currentState.isCorrect) {
+        optDiv.classList.add("wrong-selected");
+      }
+    } else {
+      optDiv.onclick = () => openConfirmModal(optText, optDiv);
+    }
+
+    container.appendChild(optDiv);
+  });
+
+  const banner = document.getElementById("resultBanner");
+  const expBox = document.getElementById("explanationBox");
+
+  if (currentState.isCorrect !== null) {
+    banner.style.display = "block";
+    if (currentState.isCorrect) {
+      banner.textContent = "✅ RESPOSTA CORRETA!";
+      banner.className = "result-banner correct";
+    } else {
+      banner.textContent = "❌ RESPOSTA INCORRETA!";
+      banner.className = "result-banner wrong";
+    }
+    document.getElementById("explanationText").textContent = qData.rExp;
+    expBox.style.display = "block";
+  } else {
+    banner.style.display = "none";
+    expBox.style.display = "none";
+  }
+}
+
+function openConfirmModal(optText, element) {
+  pendingOption = { text: optText, element: element };
+  document.getElementById("selectedOptionText").textContent = `"${optText}"`;
+  document.getElementById("confirmModal").classList.add("active");
+}
+
+function closeModal() {
+  document.getElementById("confirmModal").classList.remove("active");
+  pendingOption = null;
+}
+
+function confirmSelection() {
+  if (!pendingOption) return;
+
+  const choiceText = pendingOption.text;
+  closeModal();
+
+  const qData = questionsData[currentIndex];
+  const currentState = userState[currentIndex];
+  
+  if (currentState.isCorrect !== null) return;
+
+  const correctText = qData.options[qData.answerIdx];
+  const isCorrect = (choiceText === correctText);
+
+  currentState.userChoice = choiceText;
+  currentState.isCorrect = isCorrect;
+
+  if (isCorrect) {
+    score += 10;
+    correctAnswers++;
+  } else {
+    wrongAnswers++;
+  }
+
+  loadQuestion();
+}
+
+function goToQuestion(index) {
+  currentIndex = index;
+  loadQuestion();
+}
+
+function prevQuestion() {
+  if (currentIndex > 0) {
+    currentIndex--;
+    loadQuestion();
+  }
+}
+
+function nextQuestion() {
+  if (currentIndex < questionsData.length - 1) {
+    currentIndex++;
+    loadQuestion();
+  }
+}
+
+function checkFinalResult() {
+  const answeredTotal = userState.filter(s => s.isCorrect !== null).length;
+  alert(`📊 RESUMO DO DESAFIO:\n\nRespondidas: ${answeredTotal} de ${questionsData.length}\n✅ Acertos: ${correctAnswers}\n❌ Erros: ${wrongAnswers}\n🏆 Pontuação Final: ${score} pontos`);
+}
+
+// Inicialização
+loadQuestion();
+</script>
+
+</body>
+</html>
