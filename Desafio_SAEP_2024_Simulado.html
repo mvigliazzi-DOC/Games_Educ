@@ -1,0 +1,673 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Desafio SENAI: CAD/CAM ao Chão de Fábrica</title>
+<style>
+:root {
+  --senai-blue: #0046ad;
+  --senai-red: #e30613;
+  --bg-color: #eef5ff;
+  --card-bg: #ffffff;
+  --text-color: #17233c;
+  --border-color: #d7e4f8;
+  --accent-green: #2e7d32;
+  --accent-green-bg: #edf7ed;
+  --answered-blue: #0046ad;
+  --answered-blue-bg: #e6f0ff;
+}
+
+*{box-sizing:border-box}
+body{margin:0;font-family:Arial,Helvetica,sans-serif;background:var(--bg-color);color:var(--text-color)}
+
+header{background:var(--senai-blue);color:#fff;padding:16px 20px;display:flex;align-items:center;justify-content:center;gap:15px;box-shadow:0 3px 8px rgba(0,0,0,0.15)}
+.logo{background:var(--senai-red);color:#fff;font-weight:900;font-style:italic;font-size:22px;padding:4px 10px;border-radius:4px}
+h1{margin:0;font-size:22px}
+
+main{max-width:1250px;margin:20px auto;padding:0 15px}
+
+/* HUD / Placar Superior */
+.hud{display:flex;justify-space-between;align-items:center;background:#fff;padding:12px 20px;border-radius:10px;box-shadow:0 2px 8px rgba(0,0,0,0.06);margin-bottom:20px;font-weight:bold;color:var(--senai-blue);flex-wrap:wrap;gap:10px}
+.hud-stats{display:flex;gap:15px}
+.stat-correct{color:var(--accent-green);}
+.stat-wrong{color:var(--senai-red);}
+
+/* Layout Principal com Painel Lateral */
+.main-layout{display:grid;grid-template-columns:1fr 280px;gap:20px;align-items:start}
+
+/* Layout Interno do Jogo (Lado a Lado) */
+.game-container{display:grid;grid-template-columns:1fr 1fr;gap:20px;align-items:start}
+
+/* Estilo das Cartas */
+.card{background:#fff;border-radius:12px;border:2px solid var(--border-color);padding:20px;box-shadow:0 4px 12px rgba(0,0,0,0.08);position:relative;display:flex;flex-direction:column}
+.card-header{font-size:12px;font-weight:bold;color:var(--senai-red);text-transform:uppercase;margin-bottom:8px;letter-spacing:1px}
+.card-title{font-size:18px;font-weight:bold;color:var(--senai-blue);margin-bottom:12px}
+.card-body{font-size:15px;line-height:1.4;color:var(--text-color);flex-grow:1}
+
+/* Coluna de Opções */
+.options-container{display:flex;flex-direction:column;gap:10px}
+.option-card{background:#fff;border:2px solid var(--border-color);border-radius:10px;padding:14px;cursor:pointer;transition:all 0.2s ease;display:flex;flex-direction:column}
+.option-card:hover:not(.disabled){border-color:var(--senai-blue);transform:translateY(-2px);box-shadow:0 4px 10px rgba(0,70,173,0.15)}
+
+/* Estilos de Opção Selecionada/Correta */
+.option-card.correct-selected {
+  border: 2px solid var(--accent-green) !important;
+  background-color: var(--accent-green-bg) !important;
+  color: #1b5e20 !important;
+}
+.option-card.wrong-selected {
+  border: 2px solid var(--senai-red) !important;
+  background-color: #fff0ed !important;
+  color: #9b3425 !important;
+}
+
+/* Banner de Resultado */
+.result-banner{display:none;margin-top:15px;padding:12px;border-radius:8px;font-weight:bold;font-size:16px;text-align:center}
+.result-banner.correct{background:var(--accent-green-bg);color:var(--accent-green);border:1px solid var(--accent-green)}
+.result-banner.wrong{background:#fff0ed;color:var(--senai-red);border:1px solid var(--senai-red)}
+
+/* Explicação Pós-Resposta */
+.explanation-box{display:none;margin-top:10px;padding:12px;background:#f8fafc;border-left:4px solid var(--senai-blue);border-radius:4px;font-size:14px;color:var(--text-color)}
+
+/* Botões de Navegação */
+.nav-buttons{display:flex;justify-content:space-between;gap:12px;margin-top:20px;flex-wrap:wrap}
+.btn-nav{padding:12px 20px;border-radius:8px;border:0;font-weight:bold;font-size:15px;cursor:pointer;transition:all 0.2s}
+.btn-prev{background:#e2e8f0;color:var(--text-color)}
+.btn-next{background:var(--senai-blue);color:#fff}
+.btn-finish{background:var(--accent-green);color:#fff}
+.btn-nav:disabled{opacity:0.4;cursor:not-allowed}
+
+/* PAINEL LATERAL DE PROGRESSO */
+.sidebar{background:#fff;border-radius:12px;border:2px solid var(--border-color);padding:16px;box-shadow:0 4px 12px rgba(0,0,0,0.08)}
+.sidebar-title{font-size:16px;font-weight:bold;color:var(--senai-blue);margin-bottom:6px;border-bottom:2px solid var(--border-color);padding-bottom:8px}
+.sidebar-counter{font-size:14px;font-weight:bold;color:var(--senai-blue);margin-bottom:12px;background:var(--answered-blue-bg);padding:8px;border-radius:6px;text-align:center}
+.question-grid{display:grid;grid-template-columns:repeat(5, 1fr);gap:6px;margin-bottom:15px;max-height:360px;overflow-y:auto;padding-right:2px}
+
+/* Badges do Painel Lateral */
+.q-badge{height:34px;border-radius:6px;border:1px solid var(--border-color);background:#f1f5f9;display:flex;align-items:center;justify-content:center;font-weight:bold;font-size:12px;cursor:pointer;transition:all 0.2s;color:var(--text-color)}
+.q-badge:hover{border-color:var(--senai-blue)}
+.q-badge.current{border:2px solid var(--senai-red);box-shadow:0 0 0 2px rgba(227,6,19,0.2)}
+
+.q-badge.answered{
+  background-color: var(--answered-blue) !important;
+  color: #ffffff !important;
+  border-color: var(--answered-blue) !important;
+  font-weight: 900;
+}
+
+.btn-sidebar-check {
+  width: 100%;
+  padding: 10px;
+  background: var(--accent-green);
+  color: #fff;
+  border: 0;
+  border-radius: 8px;
+  font-weight: bold;
+  font-size: 14px;
+  cursor: pointer;
+  transition: filter 0.2s;
+}
+.btn-sidebar-check:hover { filter: brightness(1.1); }
+
+/* Modal de Confirmação (Popup) */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:1000;align-items:center;justify-content:center}
+.modal-overlay.active{display:flex}
+.modal-box{background:#fff;padding:24px;border-radius:12px;width:90%;max-width:440px;text-align:center;box-shadow:0 10px 25px rgba(0,0,0,0.2)}
+.modal-title{font-size:18px;font-weight:bold;color:var(--senai-blue);margin-bottom:12px}
+.modal-buttons{display:flex;justify-content:center;gap:12px;margin-top:20px}
+.btn{padding:10px 20px;border-radius:6px;border:0;font-weight:bold;cursor:pointer;font-size:14px}
+.btn-ok{background:var(--senai-blue);color:#fff}
+.btn-cancel{background:#e2e8f0;color:var(--text-color)}
+
+@media(max-width:900px){
+  .main-layout{grid-template-columns:1fr}
+  .game-container{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">SENAI</div>
+  <h1>Desafio SAEP 2024: Simulado de Fabricação Mecânica</h1>
+</header>
+
+<main>
+  <div class="hud">
+    <span id="questionNum">Questão 1 de 40</span>
+    <div class="hud-stats">
+      <span class="stat-correct" id="correctCount">✅ Acertos: 0</span>
+      <span class="stat-wrong" id="wrongCount">❌ Erros: 0</span>
+      <span id="score">Pontos: 0</span>
+    </div>
+  </div>
+
+  <div class="main-layout">
+    <!-- Área do Jogo -->
+    <div class="left-content">
+      <div class="game-container">
+        <!-- Carta do Desafio -->
+        <div class="card" id="challengeCard">
+          <div class="card-header" id="challengeCategory">TEMA</div>
+          <div class="card-title" id="challengeTitle">Desafio Fabril N° 01</div>
+          <div class="card-body" id="challengeText">Carregando desafio...</div>
+        </div>
+
+        <!-- Opções de Resposta -->
+        <div class="options-container" id="optionsContainer"></div>
+      </div>
+
+      <!-- Banner de Resultado -->
+      <div class="result-banner" id="resultBanner"></div>
+
+      <!-- Explicação Técnica -->
+      <div class="explanation-box" id="explanationBox">
+        <strong>💡 Explicação Técnica:</strong>
+        <p id="explanationText" style="margin:5px 0 0 0;"></p>
+      </div>
+
+      <!-- Navegação -->
+      <div class="nav-buttons">
+        <button class="btn-nav btn-prev" id="btnPrev" onclick="prevQuestion()">◀ Anterior</button>
+        <button class="btn-nav btn-next" id="btnNext" onclick="nextQuestion()">Próxima ▶</button>
+        <button class="btn-nav btn-finish" id="btnFinish" onclick="checkFinalResult()">📊 Verificar Resultado Final</button>
+      </div>
+    </div>
+
+    <!-- Painel Lateral -->
+    <aside class="sidebar">
+      <div class="sidebar-title">📋 Progresso</div>
+      <div class="sidebar-counter" id="answeredCount">Respondidas: 0 / 40</div>
+      <div class="question-grid" id="questionGrid"></div>
+      <button class="btn-sidebar-check" onclick="checkFinalResult()">🏆 Concluir & Ver Acertos</button>
+    </aside>
+  </div>
+</main>
+
+<!-- Modal de Confirmação (Popup) -->
+<div class="modal-overlay" id="confirmModal">
+  <div class="modal-box">
+    <div class="modal-title">Está certo de sua escolha?</div>
+    <p id="selectedOptionText" style="font-weight:bold; color:var(--senai-blue);"></p>
+    <div class="modal-buttons">
+      <button class="btn btn-cancel" onclick="closeModal()">Cancelar</button>
+      <button class="btn btn-ok" onclick="confirmSelection()">OK</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const questionsData = [
+  {
+    "id": 1,
+    "cat": "Manufatura Assistida (CAM)",
+    "qNum": "01",
+    "q": "Um técnico de fabricação mecânica identificou um número excessivo de quebras de ferramentas nos programas das máquinas CNC. Para reduzir os erros de programação, qual procedimento de simulação gráfica deve ser realizado antes de iniciar a usinagem?",
+    "options": [
+      "Analisar os parâmetros de corte do processo de usinagem sem alterar a capacidade.",
+      "Verificar o aspecto da peça após ser usinada para identificar incorreções de informações.",
+      "Analisar a trajetória da ferramenta durante a usinagem para verificar a compensação de raio e evitar colisões.",
+      "Identificar as ferramentas utilizadas nos processos de usinagem para evitar montagens equivocadas."
+    ],
+    "answerIdx": 2,
+    "rExp": "A simulação gráfica no sistema CAM permite analisar a trajetória completa da ferramenta, garantindo a correta compensação de raio e evitando colisões com a peça ou dispositivos de fixação."
+  },
+  {
+    "id": 2,
+    "cat": "Parâmetros de Usinagem CNC",
+    "qNum": "02",
+    "q": "Na usinagem de um componente em torno CNC, foram utilizados: fn = 0,25 mm/rot, Vc = 210 m/min e ap = 1,0 mm. Sabendo que a faixa recomendada para a ferramenta é fn = 0,05-0,25 mm/rot, Vc = 180-250 m/min e ap = 1-3 mm, qual parâmetro deve ser alterado para reduzir o tempo de usinagem mantendo o avanço máximo já atingido?",
+    "options": [
+      "Aumentar a profundidade de corte (ap).",
+      "Aumentar o avanço (fn).",
+      "Reduzir a profundidade de corte e aumentar o avanço.",
+      "Aumentar a velocidade de corte (Vc)."
+    ],
+    "answerIdx": 3,
+    "rExp": "Como o avanço (fn = 0,25 mm/rot) já se encontra no limite superior da ferramenta, para reduzir o tempo principal de usinagem deve-se aumentar a velocidade de corte (Vc) até o limite recomendado de 250 m/min."
+  },
+  {
+    "id": 3,
+    "cat": "Seleção de Processos de Fabricação",
+    "qNum": "03",
+    "q": "Uma empresa busca identificar o processo mais produtivo e viável para a fabricação mecânica de uma nova peça em aço com alta precisão dimensional e acabamento superficial rigoroso. O processo indicado é:",
+    "options": [
+      "a fundição.",
+      "o forjamento.",
+      "a usinagem.",
+      "a conformação."
+    ],
+    "answerIdx": 2,
+    "rExp": "A usinagem é o processo primário indicado para a obtenção de peças com tolerâncias dimensionais estreitas e alto padrão de acabamento superficial."
+  },
+  {
+    "id": 4,
+    "cat": "Equipamentos e Recursos CNC",
+    "qNum": "04",
+    "q": "Para atender à produção de um lote de 20 peças cilíndricas que exigem rebaixos, furações rosqueadas fora de centro e superfícies planas usinadas em ângulos específicos, qual conjunto de equipamentos o técnico deve utilizar?",
+    "options": [
+      "Fresadora Ferramenteira, Morsa de Fuso e Brocas.",
+      "Centro de Usinagem CNC, Divisor Rotativo e Fresa de Topo.",
+      "Fresadora Universal, Placa e Fresa Cilíndrica.",
+      "Torno CNC, Barra de Mandrilar e Fresa de Topo."
+    ],
+    "answerIdx": 1,
+    "rExp": "A usinagem combinada de superfícies planas, furos angulares e rosqueamento em peças cilíndricas requer um Centro de Usinagem CNC equipado com 4º eixo (Divisor Rotativo)."
+  },
+  {
+    "id": 5,
+    "cat": "Metrologia - Régua de Seio",
+    "qNum": "05",
+    "q": "Na medição angular de uma peça usando uma régua de seio com distância entre roletes L = 200 mm e ângulo com sen(α) = 0,0871, qual deve ser a altura (H) da coluna de blocos-padrão para o ajuste?",
+    "options": [
+      "17,420 mm",
+      "8,710 mm",
+      "62,500 mm",
+      "17,425 mm"
+    ],
+    "answerIdx": 0,
+    "rExp": "A altura H da pilha de blocos-padrão é calculada por H = L × sen(α) = 200 mm × 0,0871 = 17,420 mm."
+  },
+  {
+    "id": 6,
+    "cat": "Seleção de Máquinas por Fluxograma",
+    "qNum": "06",
+    "q": "Um fluxograma de decisão define: peças CILÍNDRICAS até 20 kg usinam no Torno A, de 20 a 100 kg no Torno B e acima de 100 kg no Torno C. Para uma peça cilíndrica com massa de 13,9 kg, qual equipamento deve ser adquirido?",
+    "options": [
+      "Fresadora A",
+      "Fresadora B",
+      "Torno A",
+      "Torno C"
+    ],
+    "answerIdx": 2,
+    "rExp": "Pelo fluxograma: formato Cilíndrico indica Torneamento; peso de 13,9 kg enquadra-se na faixa 'Até 20 kg', resultando na escolha do Torno A."
+  },
+  {
+    "id": 7,
+    "cat": "Tempos de Processo & Cronoanálise",
+    "qNum": "07",
+    "q": "Em uma célula de montagem com 5 montadores, os tempos individuais médios registrados foram: 12 min, 9 min, 11 min, 10 min e 8 min. Qual é o tempo médio do processo de montagem por operador?",
+    "options": [
+      "8,0 minutos",
+      "9,5 minutos",
+      "10,0 minutos",
+      "12,0 minutos"
+    ],
+    "answerIdx": 2,
+    "rExp": "A média aritmética é M = (12 + 9 + 11 + 10 + 8) / 5 = 50 / 5 = 10,0 minutos."
+  },
+  {
+    "id": 8,
+    "cat": "Cálculo de Usinagem - Rotação (RPM)",
+    "qNum": "08",
+    "q": "Para usinar um diâmetro d = 20 mm em aço carbono utilizando velocidade de corte Vc = 100 m/min e a fórmula RPM = (Vc × 1000) / (3,14 × d), qual a rotação calculada para o fuso?",
+    "options": [
+      "875 RPM",
+      "1250 RPM",
+      "1592 RPM",
+      "2000 RPM"
+    ],
+    "answerIdx": 2,
+    "rExp": "RPM = (100 × 1000) / (3,14 × 20) = 100.000 / 62,8 ≈ 1592,35 RPM."
+  },
+  {
+    "id": 9,
+    "cat": "Processos de Usinagem - Retificação",
+    "qNum": "09",
+    "q": "O surgimento de microtrincas térmicas por sobreaquecimento em peças de aço temperado é um defeito característico de qual processo de fabricação?",
+    "options": [
+      "Eletroerosão",
+      "Retificação",
+      "Aplainamento",
+      "Brochamento"
+    ],
+    "answerIdx": 1,
+    "rExp": "Trincas térmicas na superfície usinada ocorrem predominantemente na retificação devido ao calor excessivo gerado por rebolos empastados ou refrigeração inadequada."
+  },
+  {
+    "id": 10,
+    "cat": "Conformação Mecânica - Trefilação",
+    "qNum": "10",
+    "q": "Uma indústria precisa produzir fios e arames de cobre com diâmetro de 1,5 mm a partir de barras de maior diâmetro. Qual o processo de conformação mecânica indicado para essa produção?",
+    "options": [
+      "Trefilação",
+      "Extrusão",
+      "Laminação",
+      "Forjamento"
+    ],
+    "answerIdx": 0,
+    "rExp": "A trefilação é o processo de conformação no qual o material é puxado através de uma matriz (trefila) para reduzir seu diâmetro e fabricar fios, arames e tubos."
+  },
+  {
+    "id": 11,
+    "cat": "Manutenção Mecânica",
+    "qNum": "11",
+    "q": "Uma máquina apresentou falhas severas devido ao desgaste de engrenagens e uso de óleo lubrificante contaminado. Qual a conduta de manutenção correta a ser adotada?",
+    "options": [
+      "Substituir as engrenagens desgastadas, realizar a limpeza, trocar o lubrificante e programar manutenção preventiva regular.",
+      "Ajustar as engrenagens sem trocá-las, pois pequenos desgastes não alteram o desempenho.",
+      "Aplicar mais lubrificante novo sobre o óleo antigo contaminado mantendo as peças gastas.",
+      "Operar a máquina até parar totalmente para então efetuar o conserto."
+    ],
+    "answerIdx": 0,
+    "rExp": "A manutenção corretiva/preventiva adequada exige a substituição dos elementos danificados, a descontaminação do reservatório com troca de fluido e a programação de inspeções periódicas."
+  },
+  {
+    "id": 12,
+    "cat": "Gestão Financeira - ROI",
+    "qNum": "12",
+    "q": "Para avaliar a viabilidade econômica de um novo dispositivo de automação, qual fórmula de Retorno sobre o Investimento (ROI) deve ser inserida na planilha?",
+    "options": [
+      "(Receita Gerada - Custo do Investimento) / Custo do Investimento",
+      "(Receita Gerada - Custo do Investimento) / Receita Gerada",
+      "(Receita Gerada + Custo do Investimento) / Custo do Investimento",
+      "(Custo do Investimento - Receita Gerada) / Custo do Investimento"
+    ],
+    "answerIdx": 0,
+    "rExp": "O ROI calcula o ganho percentual líquido dividindo o lucro gerado (Receita - Custo) pelo valor total investido."
+  },
+  {
+    "id": 13,
+    "cat": "Usinagem Especial - Eletroerosão",
+    "qNum": "13",
+    "q": "Na usinagem por eletroerosão (EDM) de uma cavidade com volume de 1500 mm³, sabendo que a taxa de desgaste volumétrico do eletrodo é de 0,2 (20%), qual será o volume de material desgastado do eletrodo?",
+    "options": [
+      "3 mm³",
+      "30 mm³",
+      "300 mm³",
+      "3000 mm³"
+    ],
+    "answerIdx": 2,
+    "rExp": "Desgaste do Eletrodo = Volume da Cavidade × Taxa de Desgaste = 1500 mm³ × 0,2 = 300 mm³."
+  },
+  {
+    "id": 14,
+    "cat": "Simulação e Treinamento CNC",
+    "qNum": "14",
+    "q": "Enquanto as máquinas CNC reais são instaladas, uma empresa adquiriu um programa computacional para treinar operadores no manuseio da IHM, zeramento peça e montagem de ferramentas. Esse software é classificado como:",
+    "options": [
+      "software CAD (Desenho Assistido por Computador).",
+      "software de Simulação virtual de máquinas CNC.",
+      "software CAE (Engenharia Assistida por Computador).",
+      "software PDM (Gerenciamento de Dados)."
+    ],
+    "answerIdx": 1,
+    "rExp": "Softwares de simulação operacional reproduzem virtualmente os comandos físicos e a IHM do CNC para capacitar operadores com segurança."
+  },
+  {
+    "id": 15,
+    "cat": "Controle Estatístico de Processo (CEP)",
+    "qNum": "15",
+    "q": "Na análise de uma Carta de Controle da Média de um processo de torneamento, a ocorrência de pontos que ultrapassam os limites de controle (LIC/LSC) indica:",
+    "options": [
+      "horários em que ocorreram refugos e desvios fora da especificação.",
+      "que a produção está estável e sob controle estatístico.",
+      "que as ferramentas de corte não sofreram desgaste.",
+      "que o operador aumentou a velocidade da máquina."
+    ],
+    "answerIdx": 0,
+    "rExp": "Pontos fora dos limites de controle estatístico (LIC/LSC) sinalizam causas especiais de variação, gerando peças refugadas fora da tolerância."
+  },
+  {
+    "id": 16,
+    "cat": "Geometria Analítica - Plano Cartesiano",
+    "qNum": "16",
+    "q": "No plano cartesiano, três lâmpadas estão nos pontos A(1,5), B(1,1) e C(4,1). Para instalar uma quarta lâmpada no ponto D formando um retângulo, qual deve ser a coordenada de D?",
+    "options": [
+      "(1, 4)",
+      "(5, 1)",
+      "(4, 5)",
+      "(5, 4)"
+    ],
+    "answerIdx": 2,
+    "rExp": "Para fechar o retângulo alinhado aos eixos, o ponto D deve possuir a mesma abcissa x de C (x = 4) e a mesma ordenada y de A (y = 5), resultando em (4, 5)."
+  },
+  {
+    "id": 17,
+    "cat": "Geometria Analítica - Equação da Reta",
+    "qNum": "17",
+    "q": "Duas estações de metrô situam-se nos pontos A(2, -3) e B(4, 5). A equação da reta reduzida y = mx + b que conecta retilineamente essas duas estações é:",
+    "options": [
+      "y = x + 1",
+      "y = 4x - 11",
+      "y = -4x + 21",
+      "y = 2x + 5"
+    ],
+    "answerIdx": 1,
+    "rExp": "Inclinação m = (5 - (-3)) / (4 - 2) = 8 / 2 = 4. Substituindo em B(4,5): 5 = 4(4) + b ⇒ b = -11. Logo, y = 4x - 11."
+  },
+  {
+    "id": 18,
+    "cat": "Geometria Analítica - Circunferência",
+    "qNum": "18",
+    "q": "Um brinquedo realiza movimento circular de raio R = 3 centrado no ponto (6, 5) do plano cartesiano. A equação da circunferência que descreve essa trajetória é:",
+    "options": [
+      "x² + y² = 9",
+      "(x - 6)² + (y - 5)² = 3",
+      "(x - 5)² + (y - 6)² = 9",
+      "(x - 6)² + (y - 5)² = 9"
+    ],
+    "answerIdx": 3,
+    "rExp": "A equação reduzida da circunferência de centro (h, k) e raio R é (x - h)² + (y - k)² = R². Substituindo: (x - 6)² + (y - 5)² = 3² = 9."
+  },
+  {
+    "id": 19,
+    "cat": "Função do 1º Grau",
+    "qNum": "19",
+    "q": "Em um estudo de visitas de pássaros (n) em relação à temperatura (t em °C), foram obtidos os dados: (15°C, 5 visitas), (20°C, 6 visitas) e (30°C, 8 visitas). A expressão algébrica correta é:",
+    "options": [
+      "n = t + 1",
+      "n = t / 3",
+      "n = (t / 5) + 2",
+      "n = t - 10"
+    ],
+    "answerIdx": 2,
+    "rExp": "Testando n = (t / 5) + 2: para t = 15 ⇒ (15/5)+2 = 5; para t = 20 ⇒ (20/5)+2 = 6; para t = 30 ⇒ (30/5)+2 = 8."
+  },
+  {
+    "id": 20,
+    "cat": "Função Quadrática - Vértice da Parábola",
+    "qNum": "20",
+    "q": "A trajetória de uma bola de vôlei é f(t) = -0,4t² + bt + c. Sabendo que foi sacada da altura inicial c = 2 m e tocou o solo (f(t) = 0) em t = 5 s, em quantos segundos ela atingiu a altura máxima (ponto V)?",
+    "options": [
+      "1,6 s",
+      "2,0 s",
+      "2,5 s",
+      "3,0 s"
+    ],
+    "answerIdx": 1,
+    "rExp": "Calculando b: f(5) = -0,4(25) + 5b + 2 = 0 ⇒ -10 + 5b + 2 = 0 ⇒ 5b = 8 ⇒ b = 1,6. O tempo de altura máxima é o tempo do vértice: tv = -b / (2a) = -1,6 / (2 × -0,4) = 1,6 / 0,8 = 2,0 segundos."
+  },
+  {
+    "id": 21,
+    "cat": "Polinômios - Fatoração por Raízes",
+    "qNum": "21",
+    "q": "Um polinômio de 4º grau p(x) possui raízes reais nos pontos x = -1, x = -0,5, x = 1 e x = 1,5. A sua forma fatorada é expressa por:",
+    "options": [
+      "p(x) = (x - 1)(x - 0,5)(x + 1)(x + 1,5)",
+      "p(x) = (x + 1)(x + 0,5)(x - 1)(x - 1,5)",
+      "p(x) = (x + 1)²(x - 1)³",
+      "p(x) = (x - 1)⁴ - 1"
+    ],
+    "answerIdx": 1,
+    "rExp": "Qualquer polinômio com raízes r1, r2, r3, r4 pode ser decomposto na forma fatorada p(x) = a(x - r1)(x - r2)(x - r3)(x - r4). Substituindo as raízes: (x + 1)(x + 0,5)(x - 1)(x - 1,5)."
+  }
+];
+
+let currentIndex = 0;
+let score = 0;
+let correctAnswers = 0;
+let wrongAnswers = 0;
+let pendingOption = null;
+
+// Armazena o estado das escolhas
+let userState = questionsData.map(() => ({
+  userChoice: null,
+  isCorrect: null
+}));
+
+function updateHUD() {
+  document.getElementById("questionNum").textContent = `Questão ${currentIndex + 1} de ${questionsData.length}`;
+  document.getElementById("correctCount").textContent = `✅ Acertos: ${correctAnswers}`;
+  document.getElementById("wrongCount").textContent = `❌ Erros: ${wrongAnswers}`;
+  document.getElementById("score").textContent = `Pontos: ${score}`;
+
+  const answeredTotal = userState.filter(s => s.isCorrect !== null).length;
+  document.getElementById("answeredCount").textContent = `Respondidas: ${answeredTotal} / ${questionsData.length}`;
+  
+  renderSidebarGrid();
+}
+
+function renderSidebarGrid() {
+  const grid = document.getElementById("questionGrid");
+  grid.innerHTML = "";
+  
+  questionsData.forEach((q, idx) => {
+    const badge = document.createElement("div");
+    badge.className = "q-badge";
+    if (idx === currentIndex) badge.classList.add("current");
+    
+    const state = userState[idx];
+    if (state.isCorrect !== null) {
+      badge.classList.add("answered");
+      badge.textContent = `${idx + 1} ✓`;
+    } else {
+      badge.textContent = idx + 1;
+    }
+
+    badge.onclick = () => goToQuestion(idx);
+    grid.appendChild(badge);
+  });
+}
+
+function loadQuestion() {
+  const qData = questionsData[currentIndex];
+  const currentState = userState[currentIndex];
+
+  updateHUD();
+
+  document.getElementById("btnPrev").disabled = (currentIndex === 0);
+  document.getElementById("btnNext").disabled = (currentIndex === questionsData.length - 1);
+
+  document.getElementById("challengeCategory").textContent = qData.cat;
+  document.getElementById("challengeTitle").textContent = `Desafio Fabril N° ${qData.qNum}`;
+  document.getElementById("challengeText").textContent = qData.q;
+
+  const container = document.getElementById("optionsContainer");
+  container.innerHTML = "";
+
+  const correctText = qData.options[qData.answerIdx];
+
+  qData.options.forEach((optText, optIdx) => {
+    const optDiv = document.createElement("div");
+    optDiv.className = "option-card";
+    optDiv.innerHTML = `
+      <div style="font-size:11px; font-weight:bold; color:var(--senai-blue); margin-bottom:4px;">OPÇÃO ${String.fromCharCode(65 + optIdx)}</div>
+      <div style="font-size:15px; font-weight:bold;">${optText}</div>
+    `;
+
+    if (currentState.isCorrect !== null) {
+      optDiv.classList.add("disabled");
+      optDiv.style.cursor = "default";
+      
+      if (optText === correctText) {
+        optDiv.classList.add("correct-selected");
+      } else if (optText === currentState.userChoice && !currentState.isCorrect) {
+        optDiv.classList.add("wrong-selected");
+      }
+    } else {
+      optDiv.onclick = () => openConfirmModal(optText, optDiv);
+    }
+
+    container.appendChild(optDiv);
+  });
+
+  const banner = document.getElementById("resultBanner");
+  const expBox = document.getElementById("explanationBox");
+
+  if (currentState.isCorrect !== null) {
+    banner.style.display = "block";
+    if (currentState.isCorrect) {
+      banner.textContent = "✅ RESPOSTA CORRETA!";
+      banner.className = "result-banner correct";
+    } else {
+      banner.textContent = "❌ RESPOSTA INCORRETA!";
+      banner.className = "result-banner wrong";
+    }
+    document.getElementById("explanationText").textContent = qData.rExp;
+    expBox.style.display = "block";
+  } else {
+    banner.style.display = "none";
+    expBox.style.display = "none";
+  }
+}
+
+function openConfirmModal(optText, element) {
+  pendingOption = { text: optText, element: element };
+  document.getElementById("selectedOptionText").textContent = `"${optText}"`;
+  document.getElementById("confirmModal").classList.add("active");
+}
+
+function closeModal() {
+  document.getElementById("confirmModal").classList.remove("active");
+  pendingOption = null;
+}
+
+function confirmSelection() {
+  if (!pendingOption) return;
+
+  const choiceText = pendingOption.text;
+  closeModal();
+
+  const qData = questionsData[currentIndex];
+  const currentState = userState[currentIndex];
+  
+  if (currentState.isCorrect !== null) return;
+
+  const correctText = qData.options[qData.answerIdx];
+  const isCorrect = (choiceText === correctText);
+
+  currentState.userChoice = choiceText;
+  currentState.isCorrect = isCorrect;
+
+  if (isCorrect) {
+    score += 10;
+    correctAnswers++;
+  } else {
+    wrongAnswers++;
+  }
+
+  loadQuestion();
+}
+
+function goToQuestion(index) {
+  currentIndex = index;
+  loadQuestion();
+}
+
+function prevQuestion() {
+  if (currentIndex > 0) {
+    currentIndex--;
+    loadQuestion();
+  }
+}
+
+function nextQuestion() {
+  if (currentIndex < questionsData.length - 1) {
+    currentIndex++;
+    loadQuestion();
+  }
+}
+
+function checkFinalResult() {
+  const answeredTotal = userState.filter(s => s.isCorrect !== null).length;
+  alert(`📊 RESUMO DO DESAFIO:\n\nRespondidas: ${answeredTotal} de ${questionsData.length}\n✅ Acertos: ${correctAnswers}\n❌ Erros: ${wrongAnswers}\n🏆 Pontuação Final: ${score} pontos`);
+}
+
+// Inicialização
+loadQuestion();
+</script>
+
+</body>
+</html>
