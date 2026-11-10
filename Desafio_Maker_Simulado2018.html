@@ -1,0 +1,979 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Desafio SENAI: CAD/CAM ao Chão de Fábrica</title>
+<style>
+:root {
+  --senai-blue: #0046ad;
+  --senai-red: #e30613;
+  --bg-color: #eef5ff;
+  --card-bg: #ffffff;
+  --text-color: #17233c;
+  --border-color: #d7e4f8;
+  --accent-green: #2e7d32;
+  --accent-green-bg: #edf7ed;
+  --answered-blue: #0046ad;
+  --answered-blue-bg: #e6f0ff;
+}
+
+*{box-sizing:border-box}
+body{margin:0;font-family:Arial,Helvetica,sans-serif;background:var(--bg-color);color:var(--text-color)}
+
+header{background:var(--senai-blue);color:#fff;padding:16px 20px;display:flex;align-items:center;justify-content:center;gap:15px;box-shadow:0 3px 8px rgba(0,0,0,0.15)}
+.logo{background:var(--senai-red);color:#fff;font-weight:900;font-style:italic;font-size:22px;padding:4px 10px;border-radius:4px}
+h1{margin:0;font-size:22px}
+
+main{max-width:1250px;margin:20px auto;padding:0 15px}
+
+/* HUD / Placar Superior */
+.hud{display:flex;justify-space-between;align-items:center;background:#fff;padding:12px 20px;border-radius:10px;box-shadow:0 2px 8px rgba(0,0,0,0.06);margin-bottom:20px;font-weight:bold;color:var(--senai-blue);flex-wrap:wrap;gap:10px}
+.hud-stats{display:flex;gap:15px}
+.stat-correct{color:var(--accent-green);}
+.stat-wrong{color:var(--senai-red);}
+
+/* Layout Principal com Painel Lateral */
+.main-layout{display:grid;grid-template-columns:1fr 280px;gap:20px;align-items:start}
+
+/* Layout Interno do Jogo (Lado a Lado) */
+.game-container{display:grid;grid-template-columns:1fr 1fr;gap:20px;align-items:start}
+
+/* Estilo das Cartas */
+.card{background:#fff;border-radius:12px;border:2px solid var(--border-color);padding:20px;box-shadow:0 4px 12px rgba(0,0,0,0.08);position:relative;display:flex;flex-direction:column}
+.card-header{font-size:12px;font-weight:bold;color:var(--senai-red);text-transform:uppercase;margin-bottom:8px;letter-spacing:1px}
+.card-title{font-size:18px;font-weight:bold;color:var(--senai-blue);margin-bottom:12px}
+.card-body{font-size:15px;line-height:1.4;color:var(--text-color);flex-grow:1}
+
+/* Coluna de Opções */
+.options-container{display:flex;flex-direction:column;gap:10px}
+.option-card{background:#fff;border:2px solid var(--border-color);border-radius:10px;padding:14px;cursor:pointer;transition:all 0.2s ease;display:flex;flex-direction:column}
+.option-card:hover:not(.disabled){border-color:var(--senai-blue);transform:translateY(-2px);box-shadow:0 4px 10px rgba(0,70,173,0.15)}
+
+/* Estilos de Opção Selecionada/Correta */
+.option-card.correct-selected {
+  border: 2px solid var(--accent-green) !important;
+  background-color: var(--accent-green-bg) !important;
+  color: #1b5e20 !important;
+}
+.option-card.wrong-selected {
+  border: 2px solid var(--senai-red) !important;
+  background-color: #fff0ed !important;
+  color: #9b3425 !important;
+}
+
+/* Banner de Resultado */
+.result-banner{display:none;margin-top:15px;padding:12px;border-radius:8px;font-weight:bold;font-size:16px;text-align:center}
+.result-banner.correct{background:var(--accent-green-bg);color:var(--accent-green);border:1px solid var(--accent-green)}
+.result-banner.wrong{background:#fff0ed;color:var(--senai-red);border:1px solid var(--senai-red)}
+
+/* Explicação Pós-Resposta */
+.explanation-box{display:none;margin-top:10px;padding:12px;background:#f8fafc;border-left:4px solid var(--senai-blue);border-radius:4px;font-size:14px;color:var(--text-color)}
+
+/* Botões de Navegação */
+.nav-buttons{display:flex;justify-content:space-between;gap:12px;margin-top:20px;flex-wrap:wrap}
+.btn-nav{padding:12px 20px;border-radius:8px;border:0;font-weight:bold;font-size:15px;cursor:pointer;transition:all 0.2s}
+.btn-prev{background:#e2e8f0;color:var(--text-color)}
+.btn-next{background:var(--senai-blue);color:#fff}
+.btn-finish{background:var(--accent-green);color:#fff}
+.btn-nav:disabled{opacity:0.4;cursor:not-allowed}
+
+/* PAINEL LATERAL DE PROGRESSO */
+.sidebar{background:#fff;border-radius:12px;border:2px solid var(--border-color);padding:16px;box-shadow:0 4px 12px rgba(0,0,0,0.08)}
+.sidebar-title{font-size:16px;font-weight:bold;color:var(--senai-blue);margin-bottom:6px;border-bottom:2px solid var(--border-color);padding-bottom:8px}
+.sidebar-counter{font-size:14px;font-weight:bold;color:var(--senai-blue);margin-bottom:12px;background:var(--answered-blue-bg);padding:8px;border-radius:6px;text-align:center}
+.question-grid{display:grid;grid-template-columns:repeat(5, 1fr);gap:6px;margin-bottom:15px;max-height:360px;overflow-y:auto;padding-right:2px}
+
+/* Badges do Painel Lateral */
+.q-badge{height:34px;border-radius:6px;border:1px solid var(--border-color);background:#f1f5f9;display:flex;align-items:center;justify-content:center;font-weight:bold;font-size:12px;cursor:pointer;transition:all 0.2s;color:var(--text-color)}
+.q-badge:hover{border-color:var(--senai-blue)}
+.q-badge.current{border:2px solid var(--senai-red);box-shadow:0 0 0 2px rgba(227,6,19,0.2)}
+
+.q-badge.answered{
+  background-color: var(--answered-blue) !important;
+  color: #ffffff !important;
+  border-color: var(--answered-blue) !important;
+  font-weight: 900;
+}
+
+.btn-sidebar-check {
+  width: 100%;
+  padding: 10px;
+  background: var(--accent-green);
+  color: #fff;
+  border: 0;
+  border-radius: 8px;
+  font-weight: bold;
+  font-size: 14px;
+  cursor: pointer;
+  transition: filter 0.2s;
+}
+.btn-sidebar-check:hover { filter: brightness(1.1); }
+
+/* Modal de Confirmação (Popup) */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:1000;align-items:center;justify-content:center}
+.modal-overlay.active{display:flex}
+.modal-box{background:#fff;padding:24px;border-radius:12px;width:90%;max-width:440px;text-align:center;box-shadow:0 10px 25px rgba(0,0,0,0.2)}
+.modal-title{font-size:18px;font-weight:bold;color:var(--senai-blue);margin-bottom:12px}
+.modal-buttons{display:flex;justify-content:center;gap:12px;margin-top:20px}
+.btn{padding:10px 20px;border-radius:6px;border:0;font-weight:bold;cursor:pointer;font-size:14px}
+.btn-ok{background:var(--senai-blue);color:#fff}
+.btn-cancel{background:#e2e8f0;color:var(--text-color)}
+
+@media(max-width:900px){
+  .main-layout{grid-template-columns:1fr}
+  .game-container{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">SENAI</div>
+  <h1>Desafio Maker: Do CAD/CAM ao Chão de Fábrica</h1>
+</header>
+
+<main>
+  <div class="hud">
+    <span id="questionNum">Questão 1 de 40</span>
+    <div class="hud-stats">
+      <span class="stat-correct" id="correctCount">✅ Acertos: 0</span>
+      <span class="stat-wrong" id="wrongCount">❌ Erros: 0</span>
+      <span id="score">Pontos: 0</span>
+    </div>
+  </div>
+
+  <div class="main-layout">
+    <!-- Área do Jogo -->
+    <div class="left-content">
+      <div class="game-container">
+        <!-- Carta do Desafio -->
+        <div class="card" id="challengeCard">
+          <div class="card-header" id="challengeCategory">TEMA</div>
+          <div class="card-title" id="challengeTitle">Desafio Fabril N° 01</div>
+          <div class="card-body" id="challengeText">Carregando desafio...</div>
+        </div>
+
+        <!-- Opções de Resposta -->
+        <div class="options-container" id="optionsContainer"></div>
+      </div>
+
+      <!-- Banner de Resultado -->
+      <div class="result-banner" id="resultBanner"></div>
+
+      <!-- Explicação Técnica -->
+      <div class="explanation-box" id="explanationBox">
+        <strong>💡 Explicação Técnica:</strong>
+        <p id="explanationText" style="margin:5px 0 0 0;"></p>
+      </div>
+
+      <!-- Navegação -->
+      <div class="nav-buttons">
+        <button class="btn-nav btn-prev" id="btnPrev" onclick="prevQuestion()">◀ Anterior</button>
+        <button class="btn-nav btn-next" id="btnNext" onclick="nextQuestion()">Próxima ▶</button>
+        <button class="btn-nav btn-finish" id="btnFinish" onclick="checkFinalResult()">📊 Verificar Resultado Final</button>
+      </div>
+    </div>
+
+    <!-- Painel Lateral -->
+    <aside class="sidebar">
+      <div class="sidebar-title">📋 Progresso</div>
+      <div class="sidebar-counter" id="answeredCount">Respondidas: 0 / 40</div>
+      <div class="question-grid" id="questionGrid"></div>
+      <button class="btn-sidebar-check" onclick="checkFinalResult()">🏆 Concluir & Ver Acertos</button>
+    </aside>
+  </div>
+</main>
+
+<!-- Modal de Confirmação (Popup) -->
+<div class="modal-overlay" id="confirmModal">
+  <div class="modal-box">
+    <div class="modal-title">Está certo de sua escolha?</div>
+    <p id="selectedOptionText" style="font-weight:bold; color:var(--senai-blue);"></p>
+    <div class="modal-buttons">
+      <button class="btn btn-cancel" onclick="closeModal()">Cancelar</button>
+      <button class="btn btn-ok" onclick="confirmSelection()">OK</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const questionsData = [
+  {
+    "id": 1,
+    "cat": "Fabricação Mecânica - Ferramentas",
+    "qNum": "01",
+    "q": "Considere que um técnico em fabricação mecânica usine peças com a ferramenta de corte rómbica de 35° (código ISO VBMT, com VC = 150-180 m/min e Fz = 0,05-0,3 mm/rot) e utilize como referência a tabela de parâmetros. Com base nessas informações, qual avanço máximo o técnico deve utilizar para a ferramenta de corte?",
+    "options": [
+      "0,04",
+      "0,05",
+      "0,25",
+      "0,30",
+      "0,35"
+    ],
+    "answerIdx": 3,
+    "rExp": "Para a ferramenta de corte rómbica de 35° (código VBMT), o intervalo de avanço por dente/rotação Fz é de 0,05 a 0,30 mm/rot. Portanto, o avanço máximo permitido é de 0,30 mm/rot."
+  },
+  {
+    "id": 2,
+    "cat": "Fabricação Mecânica - Usinagem CNC",
+    "qNum": "02",
+    "q": "Um operador de um centro de fresamento CNC recebeu o desenho de um mancal para furação com rosca M6 (furo prévio 5,0 mm) e um furo central alargado de Ø14H7 (necessitando de subdimensionamento com broca de 13,8 mm prévia ao alargador de 14mm). As ferramentas necessárias para essa tarefa são:",
+    "options": [
+      "broca de centro, broca de 5mm, broca de 14mm e alargador de 14mm.",
+      "broca de centro, broca de 5mm, broca de 13,8mm e alargador de 14mm.",
+      "broca de centro, broca de 5,8mm, broca de 14mm e alargador de 14mm.",
+      "broca de centro, broca de 6mm, broca de 13,8mm e alargador de 14mm.",
+      "broca de centro, broca de 5,3mm, broca de 13,8mm e alargador de 14mm."
+    ],
+    "answerIdx": 1,
+    "rExp": "Para roscar M6 utiliza-se a broca de 5,0 mm (diâmetro nominal menos passo). Para obter o furo de precisão 14H7 com alargador de 14 mm, utiliza-se previamente a broca subdimensionada de 13,8 mm para deixar sobremetal de acabamento."
+  },
+  {
+    "id": 3,
+    "cat": "Conformação Mecânica - Forjamento",
+    "qNum": "03",
+    "q": "Na produção de uma metalúrgica, estão ocorrendo algumas intercorrências no setor de forjamento: as peças estão apresentando falha de enchimento. Para evitar esse problema, o técnico deverá:",
+    "options": [
+      "aumentar a força.",
+      "diminuir a temperatura.",
+      "adequar as ferramentas.",
+      "diminuir o atrito excessivo.",
+      "utilizar prensas de menor capacidade."
+    ],
+    "answerIdx": 0,
+    "rExp": "A falha de enchimento no forjamento ocorre quando o material não preenche completamente a cavidade da matriz, sendo o aumento da força de conformação a ação indicada para garantir o preenchimento total."
+  },
+  {
+    "id": 4,
+    "cat": "Elementos de Máquinas & CAM",
+    "qNum": "04",
+    "q": "Um transportador de peças utiliza corrente de transmissão de 62 e 20 dentes e será adaptado para polias (mantendo a velocidade). Para a primeira polia com diâmetro de 45 mm, considerando usinagem em CAM com sobremetal máximo de 2 mm, o diâmetro aproximado da segunda nova polia (incluindo o sobremetal) será de:",
+    "options": [
+      "121 mm.",
+      "131 mm.",
+      "141 mm.",
+      "151 mm.",
+      "161 mm."
+    ],
+    "answerIdx": 2,
+    "rExp": "A relação de transmissão é i = 62 / 20 = 3,1. O diâmetro nominal da segunda polia é D2 = 45 mm × 3,1 = 139,5 mm. Adicionando o sobremetal máximo de usinagem em CAM, o valor bruto aproximado resulta em cerca de 141 mm."
+  },
+  {
+    "id": 5,
+    "cat": "Manufatura Enxuta / Lean",
+    "qNum": "05",
+    "q": "Uma empresa que fabrica moldes em máquinas CNC deseja empregar técnicas de manufatura enxuta para reduzir tempos na troca de ferramental. A técnica a ser empregada é:",
+    "options": [
+      "5S.",
+      "Jidoka.",
+      "Kanban.",
+      "Just-in-time.",
+      "Setup rápido."
+    ],
+    "answerIdx": 4,
+    "rExp": "O Setup Rápido (ou SMED - Single-Minute Exchange of Die) é a metodologia Lean criada especificamente para reduzir os tempos de preparação e troca de ferramentas em máquinas."
+  },
+  {
+    "id": 6,
+    "cat": "Programação CNC - Fanuc",
+    "qNum": "06",
+    "q": "No ciclo de canais G75 (FANUC) com ferramenta de 3mm de espessura, o bloco 'N30 G75 X18 Z-90 P4000 Q18000 F0.15' causou erro geométrico pois não considerou a largura da ferramenta na cota final de Z. Como deve ficar o bloco corrigido para alcançar a cota Z de -90mm?",
+    "options": [
+      "N10 G00 X32 Z-18",
+      "N10 G00 X35 Z-15",
+      "N40 G00 X32 Z-18",
+      "N30 G75 X21 Z-90 P4000 Q3000 F0.15",
+      "N30 G75 X18 Z-93 P4000 Q18000 F0.15"
+    ],
+    "answerIdx": 4,
+    "rExp": "Na programação do ciclo G75 em torneamento CNC, a cota final Z deve compensar a largura da ferramenta de sangrar (3 mm). Para usinar até a cota Z-90 mm, a cota programada no ciclo deve ser Z-93 mm (Z-90 - 3 mm)."
+  },
+  {
+    "id": 7,
+    "cat": "Conformação Mecânica - Chapas",
+    "qNum": "07",
+    "q": "Uma empresa realiza a produção de peças por meio das quais uma chapa é submetida a um esforço de modo a adquirir uma nova forma geométrica, plana ou oca. Para melhorar a produção, o técnico deve executar um processo de:",
+    "options": [
+      "extrusão.",
+      "trefilação.",
+      "laminação.",
+      "forjamento.",
+      "estampagem."
+    ],
+    "answerIdx": 4,
+    "rExp": "Estampagem é o processo de conformação mecânica realizado em chapas metálicas para obter formas planas ou cavidades ocas através de corte, dobramento ou estampagem profunda."
+  },
+  {
+    "id": 8,
+    "cat": "Programação CNC - Funções M",
+    "qNum": "08",
+    "q": "Para otimizar o processo de usinagem CNC e controlar a produção, a função M76 foi acrescentada ao programa. Essa função foi acrescentada para:",
+    "options": [
+      "desligar o eixo árvore.",
+      "ligar a bomba de fluido refrigerante.",
+      "contar a quantidade de peças produzidas.",
+      "fazer com que o eixo gire no sentido horário.",
+      "reiniciar a execução do programa de usinagem."
+    ],
+    "answerIdx": 2,
+    "rExp": "Em diversos comandos CNC industriais, a função auxiliar M76 é utilizada para acionar o contador automático de peças produzidas."
+  },
+  {
+    "id": 9,
+    "cat": "Automação & Sensores",
+    "qNum": "09",
+    "q": "Em uma esteira de transporte de rebarbas contendo materiais metálicos e não-metálicos, qual o tipo de sensor indicado exclusivamente para identificar a presença dos materiais metálicos e evitar acidentes?",
+    "options": [
+      "Sensor ultrassônico.",
+      "Sensor fotoelétrico.",
+      "Sensor capacitivo.",
+      "Sensor indutivo.",
+      "Sensor óptico."
+    ],
+    "answerIdx": 3,
+    "rExp": "Os sensores de proximidade indutivos operam com base no princípio do campo eletromagnético e detectam exclusivamente materiais condutores metálicos."
+  },
+  {
+    "id": 10,
+    "cat": "Parâmetros de Usinagem CAM",
+    "qNum": "10",
+    "q": "Qual é o parâmetro técnico que indica a largura da superfície de corte (passo lateral) durante a usinagem CNC programada via CAM?",
+    "options": [
+      "Comprimento da ferramenta.",
+      "Avanço lateral da ferramenta.",
+      "Profundidade de corte da ferramenta.",
+      "Velocidade de rotação do eixo-árvore.",
+      "Avanço de penetração axial da ferramenta."
+    ],
+    "answerIdx": 1,
+    "rExp": "O avanço lateral (ou passo lateral / ae) representa a largura da superfície que a ferramenta corta a cada passe no plano transversal."
+  },
+  {
+    "id": 11,
+    "cat": "Usinagem Convencional - Fresagem",
+    "qNum": "11",
+    "q": "Para usinar um chanfro de 30° na borda de chapas em uma fresadora universal convencional (provida de morsa fixa e ferramenta vertical), o técnico deverá manter uma inclinação de 30°:",
+    "options": [
+      "na mesa da máquina.",
+      "na morsa da máquina.",
+      "no cabeçote da máquina.",
+      "na máquina sobre o solo.",
+      "nas pastilhas da ferramenta."
+    ],
+    "answerIdx": 2,
+    "rExp": "Em fresadoras universais, quando a morsa é fixa e a ferramenta é vertical, ajusta-se a inclinação angular necessária no cabeçote articulável da máquina."
+  },
+  {
+    "id": 12,
+    "cat": "Materiais & Seleção de Aços",
+    "qNum": "12",
+    "q": "Um componente mecânico de aço opera sem proteção superficial exposto à oxidação e desgaste abrasivo. Qual melhoria deve ser aplicada ao processo para solucionar o problema?",
+    "options": [
+      "Aplicar um processo de tratamento térmico de tempera na peça, a fim de aumentar sua dureza.",
+      "Utilizar um aço-liga que contenha cromo (Cr) em sua composição para a fabricação desse componente mecânico.",
+      "Utilizar um aço-liga que contenha fósforo (P) em sua composição para a fabricação desse componente mecânico.",
+      "Aplicar um processo de usinagem no componente que proporcione um acabamento superficial de maior qualidade.",
+      "Utilizar um aço carbono com maior percentual de carbono (C) em sua composição para a fabricação do componente mecânico."
+    ],
+    "answerIdx": 1,
+    "rExp": "A adição de Cromo (Cr) em ligas de aço confere elevada resistência à corrosão (oxidação) através da passivação e aumenta a resistência ao desgaste."
+  },
+  {
+    "id": 13,
+    "cat": "Cálculo Técnico & Geometria",
+    "qNum": "13",
+    "q": "Para fresar um perfil quadrado de lado 30 mm na extremidade de um eixo cilíndrico, utilizando a fórmula a² = b² + c², qual deve ser o diâmetro mínimo do eixo (a)?",
+    "options": [
+      "30,32 mm.",
+      "42,00 mm.",
+      "42,42 mm.",
+      "43,00 mm.",
+      "60,42 mm."
+    ],
+    "answerIdx": 2,
+    "rExp": "Aplicando o Teorema de Pitágoras para os catetos b = 30 e c = 30: a² = 30² + 30² = 900 + 900 = 1800. Logicamente, a = √1800 ≈ 42,42 mm."
+  },
+  {
+    "id": 14,
+    "cat": "Programação CNC - Roscamento",
+    "qNum": "14",
+    "q": "Para programar o ciclo de roscamento semi-automático G78 em uma rosca de duas entradas, indicando o ângulo do eixo árvore para a entrada da rosca em milésimos de graus, utiliza-se a letra:",
+    "options": [
+      "F.",
+      "Q.",
+      "R.",
+      "X.",
+      "Z."
+    ],
+    "answerIdx": 1,
+    "rExp": "No ciclo de roscamento G78/G76 em comandos CNC Fanuc, o parâmetro Q especifica o ângulo de entrada do fuso (orientação de fase do spindle em milésimos de grau)."
+  },
+  {
+    "id": 15,
+    "cat": "Gestão da Qualidade & 5S",
+    "qNum": "15",
+    "q": "Em uma adequação à Indústria 4.0, o primeiro passo é classificar insumos, ferramentas, máquinas e documentos, descartando tudo o que é desnecessário. Qual ferramenta da qualidade é usada?",
+    "options": [
+      "5W2H.",
+      "Fluxograma.",
+      "5S (5 sensos).",
+      "Brainstorming.",
+      "Diagrama de Ishikawa."
+    ],
+    "answerIdx": 2,
+    "rExp": "A metodologia 5S inicia-se com o Senso de Utilização (Seiri), focado no descarte e eliminação de itens desnecessários no ambiente de trabalho."
+  },
+  {
+    "id": 16,
+    "cat": "Lean Manufacturing - OEE",
+    "qNum": "16",
+    "q": "Um indicador OEE apresentou disponibilidade baixa devido ao elevado tempo e quantidade de setups executados. Qual ferramenta Lean deve ser aplicada para reduzir o tempo de setup?",
+    "options": [
+      "SMED.",
+      "PDCA.",
+      "ANDON.",
+      "JIDOKA.",
+      "KAIZEN."
+    ],
+    "answerIdx": 0,
+    "rExp": "SMED (Single-Minute Exchange of Die / Troca Rápida de Ferramentas) é a ferramenta lean focada na redução de tempos de preparação (setup) para aumentar a disponibilidade da máquina."
+  },
+  {
+    "id": 17,
+    "cat": "Metrologia & Tolerâncias ISO",
+    "qNum": "17",
+    "q": "Qual é o instrumento de medição por calibração mais indicado para o controle prático de produção da tolerância dimensional ISO H7 em furos de precisão?",
+    "options": [
+      "Calibrador tampão.",
+      "Calibrador de rosca.",
+      "Micrômetro interno.",
+      "Micrômetro externo.",
+      "Paquímetro universal."
+    ],
+    "answerIdx": 0,
+    "rExp": "O calibrador tampão passa/não-passa é o instrumento padrão de produção rápida para verificação de tolerâncias restritas de furos internos (como H7)."
+  },
+  {
+    "id": 18,
+    "cat": "Injeção de Plásticos & CAE",
+    "qNum": "18",
+    "q": "Nos testes de simulação CAE de injeção plástica foi identificada a presença de bolhas de ar aprisionadas nas peças. Qual o recurso técnico para sanar o defeito?",
+    "options": [
+      "Aumentar o diâmetro do bico de injeção.",
+      "Fazer o balanceamento da câmara quente.",
+      "Adicionar um sistema de extração pneumática.",
+      "Aumentar a saída de gás na região próxima as bolhas.",
+      "Adicionar um sistema gavetas com molas na região das bolhas."
+    ],
+    "answerIdx": 3,
+    "rExp": "As bolhas de ar/gás reprimido são corrigidas com a inclusão ou aumento de saídas de gases (respiros de molde) na região afetada."
+  },
+  {
+    "id": 19,
+    "cat": "Cálculo de Usinagem - RPM",
+    "qNum": "19",
+    "q": "Para tornear um diâmetro de 35 mm em aço carbono (Velocidade de Corte Vc = 70 m/min e π = 3,14), qual deve ser o número de rotações por minuto (RPM)?",
+    "options": [
+      "160 rpm.",
+      "637 rpm.",
+      "780 rpm.",
+      "2.000 rpm.",
+      "6.280 rpm."
+    ],
+    "answerIdx": 1,
+    "rExp": "N = (Vc × 1000) / (π × D) = (70 × 1000) / (3,14 × 35) = 70000 / 109,9 ≈ 636,94 rpm (arredondado para 637 rpm)."
+  },
+  {
+    "id": 20,
+    "cat": "Processos de Laminação",
+    "qNum": "20",
+    "q": "Durante a laminação de aço a partir de lingotes, falhas no controle rigoroso da temperatura geram defeitos na extensão das chapas. O técnico deve controlar o aparecimento de:",
+    "options": [
+      "trincas que podem surgir nas chapas.",
+      "gotas frias que podem surgir nas chapas.",
+      "vazios que podem surgir na extensão das chapas.",
+      "dobras que podem surgir na extensão das chapas.",
+      "inclusões que podem ocorrer em partes das chapas."
+    ],
+    "answerIdx": 0,
+    "rExp": "A laminação fora da faixa ideal de temperatura de conformação a quente gera gradientes térmicos e perda de ductilidade, provocando o surgimento de trincas na chapa."
+  },
+  {
+    "id": 21,
+    "cat": "Interpretação de Desenho Técnico",
+    "qNum": "21",
+    "q": "Ao analisar a folha de desenho de uma placa de fixação com cotas Ø5H7, Ø10.5, 20H10 e 30H10, a medida de furo que exige o controle de qualidade de precisão mais rigoroso é:",
+    "options": [
+      "6,5.",
+      "10,5.",
+      "5H7.",
+      "20H10.",
+      "30H10."
+    ],
+    "answerIdx": 2,
+    "rExp": "A tolerância de classe H7 representa o campo de tolerância de maior precisão (qualidade de trabalho fina) entre as opções cotadas."
+  },
+  {
+    "id": 22,
+    "cat": "Aparelho Divisor Universal",
+    "qNum": "22",
+    "q": "Para usinar uma engrenagem de 35 dentes com divisor de relação 40:1, utilizando discos com 21, 27, 29, 31 e 33 furos, quantas voltas e furos avançar na manivela?",
+    "options": [
+      "1 voltas mais 3 furos, em um disco de 21 furos.",
+      "1 voltas mais 6 furos, em um disco de 27 furos.",
+      "1 voltas mais 8 furos, em um disco de 29 furos.",
+      "2 voltas mais 5 furos, em um disco de 31 furos.",
+      "2 voltas mais 5 furos, em um disco de 33 furos."
+    ],
+    "answerIdx": 1,
+    "rExp": "N = 40 / Z = 40 / 35 = 1 + 5/35 = 1 + 1/7. Multiplicando a fração por 3/3 para ajustar aos discos disponíveis: 1/7 = 3/21 ou (multiplicando por 3.85 não dão inteiros, mas 5/35 = 3/21 (3 furos no disco de 21) ou 6/42). Analisando as opções: 1 volta + 3 furos no disco de 21 equivale a 40/35 = 1 + 3/21 = 1 + 1/7 = 8/7 = 40/35!"
+  },
+  {
+    "id": 23,
+    "cat": "Transmissão por Engrenagens",
+    "qNum": "23",
+    "q": "Um sistema de transmissão engrena um pinhão movido por motor a 1800 RPM (19 dentes) com uma coroa acoplada (61 dentes). O que ocorrerá com a velocidade no eixo da coroa?",
+    "options": [
+      "A rpm vai reduzir.",
+      "A rpm vai ampliar.",
+      "A força vai reduzir.",
+      "A rpm vai se manter.",
+      "A força vai se manter."
+    ],
+    "answerIdx": 0,
+    "rExp": "Como a engrenagem movida (coroa de 61 dentes) é maior que a motora (pinhão de 19 dentes), a velocidade de rotação (RPM) no eixo da coroa será reduzida."
+  },
+  {
+    "id": 24,
+    "cat": "Cálculo de Avanço - Fresagem",
+    "qNum": "24",
+    "q": "Uma fresa de metal duro topo reto possui Z = 4 dentes, avanço por dente fz = 0,07 mm/dente e trabalha com rotação N = 1.500 RPM. O avanço de usinagem (Vf) em mm/min é de:",
+    "options": [
+      "105 mm/min.",
+      "420 mm/min.",
+      "4.200 mm/min.",
+      "6.000 mm/min.",
+      "15.000 mm/min."
+    ],
+    "answerIdx": 1,
+    "rExp": "Vf = fz × Z × N = 0,07 × 4 × 1500 = 0,28 × 1500 = 420 mm/min."
+  },
+  {
+    "id": 25,
+    "cat": "Elementos de Fixação - Roscas",
+    "qNum": "25",
+    "q": "Em uma união submetida a uma grande solicitação axial em um único sentido, o perfil de rosca mais adequado a ser aplicado para suportar a carga sem trincar é:",
+    "options": [
+      "Redonda",
+      "Quadrada",
+      "Whitworth",
+      "Trapezoidal",
+      "Dente de serra"
+    ],
+    "answerIdx": 4,
+    "rExp": "A rosca com perfil Dente de Serra (Sawtooth/Buttress) é especialmente projetada para transmitir esforços axiais elevados atuando exclusivamente em um único sentido."
+  },
+  {
+    "id": 26,
+    "cat": "Insertos & Geometria ISO",
+    "qNum": "26",
+    "q": "Em uma usinagem de desbaste com quebra severa de pastilha quadrada (perfil 'S' de 90°), o técnico deve substituir por uma ferramenta de raio/resistência maior. Qual a geometria indicada?",
+    "options": [
+      "Perfil “C”",
+      "Perfil “D”",
+      "Perfil “R”",
+      "Perfil “T”",
+      "Perfil “V”"
+    ],
+    "answerIdx": 2,
+    "rExp": "A pastilha redonda (Perfil 'R') oferece a máxima resistência mecânica de aresta e raio por não possuir vértices pontiagudos de concentração de tensão."
+  },
+  {
+    "id": 27,
+    "cat": "Metrologia Trigonômétrica",
+    "qNum": "27",
+    "q": "Para alinhar em tridimensional uma peça conformada com ângulo de 25°, utilizando régua padrão de L = 100 mm na horizontal, a altura de ajuste H (H = L × sen(25°) ou sen/tan) é de:",
+    "options": [
+      "21,13 mm.",
+      "42,26 mm.",
+      "46,63 mm.",
+      "50,35 mm.",
+      "90,63 mm."
+    ],
+    "answerIdx": 2,
+    "rExp": "H = L × tan(25°) = 100 × 0,4663 = 46,63 mm."
+  },
+  {
+    "id": 28,
+    "cat": "Simbologia de Rugosidade",
+    "qNum": "28",
+    "q": "Na indicação de rugosidade de 0,8 µm retificada com amostragem de 2,5 mm, a simbologia correta posiciona o método 'Retificado' na haste e os valores de rugosidade e amostragem como:",
+    "options": [
+      "Simbologia com indicação 'Retificado' na haste superior, 0,8 à esquerda do V e amostragem 2,5 sobre a extensão horizontal.",
+      "Simbologia com 'Retificado' e 2,5 sob a linha e 0,8 à esquerda.",
+      "Simbologia simples sem indicação do processo de retificação.",
+      "Simbologia com 2,5 na esquerda e 0,8 no topo.",
+      "Simbologia com traço invertido."
+    ],
+    "answerIdx": 0,
+    "rExp": "Conforme a NBR ISO 1302, a exigência de rugosidade Ra (0,8) fica à esquerda da haste do símbolo, o método de fabricação (Retificado) na linha superior e o comprimento de amostragem (2,5) acima do traço horizontal."
+  },
+  {
+    "id": 29,
+    "cat": "Máquinas-Ferramenta CNC",
+    "qNum": "29",
+    "q": "Uma peça cilíndrica possui torneamento, furações rosqueadas fora de centro, rebaixos e um perfil hexagonal externo de 30mm. Para fabricá-la completamente em um só equipamento utiliza-se:",
+    "options": [
+      "Torno CNC.",
+      "Fresadora CNC.",
+      "Router CNC 3 eixos.",
+      "Centro de usinagem.",
+      "Torno CNC com ferramenta acionada."
+    ],
+    "answerIdx": 4,
+    "rExp": "O Torno CNC equipado com ferramentas acionadas e eixo C permite realizar operações combinadas de torneamento e fresamento/furação numa única fixação."
+  },
+  {
+    "id": 30,
+    "cat": "Estampagem Profunda - Cálculo",
+    "qNum": "30",
+    "q": "Para estampagem de chapa de aço com espessura e = 2 mm, a folga punção/matriz é δ = e + 0,07 × √(10 × e). Qual a folga necessária?",
+    "options": [
+      "1,31mm",
+      "2,09mm",
+      "2,18mm",
+      "2,31mm",
+      "2,89mm"
+    ],
+    "answerIdx": 3,
+    "rExp": "δ = 2 + 0,07 × √(10 × 2) = 2 + 0,07 × √20 = 2 + 0,07 × 4,472 = 2 + 0,313 = 2,31 mm."
+  },
+  {
+    "id": 31,
+    "cat": "Classes ISO de Insertos",
+    "qNum": "31",
+    "q": "Ao selecionar insertos de metal duro para usinagem de roldanas em aço inoxidável AISI 304L, qual a classe ISO de ferramenta indicada no estojo?",
+    "options": [
+      "H",
+      "K",
+      "M",
+      "P",
+      "S"
+    ],
+    "answerIdx": 2,
+    "rExp": "A classe ISO 'M' (cor amarela) é a especificação padrão para a usinagem de aços inoxidáveis austeníticos e fundidos inoxidáveis."
+  },
+  {
+    "id": 32,
+    "cat": "Leitura de Desenho & Montagem",
+    "qNum": "32",
+    "q": "Na montagem de um mancal de carcaça bi-partida contendo 4 furos rosqueados M4 e furações nas tampas laterais e base, a quantidade total de parafusos de fixação a adquirir é:",
+    "options": [
+      "4",
+      "5",
+      "7",
+      "8",
+      "9"
+    ],
+    "answerIdx": 3,
+    "rExp": "O desenho especifica a união completa exigindo o conjunto de 8 parafusos de fixação distribuídos nas interfaces rosqueadas da peça."
+  },
+  {
+    "id": 33,
+    "cat": "Metrologia de Roscas",
+    "qNum": "33",
+    "q": "No plano de controle dimensional de produção para verificar se uma rosca externa M12 fabricada em série está dentro das tolerâncias do passa/não-passa, utiliza-se o:",
+    "options": [
+      "pente de roscas.",
+      "escantilhão de 60°.",
+      "calibrador de roscas.",
+      "paquímetro universal.",
+      "micrômetro de roscas."
+    ],
+    "answerIdx": 2,
+    "rExp": "O calibrador de rosca (anel passa/não-passa para roscas externas) é o equipamento oficial de controle de produção dimensional rápido."
+  },
+  {
+    "id": 34,
+    "cat": "Organização Industrial & 5S",
+    "qNum": "34",
+    "q": "Na fabricação mecânica, quem são os reais responsáveis pela organização e conservação de um ambiente produtivo limpo e seguro na indústria?",
+    "options": [
+      "A equipe que trabalha no ambiente, pois esta é uma ação coletiva.",
+      "Os operadores de máquina, pois geram grande parte dos resíduos.",
+      "A equipe de coleta de resíduos, pois esta ação não é de responsabilidade dos demais colaboradores.",
+      "Os técnicos do setor de metrologia, pois são os responsáveis pela qualidade dos processos e produtos.",
+      "Os técnico em fabricação mecânica, pois são os responsáveis por acompanhar o atendimento dos indicadores de produção."
+    ],
+    "answerIdx": 0,
+    "rExp": "A organização do ambiente produtivo e a cultura 5S são responsabilidades coletivas e compartilhadas por todos os integrantes da equipe de trabalho."
+  },
+  {
+    "id": 35,
+    "cat": "Programação CNC - Código G",
+    "qNum": "35",
+    "q": "Quais são as funções no código G responsável por ativar (esquerda/direita) e desativar a compensação do raio da ponta da ferramenta de corte?",
+    "options": [
+      "G40 e G42 que ativam e G41 que desativa.",
+      "G41 e G42 que ativam e G40 que desativa.",
+      "G41 e G42 que desativam e G40 que ativa.",
+      "G41 e G40 que ativam e G42 que desativa.",
+      "G41 e G42 que ativa e G40 e G43 que desativam."
+    ],
+    "answerIdx": 1,
+    "rExp": "As funções G41 (compensação à esquerda) e G42 (compensação à direita) ativam o raio da ferramenta, enquanto a função G40 cancela/desativa a compensação."
+  },
+  {
+    "id": 36,
+    "cat": "Manufatura Assistida (CAM)",
+    "qNum": "36",
+    "q": "Durante o desenvolvimento da usinagem em software CAM, a verificação prévia do percurso da ferramenta para prevenir colisões antes de enviar o programa à máquina é a:",
+    "options": [
+      "escolha de material e fixação.",
+      "escolha de parâmetros de corte.",
+      "programa em linguagem G code.",
+      "simulação da trajetória da ferramenta.",
+      "maior aproveitamento do tempo de usinagem."
+    ],
+    "answerIdx": 3,
+    "rExp": "A simulação gráfica da trajetória da ferramenta em ambiente CAM permite conferir o sobremetal, evitar colisões com fixadores e validar a estratégia de usinagem."
+  },
+  {
+    "id": 37,
+    "cat": "Segurança e Saúde no Trabalho",
+    "qNum": "37",
+    "q": "Um técnico realizando manutenção em câmara frigorífica apresentou queda de pressão arterial e bradicardia devido ao frio extremo. Os EPIs devem prevenir:",
+    "options": [
+      "Riscos físicos.",
+      "Riscos químicos.",
+      "Riscos biológicos.",
+      "Riscos de acidentes.",
+      "Riscos ergonômicos."
+    ],
+    "answerIdx": 0,
+    "rExp": "Temperaturas extremas (como o frio intenso em câmaras frigoríficas) enquadram-se na classificação de Riscos Físicos ambientais."
+  },
+  {
+    "id": 38,
+    "cat": "Metalurgia do Pó",
+    "qNum": "38",
+    "q": "Qual é a sequência cronológica correta das etapas fundamentais de fabricação na Metalurgia do Pó?",
+    "options": [
+      "fabricação do pó, a mistura, o forjamento e a sinterização.",
+      "fabricação do pó, a mistura, a sinterização e o forjamento.",
+      "fabricação do pó, a mistura, a compactação e a sinterização.",
+      "fabricação do pó, a compactação, a mistura e a sinterização.",
+      "fabricação do pó, a mistura, a compactação e a sinterização."
+    ],
+    "answerIdx": 2,
+    "rExp": "O fluxo clássico da metalurgia do pó segue rigorosamente: Obtenção do Pó -> Mistura de pós e aditivos -> Compactação na matriz -> Sinterização em forno."
+  },
+  {
+    "id": 39,
+    "cat": "Processos & Equipamentos CNC",
+    "qNum": "39",
+    "q": "Para usinar em lote grande e curto prazo uma peça tridimensional complexa com recursos usinados em variadas faces numa só máquina, deve-se:",
+    "options": [
+      "Fazer a peça em uma Fresadora Convencional.",
+      "Fazer a programação ISO diretamente na fresadora CNC.",
+      "Fazer a programação parametrizada diretamente no centro de usinagem.",
+      "Fazer a programação com software CAM e usinar a peça em um centro de usinagem.",
+      "Fazer a programação com software CAM e usinar a peça em um torno CNC com ferramenta acionada."
+    ],
+    "answerIdx": 3,
+    "rExp": "A combinação de programação via software CAM com a usinagem automatizada em Centro de Usinagem CNC de múltiplos eixos é a solução padrão de alta produtividade."
+  },
+  {
+    "id": 40,
+    "cat": "Modelagem CAD 3D",
+    "qNum": "40",
+    "q": "No projeto CAD 3D de uma peça mecânica, qual o comando específico utilizado para criar rapidamente uma parede de reforço estrutural inclinado entre dois corpos cilíndricos?",
+    "options": [
+      "Loft.",
+      "Nervura.",
+      "Extrusão.",
+      "Varredura.",
+      "Revolução."
+    ],
+    "answerIdx": 1,
+    "rExp": "O recurso 'Nervura' (Rib) em softwares CAD 3D (como Inventor e SolidWorks) projeta perfis abertos para criar suportes rígidos de reforço com espessura constante."
+  }
+];
+
+let currentIndex = 0;
+let score = 0;
+let correctAnswers = 0;
+let wrongAnswers = 0;
+let pendingOption = null;
+
+// Armazena o estado das escolhas
+let userState = questionsData.map(() => ({
+  userChoice: null,
+  isCorrect: null
+}));
+
+function updateHUD() {
+  document.getElementById("questionNum").textContent = `Questão ${currentIndex + 1} de ${questionsData.length}`;
+  document.getElementById("correctCount").textContent = `✅ Acertos: ${correctAnswers}`;
+  document.getElementById("wrongCount").textContent = `❌ Erros: ${wrongAnswers}`;
+  document.getElementById("score").textContent = `Pontos: ${score}`;
+
+  const answeredTotal = userState.filter(s => s.isCorrect !== null).length;
+  document.getElementById("answeredCount").textContent = `Respondidas: ${answeredTotal} / ${questionsData.length}`;
+  
+  renderSidebarGrid();
+}
+
+function renderSidebarGrid() {
+  const grid = document.getElementById("questionGrid");
+  grid.innerHTML = "";
+  
+  questionsData.forEach((q, idx) => {
+    const badge = document.createElement("div");
+    badge.className = "q-badge";
+    if (idx === currentIndex) badge.classList.add("current");
+    
+    const state = userState[idx];
+    if (state.isCorrect !== null) {
+      badge.classList.add("answered");
+      badge.textContent = `${idx + 1} ✓`;
+    } else {
+      badge.textContent = idx + 1;
+    }
+
+    badge.onclick = () => goToQuestion(idx);
+    grid.appendChild(badge);
+  });
+}
+
+function loadQuestion() {
+  const qData = questionsData[currentIndex];
+  const currentState = userState[currentIndex];
+
+  updateHUD();
+
+  document.getElementById("btnPrev").disabled = (currentIndex === 0);
+  document.getElementById("btnNext").disabled = (currentIndex === questionsData.length - 1);
+
+  document.getElementById("challengeCategory").textContent = qData.cat;
+  document.getElementById("challengeTitle").textContent = `Desafio Fabril N° ${qData.qNum}`;
+  document.getElementById("challengeText").textContent = qData.q;
+
+  const container = document.getElementById("optionsContainer");
+  container.innerHTML = "";
+
+  const correctText = qData.options[qData.answerIdx];
+
+  qData.options.forEach((optText, optIdx) => {
+    const optDiv = document.createElement("div");
+    optDiv.className = "option-card";
+    optDiv.innerHTML = `
+      <div style="font-size:11px; font-weight:bold; color:var(--senai-blue); margin-bottom:4px;">OPÇÃO ${String.fromCharCode(65 + optIdx)}</div>
+      <div style="font-size:15px; font-weight:bold;">${optText}</div>
+    `;
+
+    if (currentState.isCorrect !== null) {
+      optDiv.classList.add("disabled");
+      optDiv.style.cursor = "default";
+      
+      if (optText === correctText) {
+        optDiv.classList.add("correct-selected");
+      } else if (optText === currentState.userChoice && !currentState.isCorrect) {
+        optDiv.classList.add("wrong-selected");
+      }
+    } else {
+      optDiv.onclick = () => openConfirmModal(optText, optDiv);
+    }
+
+    container.appendChild(optDiv);
+  });
+
+  const banner = document.getElementById("resultBanner");
+  const expBox = document.getElementById("explanationBox");
+
+  if (currentState.isCorrect !== null) {
+    banner.style.display = "block";
+    if (currentState.isCorrect) {
+      banner.textContent = "✅ RESPOSTA CORRETA!";
+      banner.className = "result-banner correct";
+    } else {
+      banner.textContent = "❌ RESPOSTA INCORRETA!";
+      banner.className = "result-banner wrong";
+    }
+    document.getElementById("explanationText").textContent = qData.rExp;
+    expBox.style.display = "block";
+  } else {
+    banner.style.display = "none";
+    expBox.style.display = "none";
+  }
+}
+
+function openConfirmModal(optText, element) {
+  pendingOption = { text: optText, element: element };
+  document.getElementById("selectedOptionText").textContent = `"${optText}"`;
+  document.getElementById("confirmModal").classList.add("active");
+}
+
+function closeModal() {
+  document.getElementById("confirmModal").classList.remove("active");
+  pendingOption = null;
+}
+
+function confirmSelection() {
+  if (!pendingOption) return;
+
+  const choiceText = pendingOption.text;
+  closeModal();
+
+  const qData = questionsData[currentIndex];
+  const currentState = userState[currentIndex];
+  
+  if (currentState.isCorrect !== null) return;
+
+  const correctText = qData.options[qData.answerIdx];
+  const isCorrect = (choiceText === correctText);
+
+  currentState.userChoice = choiceText;
+  currentState.isCorrect = isCorrect;
+
+  if (isCorrect) {
+    score += 10;
+    correctAnswers++;
+  } else {
+    wrongAnswers++;
+  }
+
+  loadQuestion();
+}
+
+function goToQuestion(index) {
+  currentIndex = index;
+  loadQuestion();
+}
+
+function prevQuestion() {
+  if (currentIndex > 0) {
+    currentIndex--;
+    loadQuestion();
+  }
+}
+
+function nextQuestion() {
+  if (currentIndex < questionsData.length - 1) {
+    currentIndex++;
+    loadQuestion();
+  }
+}
+
+function checkFinalResult() {
+  const answeredTotal = userState.filter(s => s.isCorrect !== null).length;
+  alert(`📊 RESUMO DO DESAFIO:\n\nRespondidas: ${answeredTotal} de ${questionsData.length}\n✅ Acertos: ${correctAnswers}\n❌ Erros: ${wrongAnswers}\n🏆 Pontuação Final: ${score} pontos`);
+}
+
+// Inicialização
+loadQuestion();
+</script>
+
+</body>
+</html>
