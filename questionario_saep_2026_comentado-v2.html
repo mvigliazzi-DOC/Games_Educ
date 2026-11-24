@@ -1,0 +1,1786 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Caderno de Questões Comentado e Gabarito - SAEP 2026</title>
+  <style>
+    :root {
+      --primary: #b91c1c;
+      --primary-dark: #7f1d1d;
+      --secondary: #1e293b;
+      --bg-page: #f8fafc;
+      --bg-card: #ffffff;
+      --text-main: #1f2937;
+      --text-muted: #64748b;
+      --border-color: #e2e8f0;
+      --correct-bg: #dcfce7;
+      --correct-border: #16a34a;
+      --correct-text: #14532d;
+      --just-bg: #f1f5f9;
+      --just-border: #3b82f6;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      background-color: var(--bg-page);
+      color: var(--text-main);
+      line-height: 1.6;
+      padding: 2rem 1rem;
+    }
+
+    .container {
+      max-width: 960px;
+      margin: 0 auto;
+    }
+
+    header {
+      background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+      color: #ffffff;
+      padding: 2rem 2.5rem;
+      border-radius: 10px;
+      margin-bottom: 2rem;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    }
+
+    header h1 {
+      font-size: 1.75rem;
+      font-weight: 700;
+      margin-bottom: 0.4rem;
+      letter-spacing: -0.02em;
+    }
+
+    header p {
+      font-size: 1rem;
+      opacity: 0.9;
+    }
+
+    .question-card {
+      background-color: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 1.75rem;
+      margin-bottom: 1.5rem;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+      page-break-inside: avoid;
+    }
+
+    .question-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 2px solid var(--border-color);
+      padding-bottom: 0.75rem;
+      margin-bottom: 1rem;
+    }
+
+    .question-number {
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: var(--primary);
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+    }
+
+    .badge-answer {
+      background-color: var(--correct-bg);
+      color: var(--correct-text);
+      border: 1px solid var(--correct-border);
+      font-size: 0.85rem;
+      font-weight: 700;
+      padding: 0.25rem 0.75rem;
+      border-radius: 999px;
+    }
+
+    .enunciado {
+      margin-bottom: 1.25rem;
+      font-size: 1rem;
+      color: var(--text-main);
+    }
+
+    .enunciado p {
+      margin-bottom: 0.65rem;
+    }
+
+    .media-note {
+      background-color: #fffbeb;
+      border-left: 4px solid #f59e0b;
+      padding: 0.6rem 0.9rem;
+      font-size: 0.9rem;
+      color: #92400e;
+      margin: 0.75rem 0;
+      border-radius: 0 4px 4px 0;
+    }
+
+    .formula-box {
+      background-color: #f8fafc;
+      border: 1px dashed #cbd5e1;
+      padding: 0.75rem 1rem;
+      font-family: 'Cambria Math', 'Times New Roman', serif;
+      font-size: 1.05rem;
+      margin: 0.75rem 0;
+      border-radius: 6px;
+      text-align: center;
+    }
+
+    .alternatives {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 0.6rem;
+      margin-bottom: 1.25rem;
+    }
+
+    .alternatives li {
+      padding: 0.75rem 1rem;
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      background-color: #ffffff;
+      display: flex;
+      align-items: flex-start;
+      gap: 0.75rem;
+    }
+
+    .alternatives li.correct {
+      background-color: var(--correct-bg);
+      border-color: var(--correct-border);
+      color: var(--correct-text);
+      font-weight: 600;
+    }
+
+    .alt-letter {
+      font-weight: 700;
+      min-width: 24px;
+    }
+
+    .justification {
+      background-color: var(--just-bg);
+      border-left: 4px solid var(--just-border);
+      padding: 1rem 1.25rem;
+      border-radius: 0 6px 6px 0;
+      font-size: 0.95rem;
+    }
+
+    .justification strong.just-title {
+      display: block;
+      color: var(--secondary);
+      margin-bottom: 0.35rem;
+      font-size: 0.95rem;
+      text-transform: uppercase;
+      letter-spacing: 0.02em;
+    }
+
+    .answer-key-section {
+      background-color: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 2rem;
+      margin-top: 2.5rem;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+      page-break-before: always;
+    }
+
+    .answer-key-section h2 {
+      color: var(--primary);
+      font-size: 1.5rem;
+      border-bottom: 2px solid var(--primary);
+      padding-bottom: 0.6rem;
+      margin-bottom: 1.5rem;
+    }
+
+    table.gabarito-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.95rem;
+    }
+
+    table.gabarito-table th,
+    table.gabarito-table td {
+      border: 1px solid var(--border-color);
+      padding: 0.75rem 1rem;
+      text-align: left;
+      vertical-align: top;
+    }
+
+    table.gabarito-table th {
+      background-color: var(--secondary);
+      color: #ffffff;
+      font-weight: 600;
+    }
+
+    table.gabarito-table tr:nth-child(even) {
+      background-color: #f8fafc;
+    }
+
+    table.gabarito-table td.col-num {
+      width: 110px;
+      font-weight: 700;
+      color: var(--secondary);
+      text-align: center;
+    }
+
+    table.gabarito-table td.col-letra {
+      width: 90px;
+      font-weight: 700;
+      color: var(--correct-text);
+      background-color: var(--correct-bg);
+      text-align: center;
+    }
+
+    footer {
+      text-align: center;
+      margin-top: 2rem;
+      color: var(--text-muted);
+      font-size: 0.85rem;
+    }
+
+    @media print {
+      body {
+        background-color: #ffffff;
+        padding: 0;
+      }
+      .question-card {
+        box-shadow: none;
+        border: 1px solid #cbd5e1;
+      }
+      header {
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+      .alternatives li.correct,
+      .badge-answer,
+      table.gabarito-table td.col-letra,
+      table.gabarito-table th,
+      .justification {
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>Caderno de Questões Comentado e Gabarito — SAEP 2026</h1>
+      <p>Curso Técnico em Fabricação Mecânica • Enunciados, Alternativas Destacadas, Justificativas Técnicas e Gabarito Completo</p>
+    </header>
+
+    <main id="questoes-container">
+      <article class="question-card">
+        <div class="question-header">
+          <span class="question-number">Atividade 1</span>
+          <span class="badge-answer">Correta: D</span>
+        </div>
+        <div class="enunciado">
+          <p>Um torneiro mecânico acaba de finalizar o desbaste fino de um eixo de precisão em um torno CNC. O desenho técnico especifica o diâmetro final. Para validar a operação, o operador utiliza um micrômetro externo com resolução de 0,01 mm.</p>
+          <div class="media-note">Referência visual: Micrômetro externo indicando 10 mm na escala superior da bainha, o traço de 0,50 mm visível na escala inferior da bainha e o traço 39 do tambor alinhado à linha de referência.</div>
+          <p><strong>Qual é a medida do eixo observada no micrômetro?</strong></p>
+        </div>
+        <ul class="alternatives">
+          <li>
+            <span class="alt-letter">A)</span>
+            <span>10,00.</span>
+          </li>
+          <li>
+            <span class="alt-letter">B)</span>
+            <span>10,39.</span>
+          </li>
+          <li>
+            <span class="alt-letter">C)</span>
+            <span>10,50.</span>
+          </li>
+          <li class="correct">
+            <span class="alt-letter">D)</span>
+            <span>10,89.</span>
+          </li>
+        </ul>
+        <div class="justification">
+          <strong class="just-title">Justificativa Técnica</strong>
+          <p>Na escala fixa (bainha), a leitura antes da borda do tambor mostra o traço de 10 mm na parte superior e o traço inferior correspondente ao meio milímetro (0,50 mm), totalizando 10,50 mm. Na escala móvel (tambor), o traço que coincide com a linha de referência é o 39, que equivale a 0,39 mm. Somando os valores: 10,50 + 0,39 = 10,89 mm.</p>
+        </div>
+      </article>
+      <article class="question-card">
+        <div class="question-header">
+          <span class="question-number">Atividade 2</span>
+          <span class="badge-answer">Correta: B</span>
+        </div>
+        <div class="enunciado">
+          <p>Ao construir um modelo físico que envolve a estampagem (repuxo) de uma peça, confeccionada de chapa de aço, o técnico observa a ocorrência frequente de rugas (wrinkling) na aba da peça, gerando um alto índice de refugo das peças.</p>
+          <p><strong>O ajuste técnico que deverá ser empregado consiste em</strong></p>
+        </div>
+        <ul class="alternatives">
+          <li>
+            <span class="alt-letter">A)</span>
+            <span>alterar a espessura da chapa estampada.</span>
+          </li>
+          <li class="correct">
+            <span class="alt-letter">B)</span>
+            <span>adicionar um prensa-chapas (blank holder).</span>
+          </li>
+          <li>
+            <span class="alt-letter">C)</span>
+            <span>aumentar a velocidade de descida do punção.</span>
+          </li>
+          <li>
+            <span class="alt-letter">D)</span>
+            <span>diminuir ou eliminar a quantidade de lubrificação durante a operação.</span>
+          </li>
+        </ul>
+        <div class="justification">
+          <strong class="just-title">Justificativa Técnica</strong>
+          <p>Durante o repuxo profundo, tensões de compressão circunferenciais atuam na aba da chapa, provocando flambagem localizada (rugas). O prensa-chapas (blank holder) aplica uma pressão controlada sobre a aba contra a face da matriz, impedindo o enrugamento enquanto permite o escoamento gradual do material para o interior da cavidade.</p>
+        </div>
+      </article>
+      <article class="question-card">
+        <div class="question-header">
+          <span class="question-number">Atividade 3</span>
+          <span class="badge-answer">Correta: A</span>
+        </div>
+        <div class="enunciado">
+          <p>Uma empresa de fabricação mecânica recebeu um pedido para produzir um lote de eixos roscados, com diâmetro externo de 60 mm por 150 mm de comprimento e um rasgo de chaveta de largura 10 mm por 5 mm de profundidade, em aço ABNT 1045. O processo deve garantir a qualidade dimensional e superficial, otimização do tempo e a qualidade do final do produto.</p>
+          <p><strong>Considere os requisitos de fabricação. Qual é a sequência de operações que deve ser adotada para fabricação dos eixos?</strong></p>
+        </div>
+        <ul class="alternatives">
+          <li class="correct">
+            <span class="alt-letter">A)</span>
+            <span>Corte da matéria-prima, torneamento do diâmetro externo, fresamento do rasgo de chaveta, retificação do diâmetro externo e roscamento.</span>
+          </li>
+          <li>
+            <span class="alt-letter">B)</span>
+            <span>Corte da matéria-prima, fresamento do rasgo de chaveta, torneamento do diâmetro externo, retificação do diâmetro externo e roscamento.</span>
+          </li>
+          <li>
+            <span class="alt-letter">C)</span>
+            <span>Corte da matéria-prima, torneamento do diâmetro externo, retificação do diâmetro externo, fresamento do rasgo de chaveta e roscamento.</span>
+          </li>
+          <li>
+            <span class="alt-letter">D)</span>
+            <span>Corte de matéria prima, roscamento, torneamento do diâmetro externo, fresamento do rasgo de chaveta, retificação do diâmetro externo.</span>
+          </li>
+        </ul>
+        <div class="justification">
+          <strong class="just-title">Justificativa Técnica</strong>
+          <p>Após o corte, realiza-se o torneamento para definir a geometria cilíndrica primária. O rasgo de chaveta deve ser fresado antes da retificação cilíndrica externa para que eventuais rebarbas ou tensões geradas na fresagem sejam eliminadas durante o acabamento retificado. O roscamento é executado por último para não danificar os filetes nas etapas anteriores.</p>
+        </div>
+      </article>
+      <article class="question-card">
+        <div class="question-header">
+          <span class="question-number">Atividade 4</span>
+          <span class="badge-answer">Correta: C</span>
+        </div>
+        <div class="enunciado">
+          <p>Em uma linha de produção de peças usinadas, um técnico está configurando uma máquina CNC para iniciar a fabricação de um novo lote. Durante a inspeção pré-operacional, ele observa que o intertravamento da porta de proteção da máquina está desativado.</p>
+          <p><strong>O técnico de fabricação, para garantir a segurança no processo deve</strong></p>
+        </div>
+        <ul class="alternatives">
+          <li>
+            <span class="alt-letter">A)</span>
+            <span>iniciar a usinagem, monitorando de perto a operação para intervir em caso de falha ou risco.</span>
+          </li>
+          <li>
+            <span class="alt-letter">B)</span>
+            <span>tentar reativar o intertravamento por conta própria, utilizando ferramentas disponíveis na bancada.</span>
+          </li>
+          <li class="correct">
+            <span class="alt-letter">C)</span>
+            <span>comunicar o supervisor e aguardar a correção do intertravamento antes de iniciar qualquer operação.</span>
+          </li>
+          <li>
+            <span class="alt-letter">D)</span>
+            <span>isolar a área ao redor da máquina e continuar a usinagem, mantendo os demais trabalhadores afastados.</span>
+          </li>
+        </ul>
+        <div class="justification">
+          <strong class="just-title">Justificativa Técnica</strong>
+          <p>Segundo a Norma Regulamentadora NR-12, máquinas e equipamentos não podem operar com sistemas de segurança ou dispositivos de intertravamento das proteções móveis desativados ou burlados. A operação deve ser impedida e comunicada imediatamente à supervisão/manutenção especializada.</p>
+        </div>
+      </article>
+      <article class="question-card">
+        <div class="question-header">
+          <span class="question-number">Atividade 5</span>
+          <span class="badge-answer">Correta: A</span>
+        </div>
+        <div class="enunciado">
+          <p>Em um processo de usinagem de um eixo cilíndrico, a especificação de um projeto exige que o diâmetro final da peça seja de 50,00 mm com uma tolerância de ±0,02 mm. Após a usinagem, o operador realiza a medição do diâmetro em três posições distintas da peça, obtendo os valores de 50,03 mm, 50,01 mm e 49,99 mm.</p>
+          <p><strong>Considerando os procedimentos técnicos e de controle de qualidade, o técnico deve</strong></p>
+        </div>
+        <ul class="alternatives">
+          <li class="correct">
+            <span class="alt-letter">A)</span>
+            <span>Reprovar a peça, pois uma das três posições medidas está fora da tolerância.</span>
+          </li>
+          <li>
+            <span class="alt-letter">B)</span>
+            <span>Recalibrar o instrumento de medição, pois a peça está fora da especificação.</span>
+          </li>
+          <li>
+            <span class="alt-letter">C)</span>
+            <span>Aprovar a peça, pois apenas uma das três posições medidas está fora da tolerância.</span>
+          </li>
+          <li>
+            <span class="alt-letter">D)</span>
+            <span>Retrabalhar a peça, pois a média dos diâmetros medidos está dentro da tolerância.</span>
+          </li>
+        </ul>
+        <div class="justification">
+          <strong class="just-title">Justificativa Técnica</strong>
+          <p>A dimensão nominal de 50,00 mm com tolerância de ±0,02 mm determina o campo de aceitação entre 49,98 mm (mínimo) e 50,02 mm (máximo). Como uma das seções apresentou 50,03 mm, o componente viola o limite máximo especificado (indicando erro de forma/conicidade fora da tolerância) e não pode ser aprovado.</p>
+        </div>
+      </article>
+      <article class="question-card">
+        <div class="question-header">
+          <span class="question-number">Atividade 6</span>
+          <span class="badge-answer">Correta: B</span>
+        </div>
+        <div class="enunciado">
+          <p>Uma empresa de fabricação de máquina de lavar, busca otimizar a linha de produção de um eixo de transmissão, pois está enfrentando baixa eficiência produtiva e longos tempos de setup, com grandes lotes de produção que geram muito estoque. Assim a gerência implementou recentemente a filosofia da Manufatura Enxuta para reduzir desperdícios e aumentar a produtividade do processo.</p>
+          <p><strong>Para atender os requisitos de otimização da linha de produção o Técnico deve</strong></p>
+        </div>
+        <ul class="alternatives">
+          <li>
+            <span class="alt-letter">A)</span>
+            <span>Investir em máquinas de alta velocidade e realizar manutenções preventivas apenas durante paradas programadas.</span>
+          </li>
+          <li class="correct">
+            <span class="alt-letter">B)</span>
+            <span>Padronizar ferramentas e dispositivos, eliminar ajustes e testes, sincronizando a produção com a demanda do cliente.</span>
+          </li>
+          <li>
+            <span class="alt-letter">C)</span>
+            <span>Desenvolver um software de planejamento de produção avançado e automatizar todas as operações de usinagem.</span>
+          </li>
+          <li>
+            <span class="alt-letter">D)</span>
+            <span>Mudar o layout da fábrica para um arranjo celular e adotar um sistema de recompensas por produtividade na fábrica.</span>
+          </li>
+        </ul>
+        <div class="justification">
+          <strong class="just-title">Justificativa Técnica</strong>
+          <p>Os sintomas descritos (longos setups, grandes lotes e excesso de estoques) são combatidos na Manufatura Enxuta (Lean Manufacturing) através da Troca Rápida de Ferramentas (SMED — padronização de dispositivos e eliminação de ajustes internos) e do fluxo puxado sincronizado com a demanda real (Just-in-Time).</p>
+        </div>
+      </article>
+      <article class="question-card">
+        <div class="question-header">
+          <span class="question-number">Atividade 7</span>
+          <span class="badge-answer">Correta: A</span>
+        </div>
+        <div class="enunciado">
+          <p>Para garantir a funcionalidade de uma peça que será fabricada para ser montada em um conjunto mecânico final, o projetista deve elaborar a documentação técnica (detalhamento 2D) em ambiente CAD, especificando rigorosamente as tolerâncias dimensionais e o acabamento superficial necessários para orientar os processos de fabricação e inspeção de qualidade.</p>
+          <p><strong>Para garantir a fabricação de acordo com as especificações e o controle dimensional da peça, o técnico deve</strong></p>
+        </div>
+        <ul class="alternatives">
+          <li class="correct">
+            <span class="alt-letter">A)</span>
+            <span>definir as tolerâncias dimensionais nas cotas e especificar a rugosidade média.</span>
+          </li>
+          <li>
+            <span class="alt-letter">B)</span>
+            <span>inserir as espessuras de linha padrão da norma técnica e indicar as cotas padrões.</span>
+          </li>
+          <li>
+            <span class="alt-letter">C)</span>
+            <span>aplicar as hachuras corretas nas vistas em corte e indicar o material bruto para usinagem.</span>
+          </li>
+          <li>
+            <span class="alt-letter">D)</span>
+            <span>projetar as perspectivas isométricas da peça usinada e omitir as tolerâncias geométricas de forma e de posição.</span>
+          </li>
+        </ul>
+        <div class="justification">
+          <strong class="just-title">Justificativa Técnica</strong>
+          <p>Para assegurar a intercambialidade funcional na montagem e o desempenho das superfícies de contato, o desenho executivo 2D precisa especificar explicitamente os afastamentos dimensionais (tolerâncias) e os requisitos de estado de superfície (como a rugosidade média Ra).</p>
+        </div>
+      </article>
+      <article class="question-card">
+        <div class="question-header">
+          <span class="question-number">Atividade 8</span>
+          <span class="badge-answer">Correta: B</span>
+        </div>
+        <div class="enunciado">
+          <p>Um operador utiliza um torno convencional para o desbaste de um eixo cilíndrico longo de aço carbono. Para tentar agilizar o processo, configurou a máquina com uma velocidade de corte excessivamente alta e fixou a peça utilizando apenas as castanhas da placa universal. Durante os primeiros passes, essa combinação de parâmetros e falta de rigidez gerou uma forte vibração (trepidação), resultando em marcas profundas na peça.</p>
+          <p><strong>Para diminuir a vibração gerada durante o processo de desbaste o Técnico deve</strong></p>
+        </div>
+        <ul class="alternatives">
+          <li>
+            <span class="alt-letter">A)</span>
+            <span>Aumentar a velocidade de corte da operação e apoiar a extremidade livre do eixo utilizando uma ponta rotativa no contraponto da máquina.</span>
+          </li>
+          <li class="correct">
+            <span class="alt-letter">B)</span>
+            <span>Diminuir a velocidade de corte da operação e apoiar a extremidade livre do eixo utilizando uma ponta rotativa no contraponto da máquina.</span>
+          </li>
+          <li>
+            <span class="alt-letter">C)</span>
+            <span>Diminuir a velocidade de corte da operação e estender o material em balanço para fora das castanhas da placa universal.</span>
+          </li>
+          <li>
+            <span class="alt-letter">D)</span>
+            <span>Diminuir o avanço longitudinal de usinagem e fixar o eixo utilizando apenas a pressão exercida pela placa do equipamento.</span>
+          </li>
+        </ul>
+        <div class="justification">
+          <strong class="just-title">Justificativa Técnica</strong>
+          <p>Eixos esbeltos fixados apenas na placa ficam em balanço, apresentando baixa rigidez à flexão sob os esforços radiais de corte, o que provoca trepidação (chatter). Apoiar a extremidade livre com uma ponta rotativa no contraponto aumenta a rigidez estrutural do sistema, e reduzir a velocidade de corte evita a excitação vibratória e o desgaste prematuro do gume.</p>
+        </div>
+      </article>
+      <article class="question-card">
+        <div class="question-header">
+          <span class="question-number">Atividade 9</span>
+          <span class="badge-answer">Correta: D</span>
+        </div>
+        <div class="enunciado">
+          <p>No processo de fabricação de uma peça mecânica, o setor de PCP (Planejamento e Controle da Produção) monitora os prazos de entrega e a capacidade produtiva da linha. Em um determinado dia, foi registrado um atraso na etapa de usinagem devido a uma falha inesperada em um equipamento.</p>
+          <p><strong>Devido ao atraso na usinagem relatado, qual é a principal implicação dessa ocorrência para o planejamento da produção?</strong></p>
+        </div>
+        <ul class="alternatives">
+          <li>
+            <span class="alt-letter">A)</span>
+            <span>O aumento imediato do custo total de matéria-prima devido à ineficiência do processo.</span>
+          </li>
+          <li>
+            <span class="alt-letter">B)</span>
+            <span>A redução da demanda do produto final, pois os clientes não aceitarão o atraso na entrega.</span>
+          </li>
+          <li>
+            <span class="alt-letter">C)</span>
+            <span>A necessidade de substituir imediatamente todos os equipamentos da linha de produção para evitar futuras falhas.</span>
+          </li>
+          <li class="correct">
+            <span class="alt-letter">D)</span>
+            <span>A necessidade de reprogramar as etapas subsequentes do processo, buscando ajustar os prazos de entrega e a alocação de recursos.</span>
+          </li>
+        </ul>
+        <div class="justification">
+          <strong class="just-title">Justificativa Técnica</strong>
+          <p>Uma parada não planejada em uma operação da rota produtiva impacta diretamente o sequenciamento e o carregamento das máquinas seguintes. Cabe ao PCP reprogramar as ordens subsequentes, realocar turnos/recursos alternativos e recalcular os prazos de entrega.</p>
+        </div>
+      </article>
+      <article class="question-card">
+        <div class="question-header">
+          <span class="question-number">Atividade 10</span>
+          <span class="badge-answer">Correta: A</span>
+        </div>
+        <div class="enunciado">
+          <p>A fim de garantir a construção do modelo físico conforme as especificações da engenharia, o processo de conformação utilizando prensa hidráulica deve integrar produtividade e segurança. Isso exige a aplicação rigorosa de protocolos de controle no acionamento da máquina, assegurando que as peças sejam produzidas sem prejudicar a integridade física dos operadores.</p>
+          <p><strong>Para alcançar a eficácia operacional e garantir a segurança na operação de construção desse modelo físico, o técnico deve</strong></p>
+        </div>
+        <ul class="alternatives">
+          <li class="correct">
+            <span class="alt-letter">A)</span>
+            <span>Utilizar o comando bimanual a uma distância segura, considerando o tempo de parada total do martelo.</span>
+          </li>
+          <li>
+            <span class="alt-letter">B)</span>
+            <span>Utilizar cortinas de luz em modo de flutuação (blanking) para permitir o acesso lateral à zona de prensagem.</span>
+          </li>
+          <li>
+            <span class="alt-letter">C)</span>
+            <span>Ajustar a velocidade de aproximação do martelo acima do limite nominal para reduzir a exposição do operador durante o tempo de ciclo.</span>
+          </li>
+          <li>
+            <span class="alt-letter">D)</span>
+            <span>Operar o equipamento em sistema fechado, mantendo as proteções móveis encostadas sem o uso de dispositivos de intertravamento para facilitar a inspeção visual do modelo.</span>
+          </li>
+        </ul>
+        <div class="justification">
+          <strong class="just-title">Justificativa Técnica</strong>
+          <p>Conforme a NR-12 (Anexo VIII — Prensas e Similares), o dispositivo de acionamento bimanual deve manter ambas as mãos do operador ocupadas fora da zona de perigo e estar posicionado a uma distância mínima de segurança calculada em função do tempo total de parada do movimento perigoso do martelo.</p>
+        </div>
+      </article>
+      <article class="question-card">
+        <div class="question-header">
+          <span class="question-number">Atividade 11</span>
+          <span class="badge-answer">Correta: B</span>
+        </div>
+        <div class="enunciado">
+          <p>Durante a coordenação de um processo de torneamento, o programador identifica que a ferramenta de corte passará por diversas variações de diâmetro na mesma peça. Considerando que o sistema de código FANUC configurado no torno é o B. A fim de otimizar a vida útil do inserto, foi programada a Velocidade de Corte Constante (G96). Entretanto, para evitar que a placa do torno atinja rotações perigosamente elevadas quando a ferramenta se aproximar do centro da peça (diâmetro zero), é indispensável identificar e configurar um parâmetro de segurança no cabeçalho do programa.</p>
+          <p><strong>O código G que deverá ser inserido no programa para atender às normas de segurança e aumentar a vida do inserto é:</strong></p>
+        </div>
+        <ul class="alternatives">
+          <li>
+            <span class="alt-letter">A)</span>
+            <span>G54.</span>
+          </li>
+          <li class="correct">
+            <span class="alt-letter">B)</span>
+            <span>G92.</span>
+          </li>
+          <li>
+            <span class="alt-letter">C)</span>
+            <span>G94.</span>
+          </li>
+          <li>
+            <span class="alt-letter">D)</span>
+            <span>G97.</span>
+          </li>
+        </ul>
+        <div class="justification">
+          <strong class="just-title">Justificativa Técnica</strong>
+          <p>No sistema de códigos FANUC (Tipo B), o código G92 (acompanhado do endereço S, por exemplo, G92 S2500) define o limite máximo de rotação (RPM) do eixo-árvore quando a Velocidade de Corte Constante (G96) está ativa, impedindo que a placa atinja rotações excessivas próximas ao eixo de simetria (X0).</p>
+        </div>
+      </article>
+      <article class="question-card">
+        <div class="question-header">
+          <span class="question-number">Atividade 12</span>
+          <span class="badge-answer">Correta: C</span>
+        </div>
+        <div class="enunciado">
+          <p>No planejamento da usinagem CNC, a definição adequada dos parâmetros de processo é fundamental para garantir a qualidade e a eficiência da operação. Entre esses parâmetros, um deles corresponde à distância percorrida pela ferramenta a cada rotação da peça ou da própria ferramenta, influenciando diretamente o acabamento superficial e o tempo de ciclo da usinagem.</p>
+          <p><strong>Qual parâmetro de usinagem tem influência nestas características?</strong></p>
+        </div>
+        <ul class="alternatives">
+          <li>
+            <span class="alt-letter">A)</span>
+            <span>Velocidade de corte.</span>
+          </li>
+          <li>
+            <span class="alt-letter">B)</span>
+            <span>Profundidade de corte.</span>
+          </li>
+          <li class="correct">
+            <span class="alt-letter">C)</span>
+            <span>Avanço de corte.</span>
+          </li>
+          <li>
+            <span class="alt-letter">D)</span>
+            <span>Rotação do fuso.</span>
+          </li>
+        </ul>
+        <div class="justification">
+          <strong class="just-title">Justificativa Técnica</strong>
+          <p>O avanço por rotação (f, expresso em mm/rot) representa o deslocamento linear da ferramenta a cada volta completa da peça (no torneamento) ou do fuso (na furação/fresamento). Ele governa o passo das marcas deixadas pelo raio de ponta do inserto (rugosidade teórica) e o tempo total de percurso.</p>
+        </div>
+      </article>
+      <article class="question-card">
+        <div class="question-header">
+          <span class="question-number">Atividade 13</span>
+          <span class="badge-answer">Correta: A</span>
+        </div>
+        <div class="enunciado">
+          <p>Para garantir a otimização na preparação de uma usinagem complexa, a engenharia instituiu um novo procedimento técnico de controle: "Em caso de divergência dimensional, a equipe está proibida de usar cotas deduzidas. O arquivo CAD fornecido deve ser adotado como a única referência geométrica oficial". Durante o set-up, o operador nota que uma medida do desenho impresso diverge do projeto digital e solicita orientação.</p>
+          <p><strong>Ao interpretar esse procedimento, o técnico deve esclarecer ao operador que a referência exata a ser adotada para a usinagem da peça é o</strong></p>
+        </div>
+        <ul class="alternatives">
+          <li class="correct">
+            <span class="alt-letter">A)</span>
+            <span>modelo geométrico virtual e tridimensional validado no software de projeto.</span>
+          </li>
+          <li>
+            <span class="alt-letter">B)</span>
+            <span>percurso dinâmico de corte simulado para orientar o avanço da fresa na CNC.</span>
+          </li>
+          <li>
+            <span class="alt-letter">C)</span>
+            <span>desenho técnico bidimensional impresso no papel da ordem para a fabricação.</span>
+          </li>
+          <li>
+            <span class="alt-letter">D)</span>
+            <span>bloco de comandos alfanuméricos digitados na tela do painel da máquina CNC.</span>
+          </li>
+        </ul>
+        <div class="justification">
+          <strong class="just-title">Justificativa Técnica</strong>
+          <p>De acordo com a diretriz de controle de engenharia descrita (conceito de fonte única da verdade / Model-Based Definition), o modelo sólido 3D validado em ambiente CAD é a autoridade geométrica oficial, prevalecendo sobre desenhos 2D impressos que possam conter erros de cotagem ou revisões desatualizadas.</p>
+        </div>
+      </article>
+      <article class="question-card">
+        <div class="question-header">
+          <span class="question-number">Atividade 14</span>
+          <span class="badge-answer">Correta: D</span>
+        </div>
+        <div class="enunciado">
+          <p>Em um projeto de fabricação mecânica, a usinagem de uma cavidade interna com fundo e cantos arredondados (perfil 3D) será realizada em um centro de usinagem CNC de 3 eixos, com programação em software CAM. Para otimizar o tempo de processo e garantir a qualidade do perfil, o programador deve definir a sequência de ferramentas para as etapas de desbaste pesado e de acabamento.</p>
+          <p><strong>Qual é a combinação de ferramentas necessária para executar as etapas descritas?</strong></p>
+        </div>
+        <ul class="alternatives">
+          <li>
+            <span class="alt-letter">A)</span>
+            <span>Fresa de topo plano no desbaste e no acabamento.</span>
+          </li>
+          <li>
+            <span class="alt-letter">B)</span>
+            <span>Fresa esférica no desbaste e no acabamento.</span>
+          </li>
+          <li>
+            <span class="alt-letter">C)</span>
+            <span>Fresa esférica no desbaste e fresa de topo plano no acabamento.</span>
+          </li>
+          <li class="correct">
+            <span class="alt-letter">D)</span>
+            <span>Fresa de topo plano no desbaste e fresa esférica no acabamento.</span>
+          </li>
+        </ul>
+        <div class="justification">
+          <strong class="just-title">Justificativa Técnica</strong>
+          <p>A fresa de topo plano apresenta maior rigidez e taxa de remoção de cavaco para o desbaste pesado em camadas (deixando sobremetal em degraus). Em seguida, a fresa esférica (ball nose) é empregada no acabamento 3D para usinar continuamente o fundo e os cantos côncavos arredondados com precisão geométrica.</p>
+        </div>
+      </article>
+      <article class="question-card">
+        <div class="question-header">
+          <span class="question-number">Atividade 15</span>
+          <span class="badge-answer">Correta: A</span>
+        </div>
+        <div class="enunciado">
+          <p>Em uma empresa que fabrica máquinas agrícolas, o setor técnico identificou que o processo de conformação a frio apresenta problemas recorrentes. Durante a análise do processo, observou-se acúmulo de peças entre etapas, movimentação desnecessária de operadores, dificuldade na localização de ferramentas e dispositivos, além de paradas frequentes da máquina para ajustes e organização do posto de trabalho. Esses fatores têm contribuído para retrabalho, aumento do tempo de produção e riscos à segurança dos operadores.</p>
+          <p><strong>Para readequar o processo de conformação a frio da empresa, o técnico deve</strong></p>
+        </div>
+        <ul class="alternatives">
+          <li class="correct">
+            <span class="alt-letter">A)</span>
+            <span>padronizar a inspeção visual para detecção precoce de defeitos e assegurar o uso obrigatório de EPIs específicos durante o ajuste e manuseio da máquina.</span>
+          </li>
+          <li>
+            <span class="alt-letter">B)</span>
+            <span>reduzir o número de operadores na linha de conformação para diminuir os custos com mão de obra, e instalar barreiras físicas ao redor da máquina para evitar o acesso de pessoas não autorizadas.</span>
+          </li>
+          <li>
+            <span class="alt-letter">C)</span>
+            <span>substituir a máquina de conformação atual por um modelo mais novo e totalmente automatizado, e implementar um sistema de câmeras de vigilância para monitorar a produtividade dos operadores.</span>
+          </li>
+          <li>
+            <span class="alt-letter">D)</span>
+            <span>aumentar a velocidade de alimentação da matéria-prima na máquina de conformação para acelerar a produção, e fornecer protetores auriculares para todos os operadores, independentemente do nível de ruído.</span>
+          </li>
+        </ul>
+        <div class="justification">
+          <strong class="just-title">Justificativa Técnica</strong>
+          <p>A padronização dos critérios de inspeção na fonte evita que peças não conformes avancem e gerem retrabalho acumulado, enquanto o cumprimento rigoroso do uso de EPIs específicos durante ajustes e manuseio mitiga diretamente os riscos de acidentes apontados no posto de trabalho.</p>
+        </div>
+      </article>
+      <article class="question-card">
+        <div class="question-header">
+          <span class="question-number">Atividade 16</span>
+          <span class="badge-answer">Correta: D</span>
+        </div>
+        <div class="enunciado">
+          <p>O projetista deve desenvolver um modelo em CAD de um suporte que servirá como padrão para a fixação de sensores em máquinas industriais. Este desenho é necessário para validar o posicionamento em espaços restritos, realizar estudos de interferência mecânica e garantir a montagem rígida dos componentes.</p>
+          <div class="media-note">Referência visual: Suporte mecânico simétrico composto por um corpo cilíndrico central vazado e duas abas laterais retangulares com furos passantes, chanfros nas arestas externas e raios de concordância na junção com o cilindro.</div>
+          <p><strong>Qual é a sequência de comandos que deve ser executada pelo Técnico no software CAD para modelar o suporte?</strong></p>
+        </div>
+        <ul class="alternatives">
+          <li>
+            <span class="alt-letter">A)</span>
+            <span>Desenhar o perfil completo da peça em uma única vista, extrudar, realizar o desenho de recorte nas abas laterais para diminuir a altura da aba, desenhar os 3 furos, extrudar o corte.</span>
+          </li>
+          <li>
+            <span class="alt-letter">B)</span>
+            <span>Desenhar o perfil retangular da aba lateral, extrudar, desenhar o círculo central, extrudar, desenhar os furos nas abas, extrudar corte e, por fim, desenhar o furo passante no corpo cilíndrico, extrudar corte.</span>
+          </li>
+          <li>
+            <span class="alt-letter">C)</span>
+            <span>Desenhar um bloco retangular base, extrudar, adicionar um cilindro no centro, extrudar, subtrair o material para o furo passante e extrudar o corte, adicionar as abas retangulares e os furos. Aplicar chanfros nas bordas da peça e raios de concordância na junção com o cilindro.</span>
+          </li>
+          <li class="correct">
+            <span class="alt-letter">D)</span>
+            <span>Desenhar os dois círculos concêntricos, extrudar para criar o corpo cilíndrico furado, desenhar o perfil retangular de uma aba, extrudar, desenhar o círculo na aba, extrudar corte para criar o furo, aplicar chanfros nas bordas da peça, espelhar as três últimas operações de extrusão para o outro lado. Aplicar raios de concordância na junção com o cilindro.</span>
+          </li>
+        </ul>
+        <div class="justification">
+          <strong class="just-title">Justificativa Técnica</strong>
+          <p>Essa sequência representa a melhor prática de modelagem paramétrica: gera-se o corpo cilíndrico central já vazado a partir de dois círculos concêntricos, modela-se uma das abas laterais com seu furo e chanfros, aproveita-se a simetria da peça por meio do comando Espelhar (Mirror) e finaliza-se com os raios de concordância (Fillet) na transição com o cilindro.</p>
+        </div>
+      </article>
+      <article class="question-card">
+        <div class="question-header">
+          <span class="question-number">Atividade 17</span>
+          <span class="badge-answer">Correta: C</span>
+        </div>
+        <div class="enunciado">
+          <p>Uma empresa de fabricação de componentes automotivos precisa otimizar o projeto de um novo eixo de transmissão, buscando reduzir o peso da peça sem comprometer sua resistência à tração. O material selecionado para o eixo possui uma tensão de escoamento de 400 MPa. Considere um fator de segurança de 2,5 em relação ao limite de escoamento e uma força máxima de tração de 150 kN.</p>
+          <div class="formula-box">σ_adm = σ_e / FS  |  σ = F / A ⇒ A = F / σ_adm  (Obs: 1 MPa = 1 N/mm²)</div>
+          <p><strong>Qual deve ser o diâmetro mínimo (em milímetros) que o eixo deve possuir em sua seção crítica?</strong></p>
+        </div>
+        <ul class="alternatives">
+          <li>
+            <span class="alt-letter">A)</span>
+            <span>21,90.</span>
+          </li>
+          <li>
+            <span class="alt-letter">B)</span>
+            <span>27,64.</span>
+          </li>
+          <li class="correct">
+            <span class="alt-letter">C)</span>
+            <span>34,54.</span>
+          </li>
+          <li>
+            <span class="alt-letter">D)</span>
+            <span>48,86.</span>
+          </li>
+        </ul>
+        <div class="justification">
+          <strong class="just-title">Justificativa Técnica</strong>
+          <p>1) Tensão admissível: σ_adm = 400 / 2,5 = 160 MPa (160 N/mm²). 2) Força em Newtons: F = 150 kN = 150.000 N. 3) Área mínima da seção transversal: A = 150.000 / 160 = 937,5 mm². 4) Diâmetro mínimo (A = π·d²/4): d = √(4 × 937,5 / π) = √(3750 / 3,1416) = √1193,66 ≈ 34,54 mm.</p>
+        </div>
+      </article>
+      <article class="question-card">
+        <div class="question-header">
+          <span class="question-number">Atividade 18</span>
+          <span class="badge-answer">Correta: A</span>
+        </div>
+        <div class="enunciado">
+          <p>Após o faceamento de um bloco com dimensões de 250 × 150 × 50 mm em um centro de usinagem CNC, foram observadas estreitas faixas de material não usinado entre trajetórias adjacentes na superfície da peça. A análise do programa CAM indicou que o passo lateral entre as passadas está superior à largura efetiva de corte da ferramenta, não proporcionando a sobreposição necessária entre as trajetórias no plano XY.</p>
+          <p><strong>Para eliminar as faixas de material não usinado e assegurar a cobertura completa da superfície durante o faceamento, o técnico deve</strong></p>
+        </div>
+        <ul class="alternatives">
+          <li class="correct">
+            <span class="alt-letter">A)</span>
+            <span>Diminuir o passo lateral entre as trajetórias de faceamento.</span>
+          </li>
+          <li>
+            <span class="alt-letter">B)</span>
+            <span>Aumentar o passo lateral entre as trajetórias de faceamento.</span>
+          </li>
+          <li>
+            <span class="alt-letter">C)</span>
+            <span>Diminuir o avanço da ferramenta.</span>
+          </li>
+          <li>
+            <span class="alt-letter">D)</span>
+            <span>Aumentar a profundidade axial de corte da ferramenta.</span>
+          </li>
+        </ul>
+        <div class="justification">
+          <strong class="just-title">Justificativa Técnica</strong>
+          <p>O passo lateral (stepover) define o deslocamento transversal da fresa entre passes paralelos no plano XY. Quando o passo lateral supera o diâmetro efetivo de corte da ferramenta, permanecem filetes de material intacto entre as passadas. Reduzir o passo lateral (usualmente para 60% a 75% do diâmetro de corte) assegura a sobreposição e o faceamento completo.</p>
+        </div>
+      </article>
+      <article class="question-card">
+        <div class="question-header">
+          <span class="question-number">Atividade 19</span>
+          <span class="badge-answer">Correta: B</span>
+        </div>
+        <div class="enunciado">
+          <p>Durante a preparação do programa de usinagem de uma peça complexa, um técnico concluiu no software CAM a definição das ferramentas, estratégias e trajetórias de corte. Ao transferir o arquivo gerado para o comando numérico da máquina, ocorreu erro de leitura e as instruções do programa não foram reconhecidas. Após verificar o arquivo exportado, o técnico identificou que o programa ainda estava no formato interno do sistema CAM, não compatível com a linguagem específica exigida pelo comando numérico da máquina.</p>
+          <p><strong>Qual é a etapa do processo que cumpre a função de compatibilizar as trajetórias estipuladas no software CAM em linguagem de comando numérico?</strong></p>
+        </div>
+        <ul class="alternatives">
+          <li>
+            <span class="alt-letter">A)</span>
+            <span>Interpolação Linear.</span>
+          </li>
+          <li class="correct">
+            <span class="alt-letter">B)</span>
+            <span>Pós-processamento.</span>
+          </li>
+          <li>
+            <span class="alt-letter">C)</span>
+            <span>Simulação de Trajetória.</span>
+          </li>
+          <li>
+            <span class="alt-letter">D)</span>
+            <span>Modelagem Geométrica.</span>
+          </li>
+        </ul>
+        <div class="justification">
+          <strong class="just-title">Justificativa Técnica</strong>
+          <p>O software CAM calcula inicialmente as trajetórias em um formato neutro/interno (arquivo CL — Cutter Location). O pós-processamento é a etapa responsável por traduzir essas coordenadas e ciclos para a sintaxe específica de códigos G e M compatível com o comando numérico da máquina (Fanuc, Siemens, Heidenhain, etc.).</p>
+        </div>
+      </article>
+      <article class="question-card">
+        <div class="question-header">
+          <span class="question-number">Atividade 20</span>
+          <span class="badge-answer">Correta: D</span>
+        </div>
+        <div class="enunciado">
+          <p>Um técnico em fabricação mecânica precisa planejar as etapas de usinagem de um componente mecânico conforme o desenho técnico, visando a otimização do processo e garantia do dimensionamento. A peça será fabricada a partir de um tarugo cilíndrico de aço SAE 4140.</p>
+          <div class="media-note">Referência visual: Desenho técnico de um eixo escalonado (comprimento total 470 mm) com diâmetros externos Ø70, Ø80 e Ø90 mm, raios de concordância R2, chanfros 1,6×45° e dois rasgos de chaveta.</div>
+          <p><strong>Qual é a sequência racional de operações para a fabricação do componente?</strong></p>
+        </div>
+        <ul class="alternatives">
+          <li>
+            <span class="alt-letter">A)</span>
+            <span>Torneamento dos diâmetros externos (090, 080, 070), seguido pela fresagem dos rasgos de chaveta e, por fim, a execução dos raios e chanfros.</span>
+          </li>
+          <li>
+            <span class="alt-letter">B)</span>
+            <span>Fresagem dos rasgos de chaveta, seguida pelo torneamento dos diâmetros externos (090, 080, 070) e, por último, a execução dos raios e chanfros.</span>
+          </li>
+          <li>
+            <span class="alt-letter">C)</span>
+            <span>Execução dos raios e chanfros, seguida pelo torneamento dos diâmetros externos (090, 080, 070) e, por último, a fresagem dos rasgos de chaveta.</span>
+          </li>
+          <li class="correct">
+            <span class="alt-letter">D)</span>
+            <span>Torneamento dos diâmetros externos (090, 080, 070), seguido pela execução dos raios e chanfros, e por fim, a fresagem dos rasgos de chaveta.</span>
+          </li>
+        </ul>
+        <div class="justification">
+          <strong class="just-title">Justificativa Técnica</strong>
+          <p>Todas as operações de revolução devem ser concluídas no torno enquanto a superfície cilíndrica é contínua (evitando corte interrompido na pastilha de torneamento). Assim, torneiam-se os escalonamentos externos (Ø90, Ø80, Ø70), executam-se os raios de concordância e chanfros e, somente ao final, a peça segue para a fresadora para a abertura dos rasgos de chaveta.</p>
+        </div>
+      </article>
+      <article class="question-card">
+        <div class="question-header">
+          <span class="question-number">Atividade 21</span>
+          <span class="badge-answer">Correta: D</span>
+        </div>
+        <div class="enunciado">
+          <p>Em uma indústria de produção de eixos para implementos agrícolas, um operador de torno convencional informou ao técnico responsável pelas ferramentas de usinagem a necessidade de aquisição de insertos para um novo suporte que será testado, considerando o seu correto encaixe no suporte, cujo código é DWLNR 2020K 08.</p>
+          <p><strong>Quais dígitos, do código do suporte, o técnico deve utilizar como referência para a aquisição dos insertos?</strong></p>
+        </div>
+        <ul class="alternatives">
+          <li>
+            <span class="alt-letter">A)</span>
+            <span>O segundo dígito, quarto dígito e o último dígito.</span>
+          </li>
+          <li>
+            <span class="alt-letter">B)</span>
+            <span>O primeiro dígito, quarto dígito e o último dígito.</span>
+          </li>
+          <li>
+            <span class="alt-letter">C)</span>
+            <span>O terceiro dígito, quarto dígito e o jogo dos dois últimos dígitos.</span>
+          </li>
+          <li class="correct">
+            <span class="alt-letter">D)</span>
+            <span>O segundo dígito, quarto dígito e o jogo dos dois últimos dígitos.</span>
+          </li>
+        </ul>
+        <div class="justification">
+          <strong class="just-title">Justificativa Técnica</strong>
+          <p>Na norma ISO para suportes de torneamento externo (D W L N R 2020 K 08): o 2º dígito ('W') define o formato do inserto (trigonal 80°); o 4º dígito ('N') define o ângulo de folga do inserto (0° negativo); e o jogo dos dois últimos dígitos ('08') define o tamanho/comprimento da aresta de corte da pastilha.</p>
+        </div>
+      </article>
+      <article class="question-card">
+        <div class="question-header">
+          <span class="question-number">Atividade 22</span>
+          <span class="badge-answer">Correta: C</span>
+        </div>
+        <div class="enunciado">
+          <p>Uma empresa de usinagem CNC produz, em pequenos lotes, peças com características semelhantes entre si. O técnico de fabricação mecânica desta empresa faz parte do grupo do lean manufacturing e deve apresentar uma proposta de alteração de layout para o setor de usinagem, de forma a evitar desperdícios de tempo e movimentações.</p>
+          <p><strong>Qual tipo de layout atende à necessidade dessa empresa?</strong></p>
+        </div>
+        <ul class="alternatives">
+          <li>
+            <span class="alt-letter">A)</span>
+            <span>Layout setorial</span>
+          </li>
+          <li>
+            <span class="alt-letter">B)</span>
+            <span>Layout em linha</span>
+          </li>
+          <li class="correct">
+            <span class="alt-letter">C)</span>
+            <span>Layout em célula</span>
+          </li>
+          <li>
+            <span class="alt-letter">D)</span>
+            <span>Layout por projeto</span>
+          </li>
+        </ul>
+        <div class="justification">
+          <strong class="just-title">Justificativa Técnica</strong>
+          <p>O layout celular (fundamentado na Tecnologia de Grupo) agrupa máquinas distintas dedicadas ao processamento completo de famílias de peças similares em pequenos lotes, reduzindo drasticamente tempos de setup, movimentação de materiais e estoques intermediários.</p>
+        </div>
+      </article>
+      <article class="question-card">
+        <div class="question-header">
+          <span class="question-number">Atividade 23</span>
+          <span class="badge-answer">Correta: B</span>
+        </div>
+        <div class="enunciado">
+          <p>Ao receber um desenho para realizar a programação CAM de usinagem de uma peça em um torno CNC, o programador verificou a necessidade de obter uma rugosidade de 6 microns, utilizando um inserto com raio de ponta de 0,8 mm.</p>
+          <div class="formula-box">h = (f² / (8 · Re)) × 1000  (μm)</div>
+          <p><strong>Qual avanço deve ser programado para se obter essa rugosidade superficial?</strong></p>
+        </div>
+        <ul class="alternatives">
+          <li>
+            <span class="alt-letter">A)</span>
+            <span>0,0384 mm/rot</span>
+          </li>
+          <li class="correct">
+            <span class="alt-letter">B)</span>
+            <span>0.2 mm/rot</span>
+          </li>
+          <li>
+            <span class="alt-letter">C)</span>
+            <span>0.61 mm/rot</span>
+          </li>
+          <li>
+            <span class="alt-letter">D)</span>
+            <span>6.2 mm/rot</span>
+          </li>
+        </ul>
+        <div class="justification">
+          <strong class="just-title">Justificativa Técnica</strong>
+          <p>Substituindo h = 6 μm e Re = 0,8 mm na equação: 6 = (f² / (8 × 0,8)) × 1000 ⇒ 6 = (f² / 6,4) × 1000 ⇒ f² = (6 × 6,4) / 1000 = 0,0384 ⇒ f = √0,0384 ≈ 0,196 mm/rot ≈ 0,2 mm/rot.</p>
+        </div>
+      </article>
+      <article class="question-card">
+        <div class="question-header">
+          <span class="question-number">Atividade 24</span>
+          <span class="badge-answer">Correta: C</span>
+        </div>
+        <div class="enunciado">
+          <p>Durante os testes iniciais de uma matriz de forjamento de bielas para a indústria automotiva, o setor de qualidade identificou peças forjadas contendo áreas com falta de preenchimento de material. Uma avaliação realizada pelo corpo técnico da empresa constatou que o problema estava relacionado com a zona de rebarba da matriz de forjamento, como mostra a imagem a seguir.</p>
+          <div class="media-note">Referência visual: Seção transversal da bacia de rebarba da matriz de forjamento destacando a 'Passagem de rebarba' (estrangulamento) e o 'Canal de rebarba'.</div>
+          <p><strong>Diante da situação relatada, qual ajuste deve ser realizado para solucionar o problema?</strong></p>
+        </div>
+        <ul class="alternatives">
+          <li>
+            <span class="alt-letter">A)</span>
+            <span>Aumentar a espessura de passagem de rebarba.</span>
+          </li>
+          <li>
+            <span class="alt-letter">B)</span>
+            <span>Aumentar o comprimento do canal de rebarba.</span>
+          </li>
+          <li class="correct">
+            <span class="alt-letter">C)</span>
+            <span>Reduzir a espessura de passagem de rebarba.</span>
+          </li>
+          <li>
+            <span class="alt-letter">D)</span>
+            <span>Reduzir o comprimento do canal de rebarba.</span>
+          </li>
+        </ul>
+        <div class="justification">
+          <strong class="just-title">Justificativa Técnica</strong>
+          <p>No forjamento em matriz fechada, a passagem de rebarba (flash land) cria resistência ao escoamento lateral do metal aquecido, elevando a pressão interna na cavidade para forçar o preenchimento dos detalhes mais profundos. Se há falta de preenchimento, o metal está escapando com pouca restrição; logo, deve-se reduzir a espessura da passagem de rebarba.</p>
+        </div>
+      </article>
+      <article class="question-card">
+        <div class="question-header">
+          <span class="question-number">Atividade 25</span>
+          <span class="badge-answer">Correta: D</span>
+        </div>
+        <div class="enunciado">
+          <p>Em um processo de fresamento CNC, o operador do centro de usinagem recebeu um desenho onde havia informações referentes ao material da peça a ser usinado. Interpretando as informações do desenho, ele verificou que o material da peça a ser usinado é um aço SAE 1045.</p>
+          <p><strong>Com base nestas informações, qual classe de ferramentas de corte deverá ser utilizada, segundo a norma ISO?</strong></p>
+        </div>
+        <ul class="alternatives">
+          <li>
+            <span class="alt-letter">A)</span>
+            <span>Classe K</span>
+          </li>
+          <li>
+            <span class="alt-letter">B)</span>
+            <span>Classe M</span>
+          </li>
+          <li>
+            <span class="alt-letter">C)</span>
+            <span>Classe N</span>
+          </li>
+          <li class="correct">
+            <span class="alt-letter">D)</span>
+            <span>Classe P</span>
+          </li>
+        </ul>
+        <div class="justification">
+          <strong class="just-title">Justificativa Técnica</strong>
+          <p>Segundo a norma ISO 513, a Classe P (identificada pela cor azul) é destinada à usinagem de aços carbono e aços-liga de cavaco longo, como o aço SAE 1045. (K = ferros fundidos; M = aços inoxidáveis; N = materiais não ferrosos).</p>
+        </div>
+      </article>
+      <article class="question-card">
+        <div class="question-header">
+          <span class="question-number">Atividade 26</span>
+          <span class="badge-answer">Correta: D</span>
+        </div>
+        <div class="enunciado">
+          <p>Em determinada empresa, um técnico em fabricação mecânica estava auxiliando o analista de PCP no monitoramento da produção. Nesse monitoramento, eles identificaram que, em um lote de peças, que estava sendo usinado em um torno CNC, faltavam poucas peças e o pedido precisa ser finalizado o mais rápido possível. Para atender a essa necessidade pontual, o técnico propôs uma pequena alteração no programa: a troca, em determinada linha, do código F0.16 para F0.18, provocando uma diminuição do tempo de cada peça.</p>
+          <p><strong>Essa mudança ocorreu devido</strong></p>
+        </div>
+        <ul class="alternatives">
+          <li>
+            <span class="alt-letter">A)</span>
+            <span>ao aumento da velocidade de corte.</span>
+          </li>
+          <li>
+            <span class="alt-letter">B)</span>
+            <span>à diminuição do avanço de corte.</span>
+          </li>
+          <li>
+            <span class="alt-letter">C)</span>
+            <span>à diminuição da velocidade de corte.</span>
+          </li>
+          <li class="correct">
+            <span class="alt-letter">D)</span>
+            <span>ao aumento do avanço de corte.</span>
+          </li>
+        </ul>
+        <div class="justification">
+          <strong class="just-title">Justificativa Técnica</strong>
+          <p>Na programação CNC, o endereço 'F' (Feed) controla o avanço da ferramenta. Ao elevar o parâmetro de F0.16 para F0.18, o avanço aumenta de 0,16 mm/rot para 0,18 mm/rot, reduzindo o número de rotações necessárias para percorrer o comprimento usinado e diminuindo o tempo de ciclo.</p>
+        </div>
+      </article>
+      <article class="question-card">
+        <div class="question-header">
+          <span class="question-number">Atividade 27</span>
+          <span class="badge-answer">Correta: D</span>
+        </div>
+        <div class="enunciado">
+          <p>Para a fabricação de um eixo para a indústria metal mecânica, foi utilizado um aço liga, cuja variação percentual dos componentes, além do Fe, são: 0,38 a 0,43 de C; 0,75 a 1,00 de Mn; 0,15 a 0,35 de Si; 0,40 a 0,70 de Ni; 0,40 a 0,60 de Cr; e 0,15 a 0,25 de Mo.</p>
+          <p><strong>Segundo a norma SAE, qual aço contém as variações percentuais dos componentes de liga citados?</strong></p>
+        </div>
+        <ul class="alternatives">
+          <li>
+            <span class="alt-letter">A)</span>
+            <span>SAE 5120</span>
+          </li>
+          <li>
+            <span class="alt-letter">B)</span>
+            <span>SAE 5140</span>
+          </li>
+          <li>
+            <span class="alt-letter">C)</span>
+            <span>SAE 8620</span>
+          </li>
+          <li class="correct">
+            <span class="alt-letter">D)</span>
+            <span>SAE 8640</span>
+          </li>
+        </ul>
+        <div class="justification">
+          <strong class="just-title">Justificativa Técnica</strong>
+          <p>Na classificação SAE, a série 86XX designa aços-liga Níquel-Cromo-Molibdênio (Ni: 0,40–0,70%, Cr: 0,40–0,60%, Mo: 0,15–0,25%), e os dois últimos dígitos ('40') indicam o teor médio de carbono de 0,40% (faixa de 0,38% a 0,43%).</p>
+        </div>
+      </article>
+      <article class="question-card">
+        <div class="question-header">
+          <span class="question-number">Atividade 28</span>
+          <span class="badge-answer">Correta: B</span>
+        </div>
+        <div class="enunciado">
+          <p>Ao receber os desenhos de um conjunto mecânico, o técnico de fabricação identificou uma cota em polegadas fracionárias, com o valor de 3/8". No entanto, ele precisa saber a medida em milímetros para preparar o material a ser usinado.</p>
+          <p><strong>Qual o valor dessa medida em milímetros?</strong></p>
+        </div>
+        <ul class="alternatives">
+          <li>
+            <span class="alt-letter">A)</span>
+            <span>0,375 mm</span>
+          </li>
+          <li class="correct">
+            <span class="alt-letter">B)</span>
+            <span>9,525 mm</span>
+          </li>
+          <li>
+            <span class="alt-letter">C)</span>
+            <span>67,3 mm</span>
+          </li>
+          <li>
+            <span class="alt-letter">D)</span>
+            <span>76,2 mm</span>
+          </li>
+        </ul>
+        <div class="justification">
+          <strong class="just-title">Justificativa Técnica</strong>
+          <p>Sabendo que 1 polegada equivale exatamente a 25,4 mm, multiplica-se a fração por 25,4: (3 / 8) × 25,4 = 76,2 / 8 = 9,525 mm.</p>
+        </div>
+      </article>
+      <article class="question-card">
+        <div class="question-header">
+          <span class="question-number">Atividade 29</span>
+          <span class="badge-answer">Correta: D</span>
+        </div>
+        <div class="enunciado">
+          <p>Em um processo de fabricação de peças cilíndricas de aço SAE 1020, verificou-se a necessidade de saber a massa do material bruto antes da usinagem, porém não há balanças na empresa. A empresa optou por encontrar a massa do material através de equações matemáticas. Nesse sentido, as medidas do material bruto são 50,8 mm de diâmetro e 205 mm de comprimento.</p>
+          <div class="formula-box">M = V · d  (onde d = 0,00786 g/mm³)</div>
+          <p><strong>Qual é a massa do material bruto descrito?</strong></p>
+        </div>
+        <ul class="alternatives">
+          <li>
+            <span class="alt-letter">A)</span>
+            <span>3118,6 g</span>
+          </li>
+          <li>
+            <span class="alt-letter">B)</span>
+            <span>3163,8 g</span>
+          </li>
+          <li>
+            <span class="alt-letter">C)</span>
+            <span>3186,2 g</span>
+          </li>
+          <li class="correct">
+            <span class="alt-letter">D)</span>
+            <span>3265,8 g</span>
+          </li>
+        </ul>
+        <div class="justification">
+          <strong class="just-title">Justificativa Técnica</strong>
+          <p>1) Raio do cilindro: r = 50,8 / 2 = 25,4 mm. 2) Volume do tarugo: V = π · r² · h = 3,14159 × (25,4)² × 205 = 3,14159 × 645,16 × 205 ≈ 415.499,7 mm³. 3) Massa: M = 415.499,7 × 0,00786 ≈ 3265,83 g.</p>
+        </div>
+      </article>
+      <article class="question-card">
+        <div class="question-header">
+          <span class="question-number">Atividade 30</span>
+          <span class="badge-answer">Correta: B</span>
+        </div>
+        <div class="enunciado">
+          <p>Uma empresa especializada em conformação mecânica de metais recebeu um pedido para iniciar a produção em série de uma peça forjada em aço. Trata-se de uma peça com detalhes complexos, e o projeto exige boa qualidade geométrica e dimensional.</p>
+          <p><strong>De acordo com as especificações apresentadas, para atender aos requisitos do projeto da peça, o técnico deve aplicar uma matriz</strong></p>
+        </div>
+        <ul class="alternatives">
+          <li>
+            <span class="alt-letter">A)</span>
+            <span>aberta.</span>
+          </li>
+          <li class="correct">
+            <span class="alt-letter">B)</span>
+            <span>fechada.</span>
+          </li>
+          <li>
+            <span class="alt-letter">C)</span>
+            <span>de cunho.</span>
+          </li>
+          <li>
+            <span class="alt-letter">D)</span>
+            <span>de extrusão.</span>
+          </li>
+        </ul>
+        <div class="justification">
+          <strong class="just-title">Justificativa Técnica</strong>
+          <p>O forjamento em matriz fechada utiliza cavidades gravadas com o contorno negativo exato do componente, sendo o método indicado para a produção seriada de peças com geometrias complexas e estreitas tolerâncias dimensionais.</p>
+        </div>
+      </article>
+      <article class="question-card">
+        <div class="question-header">
+          <span class="question-number">Atividade 31</span>
+          <span class="badge-answer">Correta: D</span>
+        </div>
+        <div class="enunciado">
+          <p>Um engenheiro mecânico está conduzindo um projeto de engenharia reversa para desmontar, interpretar e remodelar um produto de sua linha de produção. Logo, o profissional precisa entender a tecnologia utilizada e realizar melhorias, utilizando, para isso, um software CAD para o modelamento de máquinas CNC para posterior usinagem.</p>
+          <p><strong>A desmontagem e a análise do produto visam</strong></p>
+        </div>
+        <ul class="alternatives">
+          <li>
+            <span class="alt-letter">A)</span>
+            <span>revisar as peças defeituosas.</span>
+          </li>
+          <li>
+            <span class="alt-letter">B)</span>
+            <span>realizar a modificação do produto.</span>
+          </li>
+          <li>
+            <span class="alt-letter">C)</span>
+            <span>revisar os materiais utilizados na fabricação do produto.</span>
+          </li>
+          <li class="correct">
+            <span class="alt-letter">D)</span>
+            <span>interpretar o funcionamento interno e os processos de fabricação do produto.</span>
+          </li>
+        </ul>
+        <div class="justification">
+          <strong class="just-title">Justificativa Técnica</strong>
+          <p>Na engenharia reversa, a desmontagem e a análise física têm como propósito principal compreender o princípio de funcionamento interno, as interfaces de montagem, os materiais e os processos de fabricação empregados no produto original, viabilizando sua posterior remodelagem e otimização.</p>
+        </div>
+      </article>
+      <article class="question-card">
+        <div class="question-header">
+          <span class="question-number">Atividade 32</span>
+          <span class="badge-answer">Correta: B</span>
+        </div>
+        <div class="enunciado">
+          <p>Um técnico em fabricação foi contratado por uma empresa fabricante de fechaduras para desenvolver todo o processo de produção e controle das chaves. Essas peças, que são relativamente pequenas, possuem perfis, ângulos e medidas muito precisos, necessários para garantir o "segredo" das chaves.</p>
+          <p><strong>Para controlar a qualidade, essas peças devem ser medidas usando</strong></p>
+        </div>
+        <ul class="alternatives">
+          <li>
+            <span class="alt-letter">A)</span>
+            <span>o scanner 3D.</span>
+          </li>
+          <li class="correct">
+            <span class="alt-letter">B)</span>
+            <span>o projetor de perfil.</span>
+          </li>
+          <li>
+            <span class="alt-letter">C)</span>
+            <span>o braço de medição 3D.</span>
+          </li>
+          <li>
+            <span class="alt-letter">D)</span>
+            <span>a máquina de medir por coordenadas.</span>
+          </li>
+        </ul>
+        <div class="justification">
+          <strong class="just-title">Justificativa Técnica</strong>
+          <p>O projetor de perfil é o equipamento de metrologia óptica ideal para inspecionar peças pequenas e planas com contornos complexos, entalhes e ângulos reduzidos (como os segredos de chaves), ampliando a sombra do perfil sem contato físico que possa deformar a peça.</p>
+        </div>
+      </article>
+      <article class="question-card">
+        <div class="question-header">
+          <span class="question-number">Atividade 33</span>
+          <span class="badge-answer">Correta: C</span>
+        </div>
+        <div class="enunciado">
+          <p>Considere que, na finalização do turno de trabalho, um torneiro mecânico foi surpreendido com a quebra inesperada da ferramenta de corte, fazendo com que ele ultrapassasse seu horário de trabalho para a troca desse componente. No dia seguinte, seu superior pediu que ele apresentasse possíveis soluções, obedecendo às seguintes etapas: esclarecer o problema, aplicar contramedidas, avaliar os resultados e padronizar.</p>
+          <p><strong>Nesse contexto, qual ferramenta da qualidade deve ser utilizada?</strong></p>
+        </div>
+        <ul class="alternatives">
+          <li>
+            <span class="alt-letter">A)</span>
+            <span>5S</span>
+          </li>
+          <li>
+            <span class="alt-letter">B)</span>
+            <span>5W2H</span>
+          </li>
+          <li class="correct">
+            <span class="alt-letter">C)</span>
+            <span>PDCA</span>
+          </li>
+          <li>
+            <span class="alt-letter">D)</span>
+            <span>Ishikawa</span>
+          </li>
+        </ul>
+        <div class="justification">
+          <strong class="just-title">Justificativa Técnica</strong>
+          <p>As etapas enunciadas correspondem diretamente à estrutura do ciclo de melhoria contínua PDCA: Plan (esclarecer o problema e planejar a ação), Do (aplicar contramedidas), Check (avaliar os resultados obtidos) e Act (padronizar a solução eficaz).</p>
+        </div>
+      </article>
+      <article class="question-card">
+        <div class="question-header">
+          <span class="question-number">Atividade 34</span>
+          <span class="badge-answer">Correta: D</span>
+        </div>
+        <div class="enunciado">
+          <p>Durante o processo de usinagem em um torno CNC, o técnico em fabricação mecânica constatou que o material usinado estava causando um grande desgaste na ferramenta e ficou na dúvida se o material utilizado era o mesmo que constava no desenho técnico do projeto e se realmente tinha a quantidade de carbono ideal para aquele tipo de aço.</p>
+          <p><strong>Diante do desafio, o técnico em fabricação mecânica deve aplicar o teste de</strong></p>
+        </div>
+        <ul class="alternatives">
+          <li>
+            <span class="alt-letter">A)</span>
+            <span>tração.</span>
+          </li>
+          <li>
+            <span class="alt-letter">B)</span>
+            <span>dureza.</span>
+          </li>
+          <li>
+            <span class="alt-letter">C)</span>
+            <span>impacto.</span>
+          </li>
+          <li class="correct">
+            <span class="alt-letter">D)</span>
+            <span>espectrometria de emissão óptica.</span>
+          </li>
+        </ul>
+        <div class="justification">
+          <strong class="just-title">Justificativa Técnica</strong>
+          <p>Para determinar a composição química exata da liga metálica e verificar o teor percentual de carbono do aço, utiliza-se o ensaio químico instrumental por espectrometria de emissão óptica. Os ensaios de tração, dureza e impacto avaliam propriedades mecânicas, não a composição química.</p>
+        </div>
+      </article>
+      <article class="question-card">
+        <div class="question-header">
+          <span class="question-number">Atividade 35</span>
+          <span class="badge-answer">Correta: B</span>
+        </div>
+        <div class="enunciado">
+          <p>O departamento de engenharia solicitou ao técnico de fabricação mecânica que analisasse a reclamação de um cliente sobre uma peça produzida em torno convencional. A peça apresentava variação dimensional dentro dos valores tolerados, mas o grau de acabamento não era satisfatório.</p>
+          <p><strong>O que o técnico deve fazer para resolver o problema?</strong></p>
+        </div>
+        <ul class="alternatives">
+          <li>
+            <span class="alt-letter">A)</span>
+            <span>Aumentar velocidade de corte e avanço da ferramenta.</span>
+          </li>
+          <li class="correct">
+            <span class="alt-letter">B)</span>
+            <span>Verificar fixação da peça e ajustar parâmetros de corte.</span>
+          </li>
+          <li>
+            <span class="alt-letter">C)</span>
+            <span>Repetir o último passe de usinagem para corrigir as imperfeições.</span>
+          </li>
+          <li>
+            <span class="alt-letter">D)</span>
+            <span>Realizar inspeções visuais constantes durante o processo de usinagem.</span>
+          </li>
+        </ul>
+        <div class="justification">
+          <strong class="just-title">Justificativa Técnica</strong>
+          <p>Quando a dimensão está dentro da tolerância, mas a rugosidade superficial está fora do especificado no torneamento convencional, a causa está associada a microvibrações por falta de rigidez na fixação ou a parâmetros de corte inadequados (avanço elevado para o raio de ponta da ferramenta ou velocidade de corte fora da faixa recomendada).</p>
+        </div>
+      </article>
+      <article class="question-card">
+        <div class="question-header">
+          <span class="question-number">Atividade 36</span>
+          <span class="badge-answer">Correta: A</span>
+        </div>
+        <div class="enunciado">
+          <p>Uma indústria de fabricação mecânica fechou um contrato com uma montadora de automóveis para fornecer diversos itens estampados. A montadora utiliza um sistema puxado de produção, com estoques intermediários controlados. O técnico em fabricação mecânica, responsável pelo planejamento e controle da produção, está encarregado de melhorar o desempenho e a produtividade da fábrica, sem perder o controle sobre a produção, o fluxo de trabalho e os estoques de peças.</p>
+          <p><strong>Qual ferramenta do Lean Manufacturing o técnico deve aplicar?</strong></p>
+        </div>
+        <ul class="alternatives">
+          <li class="correct">
+            <span class="alt-letter">A)</span>
+            <span>Kanban</span>
+          </li>
+          <li>
+            <span class="alt-letter">B)</span>
+            <span>Fluxograma</span>
+          </li>
+          <li>
+            <span class="alt-letter">C)</span>
+            <span>Gráfico de Pareto</span>
+          </li>
+          <li>
+            <span class="alt-letter">D)</span>
+            <span>Diagrama de Gantt</span>
+          </li>
+        </ul>
+        <div class="justification">
+          <strong class="just-title">Justificativa Técnica</strong>
+          <p>O Kanban é o sistema de sinalização visual do Lean Manufacturing utilizado para operacionalizar a produção puxada, controlando o fluxo de materiais e limitando os estoques intermediários (WIP) de acordo com o consumo real do cliente.</p>
+        </div>
+      </article>
+      <article class="question-card">
+        <div class="question-header">
+          <span class="question-number">Atividade 37</span>
+          <span class="badge-answer">Correta: D</span>
+        </div>
+        <div class="enunciado">
+          <p>Na produção seriada de uma placa com um canal em uma das faces e quatro furos rebaixados na face oposta, executada em uma fresadora ferramenteira, tem ocorrido de o operador executar o rebaixo na face errada. Isso tem causado o descarte de várias peças, pois não é possível realizar o retrabalho.</p>
+          <p><strong>Para correção desse processo de fabricação, considerando as ferramentas de lean manufacturing, o técnico deve aplicar</strong></p>
+        </div>
+        <ul class="alternatives">
+          <li>
+            <span class="alt-letter">A)</span>
+            <span>o 5S.</span>
+          </li>
+          <li>
+            <span class="alt-letter">B)</span>
+            <span>o Jidoka.</span>
+          </li>
+          <li>
+            <span class="alt-letter">C)</span>
+            <span>o Kanban.</span>
+          </li>
+          <li class="correct">
+            <span class="alt-letter">D)</span>
+            <span>o Poka-yoke.</span>
+          </li>
+        </ul>
+        <div class="justification">
+          <strong class="just-title">Justificativa Técnica</strong>
+          <p>O Poka-yoke (dispositivo à prova de erros) consiste na criação de um pino guia ou batente assimétrico no dispositivo de fixação da fresadora que impeça fisicamente o encaixe da placa na posição invertida, eliminando a possibilidade de falha humana.</p>
+        </div>
+      </article>
+      <article class="question-card">
+        <div class="question-header">
+          <span class="question-number">Atividade 38</span>
+          <span class="badge-answer">Correta: C</span>
+        </div>
+        <div class="enunciado">
+          <p>Ao elaborar a folha de processo de uma peça a ser produzida em torno CNC, a partir de tarugos com comprimentos previamente usinados, o técnico adota a seguinte simbologia para instruir o programador.</p>
+          <div class="media-note">Referência visual: Representação da placa do torno fixando o tarugo, com os eixos X+ e Z+ e a origem X0, Z0 posicionada na face livre da peça.</div>
+          <p><strong>A função utilizada para deslocar, do zero máquina, a origem especificada na folha de processo é</strong></p>
+        </div>
+        <ul class="alternatives">
+          <li>
+            <span class="alt-letter">A)</span>
+            <span>G28.</span>
+          </li>
+          <li>
+            <span class="alt-letter">B)</span>
+            <span>G40.</span>
+          </li>
+          <li class="correct">
+            <span class="alt-letter">C)</span>
+            <span>G58.</span>
+          </li>
+          <li>
+            <span class="alt-letter">D)</span>
+            <span>G90.</span>
+          </li>
+        </ul>
+        <div class="justification">
+          <strong class="just-title">Justificativa Técnica</strong>
+          <p>Na programação CNC (norma ISO/DIN), o grupo de funções preparatórias G54 a G59 define os sistemas de coordenadas de trabalho (deslocamento do zero-máquina para o zero-peça X0, Z0). Dentre as alternativas apresentadas, apenas G58 pertence a essa família.</p>
+        </div>
+      </article>
+      <article class="question-card">
+        <div class="question-header">
+          <span class="question-number">Atividade 39</span>
+          <span class="badge-answer">Correta: D</span>
+        </div>
+        <div class="enunciado">
+          <p>Em uma fábrica de peças mecânicas, um técnico em fabricação está implantando a metodologia TPM, a fim de melhorar a eficiência da fábrica. Ao analisar o desempenho do centro de usinagem CNC, ele coletou os seguintes dados para um determinado período de tempo: Tempo total disponível: 450 horas; Tempo de paradas programadas: 50 horas; Tempo de paradas não programadas: 20 horas.</p>
+          <p><strong>Qual é a taxa de disponibilidade operacional da máquina?</strong></p>
+        </div>
+        <ul class="alternatives">
+          <li>
+            <span class="alt-letter">A)</span>
+            <span>88%</span>
+          </li>
+          <li>
+            <span class="alt-letter">B)</span>
+            <span>89%</span>
+          </li>
+          <li>
+            <span class="alt-letter">C)</span>
+            <span>93%</span>
+          </li>
+          <li class="correct">
+            <span class="alt-letter">D)</span>
+            <span>95%</span>
+          </li>
+        </ul>
+        <div class="justification">
+          <strong class="just-title">Justificativa Técnica</strong>
+          <p>No cálculo da Disponibilidade Operacional (OEE/TPM), subtraem-se as paradas programadas do tempo total para obter o Tempo Planejado de Produção: Tempo Planejado = 450 - 50 = 400 horas. Descontando as paradas não programadas: Tempo Operando = 400 - 20 = 380 horas. Logo, Disponibilidade = 380 / 400 = 0,95 = 95%.</p>
+        </div>
+      </article>
+      <article class="question-card">
+        <div class="question-header">
+          <span class="question-number">Atividade 40</span>
+          <span class="badge-answer">Correta: B</span>
+        </div>
+        <div class="enunciado">
+          <p>Durante a usinagem de um eixo relativamente longo, foi realizada a medição do diâmetro, no qual foram constatadas dimensões diferentes, conforme indicado pelas cotas na figura a seguir. Essas dimensões não atendem à tolerância indicada no desenho técnico, de ±0,02 mm. O eixo está fixado no torno por meio de uma placa universal de três castanhas e contraponto.</p>
+          <div class="media-note">Referência visual: Eixo longo apresentando diâmetro de 15,00 mm junto à placa e junto ao contraponto, e diâmetros maiores na região central (15,12 mm e 15,15 mm).</div>
+          <p><strong>Qual melhoria deve ser implementada no processo para solucionar o problema?</strong></p>
+        </div>
+        <ul class="alternatives">
+          <li>
+            <span class="alt-letter">A)</span>
+            <span>Utilizar a luneta fixa.</span>
+          </li>
+          <li class="correct">
+            <span class="alt-letter">B)</span>
+            <span>Utilizar a luneta móvel.</span>
+          </li>
+          <li>
+            <span class="alt-letter">C)</span>
+            <span>Utilizar o ponto, placa arrastadora e contraponto.</span>
+          </li>
+          <li>
+            <span class="alt-letter">D)</span>
+            <span>Utilizar placa de quatro castanhas independentes e contraponto.</span>
+          </li>
+        </ul>
+        <div class="justification">
+          <strong class="just-title">Justificativa Técnica</strong>
+          <p>O perfil abaulado (diâmetro maior no centro do eixo, 15,12 e 15,15 mm, e nominal 15,00 mm nas extremidades) ocorre porque o eixo esbelto flete sob a pressão radial da ferramenta na região central, distante dos apoios. A luneta móvel (acompanhadora) é montada no carro transversal e desloca-se junto com a ferramenta, apoiando a peça exatamente oposta ao gume de corte ao longo de todo o comprimento.</p>
+        </div>
+      </article>
+    </main>
+
+    <section class="answer-key-section">
+      <h2>Gabarito Oficial Comentado — Respostas Completas</h2>
+      <table class="gabarito-table">
+        <thead>
+          <tr>
+            <th style="text-align:center;">Questão</th>
+            <th style="text-align:center;">Alternativa</th>
+            <th>Resposta Completa</th>
+          </tr>
+        </thead>
+        <tbody id="gabarito-tbody">
+          <tr>
+            <td class="col-num">Questão 01</td>
+            <td class="col-letra">D</td>
+            <td>10,89.</td>
+          </tr>
+          <tr>
+            <td class="col-num">Questão 02</td>
+            <td class="col-letra">B</td>
+            <td>adicionar um prensa-chapas (blank holder).</td>
+          </tr>
+          <tr>
+            <td class="col-num">Questão 03</td>
+            <td class="col-letra">A</td>
+            <td>Corte da matéria-prima, torneamento do diâmetro externo, fresamento do rasgo de chaveta, retificação do diâmetro externo e roscamento.</td>
+          </tr>
+          <tr>
+            <td class="col-num">Questão 04</td>
+            <td class="col-letra">C</td>
+            <td>comunicar o supervisor e aguardar a correção do intertravamento antes de iniciar qualquer operação.</td>
+          </tr>
+          <tr>
+            <td class="col-num">Questão 05</td>
+            <td class="col-letra">A</td>
+            <td>Reprovar a peça, pois uma das três posições medidas está fora da tolerância.</td>
+          </tr>
+          <tr>
+            <td class="col-num">Questão 06</td>
+            <td class="col-letra">B</td>
+            <td>Padronizar ferramentas e dispositivos, eliminar ajustes e testes, sincronizando a produção com a demanda do cliente.</td>
+          </tr>
+          <tr>
+            <td class="col-num">Questão 07</td>
+            <td class="col-letra">A</td>
+            <td>definir as tolerâncias dimensionais nas cotas e especificar a rugosidade média.</td>
+          </tr>
+          <tr>
+            <td class="col-num">Questão 08</td>
+            <td class="col-letra">B</td>
+            <td>Diminuir a velocidade de corte da operação e apoiar a extremidade livre do eixo utilizando uma ponta rotativa no contraponto da máquina.</td>
+          </tr>
+          <tr>
+            <td class="col-num">Questão 09</td>
+            <td class="col-letra">D</td>
+            <td>A necessidade de reprogramar as etapas subsequentes do processo, buscando ajustar os prazos de entrega e a alocação de recursos.</td>
+          </tr>
+          <tr>
+            <td class="col-num">Questão 10</td>
+            <td class="col-letra">A</td>
+            <td>Utilizar o comando bimanual a uma distância segura, considerando o tempo de parada total do martelo.</td>
+          </tr>
+          <tr>
+            <td class="col-num">Questão 11</td>
+            <td class="col-letra">B</td>
+            <td>G92.</td>
+          </tr>
+          <tr>
+            <td class="col-num">Questão 12</td>
+            <td class="col-letra">C</td>
+            <td>Avanço de corte.</td>
+          </tr>
+          <tr>
+            <td class="col-num">Questão 13</td>
+            <td class="col-letra">A</td>
+            <td>modelo geométrico virtual e tridimensional validado no software de projeto.</td>
+          </tr>
+          <tr>
+            <td class="col-num">Questão 14</td>
+            <td class="col-letra">D</td>
+            <td>Fresa de topo plano no desbaste e fresa esférica no acabamento.</td>
+          </tr>
+          <tr>
+            <td class="col-num">Questão 15</td>
+            <td class="col-letra">A</td>
+            <td>padronizar a inspeção visual para detecção precoce de defeitos e assegurar o uso obrigatório de EPIs específicos durante o ajuste e manuseio da máquina.</td>
+          </tr>
+          <tr>
+            <td class="col-num">Questão 16</td>
+            <td class="col-letra">D</td>
+            <td>Desenhar os dois círculos concêntricos, extrudar para criar o corpo cilíndrico furado, desenhar o perfil retangular de uma aba, extrudar, desenhar o círculo na aba, extrudar corte para criar o furo, aplicar chanfros nas bordas da peça, espelhar as três últimas operações de extrusão para o outro lado. Aplicar raios de concordância na junção com o cilindro.</td>
+          </tr>
+          <tr>
+            <td class="col-num">Questão 17</td>
+            <td class="col-letra">C</td>
+            <td>34,54.</td>
+          </tr>
+          <tr>
+            <td class="col-num">Questão 18</td>
+            <td class="col-letra">A</td>
+            <td>Diminuir o passo lateral entre as trajetórias de faceamento.</td>
+          </tr>
+          <tr>
+            <td class="col-num">Questão 19</td>
+            <td class="col-letra">B</td>
+            <td>Pós-processamento.</td>
+          </tr>
+          <tr>
+            <td class="col-num">Questão 20</td>
+            <td class="col-letra">D</td>
+            <td>Torneamento dos diâmetros externos (090, 080, 070), seguido pela execução dos raios e chanfros, e por fim, a fresagem dos rasgos de chaveta.</td>
+          </tr>
+          <tr>
+            <td class="col-num">Questão 21</td>
+            <td class="col-letra">D</td>
+            <td>O segundo dígito, quarto dígito e o jogo dos dois últimos dígitos.</td>
+          </tr>
+          <tr>
+            <td class="col-num">Questão 22</td>
+            <td class="col-letra">C</td>
+            <td>Layout em célula</td>
+          </tr>
+          <tr>
+            <td class="col-num">Questão 23</td>
+            <td class="col-letra">B</td>
+            <td>0.2 mm/rot</td>
+          </tr>
+          <tr>
+            <td class="col-num">Questão 24</td>
+            <td class="col-letra">C</td>
+            <td>Reduzir a espessura de passagem de rebarba.</td>
+          </tr>
+          <tr>
+            <td class="col-num">Questão 25</td>
+            <td class="col-letra">D</td>
+            <td>Classe P</td>
+          </tr>
+          <tr>
+            <td class="col-num">Questão 26</td>
+            <td class="col-letra">D</td>
+            <td>ao aumento do avanço de corte.</td>
+          </tr>
+          <tr>
+            <td class="col-num">Questão 27</td>
+            <td class="col-letra">D</td>
+            <td>SAE 8640</td>
+          </tr>
+          <tr>
+            <td class="col-num">Questão 28</td>
+            <td class="col-letra">B</td>
+            <td>9,525 mm</td>
+          </tr>
+          <tr>
+            <td class="col-num">Questão 29</td>
+            <td class="col-letra">D</td>
+            <td>3265,8 g</td>
+          </tr>
+          <tr>
+            <td class="col-num">Questão 30</td>
+            <td class="col-letra">B</td>
+            <td>fechada.</td>
+          </tr>
+          <tr>
+            <td class="col-num">Questão 31</td>
+            <td class="col-letra">D</td>
+            <td>interpretar o funcionamento interno e os processos de fabricação do produto.</td>
+          </tr>
+          <tr>
+            <td class="col-num">Questão 32</td>
+            <td class="col-letra">B</td>
+            <td>o projetor de perfil.</td>
+          </tr>
+          <tr>
+            <td class="col-num">Questão 33</td>
+            <td class="col-letra">C</td>
+            <td>PDCA</td>
+          </tr>
+          <tr>
+            <td class="col-num">Questão 34</td>
+            <td class="col-letra">D</td>
+            <td>espectrometria de emissão óptica.</td>
+          </tr>
+          <tr>
+            <td class="col-num">Questão 35</td>
+            <td class="col-letra">B</td>
+            <td>Verificar fixação da peça e ajustar parâmetros de corte.</td>
+          </tr>
+          <tr>
+            <td class="col-num">Questão 36</td>
+            <td class="col-letra">A</td>
+            <td>Kanban</td>
+          </tr>
+          <tr>
+            <td class="col-num">Questão 37</td>
+            <td class="col-letra">D</td>
+            <td>o Poka-yoke.</td>
+          </tr>
+          <tr>
+            <td class="col-num">Questão 38</td>
+            <td class="col-letra">C</td>
+            <td>G58.</td>
+          </tr>
+          <tr>
+            <td class="col-num">Questão 39</td>
+            <td class="col-letra">D</td>
+            <td>95%</td>
+          </tr>
+          <tr>
+            <td class="col-num">Questão 40</td>
+            <td class="col-letra">B</td>
+            <td>Utilizar a luneta móvel.</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <footer>
+      Documento gerado para estudo e revisão técnica — Exercícios SAEP 2026 (Fabricação Mecânica).
+    </footer>
+  </div>
+</body>
+</html>
