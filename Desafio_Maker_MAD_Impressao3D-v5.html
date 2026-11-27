@@ -1,0 +1,1350 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Desafio SENAI: Materiais e Filamentos na Impressão 3D FDM</title>
+<style>
+:root {
+  --senai-blue: #0046ad;
+  --senai-red: #e30613;
+  --bg-color: #eef5ff;
+  --card-bg: #ffffff;
+  --text-color: #17233c;
+  --border-color: #d7e4f8;
+  --accent-green: #2e7d32;
+  --accent-green-bg: #edf7ed;
+  --answered-blue: #0046ad;
+  --answered-blue-bg: #e6f0ff;
+}
+
+*{box-sizing:border-box}
+body{margin:0;font-family:Arial,Helvetica,sans-serif;background:var(--bg-color);color:var(--text-color)}
+
+header{background:var(--senai-blue);color:#fff;padding:16px 20px;display:flex;align-items:center;justify-content:center;gap:15px;box-shadow:0 3px 8px rgba(0,0,0,0.15);flex-wrap:wrap}
+.logo{background:var(--senai-red);color:#fff;font-weight:900;font-style:italic;font-size:22px;padding:4px 10px;border-radius:4px}
+h1{margin:0;font-size:22px}
+
+main{max-width:1250px;margin:20px auto;padding:0 15px}
+
+/* Barra de Configuração: Modo de Jogo, Aluno e Cronômetro */
+.student-bar{display:flex;justify-content:space-between;align-items:center;background:#fff;padding:12px 20px;border-radius:10px;box-shadow:0 2px 8px rgba(0,0,0,0.06);margin-bottom:14px;flex-wrap:wrap;gap:14px;border-left:5px solid var(--senai-blue)}
+
+.mode-selector-group{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.mode-selector-group label{font-weight:bold;color:var(--senai-blue);font-size:14px}
+.mode-select{padding:8px 12px;border:2px solid var(--senai-blue);border-radius:6px;font-size:14px;font-weight:bold;color:var(--senai-blue);background:var(--answered-blue-bg);cursor:pointer;transition:all 0.2s}
+.mode-select:focus{outline:none;box-shadow:0 0 0 3px rgba(0,70,173,0.15)}
+
+.student-input-group{display:flex;align-items:center;gap:10px;flex-wrap:wrap;flex-grow:1}
+.student-input-group label{font-weight:bold;color:var(--senai-blue);font-size:14px}
+.student-input{padding:8px 12px;border:2px solid var(--border-color);border-radius:6px;font-size:14px;min-width:220px;max-width:340px;width:100%;color:var(--text-color);font-weight:600;transition:border-color 0.2s}
+.student-input:focus{outline:none;border-color:var(--senai-blue)}
+
+.timer-box{background:var(--answered-blue-bg);color:var(--senai-blue);padding:8px 16px;border-radius:8px;font-weight:bold;font-size:15px;display:flex;align-items:center;gap:8px;border:1px solid var(--border-color)}
+
+/* Banner Informativo do Modo Selecionado */
+.mode-info-banner{background:#fff;border:1px solid var(--border-color);border-radius:8px;padding:8px 16px;margin-bottom:14px;font-size:13px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;color:#334155}
+.mode-badge{padding:3px 10px;border-radius:12px;font-weight:bold;font-size:12px}
+.mode-badge.study{background:#e0f2fe;color:#0369a1}
+.mode-badge.exam{background:#fee2e2;color:#b91c1c}
+
+/* HUD / Placar Superior */
+.hud{display:flex;justify-content:space-between;align-items:center;background:#fff;padding:12px 20px;border-radius:10px;box-shadow:0 2px 8px rgba(0,0,0,0.06);margin-bottom:20px;font-weight:bold;color:var(--senai-blue);flex-wrap:wrap;gap:10px}
+.hud-stats{display:flex;gap:15px;align-items:center;flex-wrap:wrap}
+.stat-correct{color:var(--accent-green);}
+.stat-wrong{color:var(--senai-red);}
+.stat-limit{color:#b45309;background:#fef3c7;padding:4px 10px;border-radius:6px;font-size:13px}
+.btn-shuffle{background:var(--senai-blue);color:#fff;border:none;padding:7px 14px;border-radius:6px;font-size:13px;font-weight:bold;cursor:pointer;transition:background 0.2s}
+.btn-shuffle:hover{background:#003380}
+
+/* Layout Principal com Painel Lateral */
+.main-layout{display:grid;grid-template-columns:1fr 290px;gap:20px;align-items:start}
+
+/* Layout Interno do Jogo (Lado a Lado) */
+.game-container{display:grid;grid-template-columns:1fr 1fr;gap:20px;align-items:start}
+
+/* Estilo das Cartas */
+.card{background:#fff;border-radius:12px;border:2px solid var(--border-color);padding:20px;box-shadow:0 4px 12px rgba(0,0,0,0.08);position:relative;display:flex;flex-direction:column}
+.card-header{font-size:12px;font-weight:bold;color:var(--senai-red);text-transform:uppercase;margin-bottom:8px;letter-spacing:1px}
+.card-title{font-size:18px;font-weight:bold;color:var(--senai-blue);margin-bottom:12px}
+.card-body{font-size:15px;line-height:1.5;color:var(--text-color);flex-grow:1}
+
+/* Coluna de Opções */
+.options-container{display:flex;flex-direction:column;gap:10px}
+.option-card{background:#fff;border:2px solid var(--border-color);border-radius:10px;padding:14px;cursor:pointer;transition:all 0.2s ease;display:flex;flex-direction:column}
+.option-card:hover:not(.disabled){border-color:var(--senai-blue);transform:translateY(-2px);box-shadow:0 4px 10px rgba(0,70,173,0.15)}
+
+/* Estilos de Opção Selecionada/Correta */
+.option-card.correct-selected {
+  border: 2px solid var(--accent-green) !important;
+  background-color: var(--accent-green-bg) !important;
+  color: #1b5e20 !important;
+}
+.option-card.wrong-selected {
+  border: 2px solid var(--senai-red) !important;
+  background-color: #fff0ed !important;
+  color: #9b3425 !important;
+}
+
+/* Banner de Resultado */
+.result-banner{display:none;margin-top:15px;padding:12px;border-radius:8px;font-weight:bold;font-size:16px;text-align:center}
+.result-banner.correct{background:var(--accent-green-bg);color:var(--accent-green);border:1px solid var(--accent-green)}
+.result-banner.wrong{background:#fff0ed;color:var(--senai-red);border:1px solid var(--senai-red)}
+
+/* Explicação Pós-Resposta */
+.explanation-box{display:none;margin-top:10px;padding:12px;background:#f8fafc;border-left:4px solid var(--senai-blue);border-radius:4px;font-size:14px;color:var(--text-color);line-height:1.45}
+.explanation-box.correct-exp{border-left-color:var(--accent-green)}
+
+/* Botões de Navegação */
+.nav-buttons{display:flex;justify-content:space-between;gap:12px;margin-top:20px;flex-wrap:wrap}
+.btn-nav{padding:12px 20px;border-radius:8px;border:0;font-weight:bold;font-size:15px;cursor:pointer;transition:all 0.2s}
+.btn-prev{background:#e2e8f0;color:var(--text-color)}
+.btn-next{background:var(--senai-blue);color:#fff}
+.btn-finish{background:var(--accent-green);color:#fff}
+.btn-nav:disabled{opacity:0.4;cursor:not-allowed}
+
+/* PAINEL LATERAL DE PROGRESSO */
+.sidebar{background:#fff;border-radius:12px;border:2px solid var(--border-color);padding:16px;box-shadow:0 4px 12px rgba(0,0,0,0.08)}
+.sidebar-title{font-size:16px;font-weight:bold;color:var(--senai-blue);margin-bottom:6px;border-bottom:2px solid var(--border-color);padding-bottom:8px}
+.sidebar-counter{font-size:14px;font-weight:bold;color:var(--senai-blue);margin-bottom:12px;background:var(--answered-blue-bg);padding:8px;border-radius:6px;text-align:center}
+.question-grid{display:grid;grid-template-columns:repeat(5, 1fr);gap:6px;margin-bottom:15px;max-height:380px;overflow-y:auto;padding-right:2px}
+
+/* Badges do Painel Lateral */
+.q-badge{height:34px;border-radius:6px;border:1px solid var(--border-color);background:#f1f5f9;display:flex;align-items:center;justify-content:center;font-weight:bold;font-size:12px;cursor:pointer;transition:all 0.2s;color:var(--text-color)}
+.q-badge:hover{border-color:var(--senai-blue)}
+.q-badge.current{border:2px solid var(--senai-red);box-shadow:0 0 0 2px rgba(227,6,19,0.2)}
+
+.q-badge.correct{
+  background-color: var(--accent-green) !important;
+  color: #ffffff !important;
+  border-color: var(--accent-green) !important;
+  font-weight: 900;
+}
+.q-badge.wrong{
+  background-color: var(--senai-red) !important;
+  color: #ffffff !important;
+  border-color: var(--senai-red) !important;
+  font-weight: 900;
+}
+
+.btn-sidebar-check {
+  width: 100%;
+  padding: 10px;
+  background: var(--accent-green);
+  color: #fff;
+  border: 0;
+  border-radius: 8px;
+  font-weight: bold;
+  font-size: 14px;
+  cursor: pointer;
+  transition: filter 0.2s;
+}
+.btn-sidebar-check:hover { filter: brightness(1.1); }
+
+/* Modais (Confirmação, Bloqueio e Resultado Final) */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:1000;align-items:center;justify-content:center;padding:15px}
+.modal-overlay.active{display:flex}
+.modal-box{background:#fff;padding:26px;border-radius:12px;width:100%;max-width:480px;text-align:center;box-shadow:0 10px 25px rgba(0,0,0,0.25)}
+.modal-title{font-size:19px;font-weight:bold;color:var(--senai-blue);margin-bottom:12px}
+.modal-title.danger{color:var(--senai-red);font-size:20px}
+.modal-buttons{display:flex;justify-content:center;gap:12px;margin-top:20px;flex-wrap:wrap}
+.btn{padding:10px 20px;border-radius:6px;border:0;font-weight:bold;cursor:pointer;font-size:14px}
+.btn-ok{background:var(--senai-blue);color:#fff}
+.btn-danger{background:var(--senai-red);color:#fff}
+.btn-cancel{background:#e2e8f0;color:var(--text-color)}
+
+/* Cards de Escolha Inicial de Modo */
+.mode-cards{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:16px;text-align:left}
+.mode-card-btn{border:2px solid var(--border-color);border-radius:10px;padding:14px;background:#f8fafc;cursor:pointer;transition:all 0.2s}
+.mode-card-btn:hover{border-color:var(--senai-blue);background:var(--answered-blue-bg);transform:translateY(-2px)}
+.mode-card-btn h4{margin:0 0 6px 0;color:var(--senai-blue);font-size:15px}
+.mode-card-btn p{margin:0;font-size:12px;color:#475569;line-height:1.4}
+
+@media(max-width:900px){
+  .main-layout{grid-template-columns:1fr}
+  .game-container{grid-template-columns:1fr}
+  .mode-cards{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">SENAI</div>
+  <h1>Desafio Maker: Filamentos na Impressão 3D FDM</h1>
+</header>
+
+<main>
+  <!-- Barra Superior: Seletor de Modo, Identificação do Aluno e Cronômetro -->
+  <div class="student-bar">
+    <div class="mode-selector-group">
+      <label for="gameModeSelect">🎯 Modo:</label>
+      <select id="gameModeSelect" class="mode-select" onchange="handleModeChange()">
+        <option value="study">📘 Modo Estudo (Livre)</option>
+        <option value="exam">🛡️ Modo Avaliação (Limite 25%)</option>
+      </select>
+    </div>
+
+    <div class="student-input-group">
+      <label for="studentName">👤 Aluno:</label>
+      <input type="text" id="studentName" class="student-input" placeholder="Digite o nome do aluno..." />
+    </div>
+
+    <div class="timer-box">
+      <span>⏱️ Tempo:</span>
+      <span id="timerDisplay">00:00:00</span>
+    </div>
+  </div>
+
+  <!-- Faixa descritiva do modo ativo -->
+  <div class="mode-info-banner">
+    <span id="modeDescription">Exibe o gabarito e a justificativa técnica em todas as questões, sem bloqueio por erros.</span>
+    <span id="modeBadge" class="mode-badge study">MODO ESTUDO ATIVO</span>
+  </div>
+
+  <div class="hud">
+    <span id="questionNum">Questão 1 de 50</span>
+    <div class="hud-stats">
+      <span class="stat-correct" id="correctCount">✅ Acertos: 0</span>
+      <span class="stat-wrong" id="wrongCount">❌ Erros: 0</span>
+      <span class="stat-limit" id="errorRateDisplay" style="display:none;">⚠️ Taxa de Erro: 0% (Máx: 25%)</span>
+      <span id="score">Pontos: 0</span>
+      <button class="btn-shuffle" onclick="resetAndShuffle()" title="Embaralhar novamente questões e alternativas">🔀 Reiniciar & Embaralhar</button>
+    </div>
+  </div>
+
+  <div class="main-layout">
+    <!-- Área do Jogo -->
+    <div class="left-content">
+      <div class="game-container">
+        <!-- Carta do Desafio -->
+        <div class="card" id="challengeCard">
+          <div class="card-header" id="challengeCategory">TEMA</div>
+          <div class="card-title" id="challengeTitle">Desafio FDM N° 01</div>
+          <div class="card-body" id="challengeText">Carregando desafio...</div>
+        </div>
+
+        <!-- Opções de Resposta -->
+        <div class="options-container" id="optionsContainer"></div>
+      </div>
+
+      <!-- Banner de Resultado -->
+      <div class="result-banner" id="resultBanner"></div>
+
+      <!-- Explicação Pós-Resposta -->
+      <div class="explanation-box" id="explanationBox">
+        <strong>💡 Justificativa Técnica:</strong>
+        <p id="explanationText" style="margin:5px 0 0 0;"></p>
+      </div>
+
+      <!-- Navegação -->
+      <div class="nav-buttons">
+        <button class="btn-nav btn-prev" id="btnPrev" onclick="prevQuestion()">◀ Anterior</button>
+        <button class="btn-nav btn-next" id="btnNext" onclick="nextQuestion()">Próxima ▶</button>
+        <button class="btn-nav btn-finish" id="btnFinish" onclick="checkFinalResult()">📊 Verificar Resultado Final</button>
+      </div>
+    </div>
+
+    <!-- Painel Lateral -->
+    <aside class="sidebar">
+      <div class="sidebar-title">📋 Progresso</div>
+      <div class="sidebar-counter" id="answeredCount">Respondidas: 0 / 50</div>
+      <div class="question-grid" id="questionGrid"></div>
+      <button class="btn-sidebar-check" onclick="checkFinalResult()">🏆 Concluir & Ver Acertos</button>
+    </aside>
+  </div>
+</main>
+
+<!-- Modal Inicial de Escolha de Modo -->
+<div class="modal-overlay active" id="welcomeModeModal">
+  <div class="modal-box" style="max-width:560px; border-top: 5px solid var(--senai-blue);">
+    <div class="modal-title">Bem-vindo ao Desafio Maker FDM</div>
+    <p style="font-size:14px; color:#475569; margin:0 0 10px 0;">
+      Informe seu nome (opcional no Modo Estudo, obrigatório no Modo Avaliação) e escolha como deseja realizar o simulado:
+    </p>
+    <input type="text" id="welcomeStudentName" class="student-input" style="max-width:100%; margin-bottom:6px;" placeholder="Digite o nome completo do aluno..." />
+    
+    <div class="mode-cards">
+      <div class="mode-card-btn" onclick="selectInitialMode('study')">
+        <h4>📘 Modo Estudo (Livre)</h4>
+        <p>• Sem limite de erros.<br>• Mostra a resposta correta e a justificativa mesmo quando você erra.<br>• Ideal para revisão e aprendizagem.</p>
+      </div>
+      <div class="mode-card-btn" onclick="selectInitialMode('exam')">
+        <h4>🛡️ Modo Avaliação (25%)</h4>
+        <p>• Exige identificação do aluno.<br>• Não revela gabarito nem justificativa ao errar.<br>• Bloqueia e reinicia se errar mais de 25%.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal de Confirmação (Popup) -->
+<div class="modal-overlay" id="confirmModal">
+  <div class="modal-box">
+    <div class="modal-title">Está certo de sua escolha?</div>
+    <p id="selectedOptionText" style="font-weight:bold; color:var(--senai-blue);"></p>
+    <div class="modal-buttons">
+      <button class="btn btn-cancel" onclick="closeModal()">Cancelar</button>
+      <button class="btn btn-ok" onclick="confirmSelection()">OK</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal de Bloqueio por Excesso de Erros (> 25%) -->
+<div class="modal-overlay" id="blockModal">
+  <div class="modal-box" style="border: 3px solid var(--senai-red);">
+    <div class="modal-title danger">🚫 Teste Bloqueado</div>
+    <p id="blockMessageText" style="font-size:16px; font-weight:bold; color:var(--text-color); margin: 14px 0;">
+      Você excedeu o limite de de 25%, tente novamente
+    </p>
+    <p id="blockDetailsText" style="font-size:13px; color:#4b5563;"></p>
+    <div class="modal-buttons">
+      <button class="btn btn-danger" onclick="restartAfterBlock()">🔄 Reiniciar Teste</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal de Resultado Final -->
+<div class="modal-overlay" id="resultModal">
+  <div class="modal-box" style="border: 3px solid var(--senai-blue);">
+    <div class="modal-title">📊 Resumo do Desafio</div>
+    <div id="finalResultBody" style="text-align:left; background:#f8fafc; padding:14px; border-radius:8px; font-size:14px; line-height:1.6;"></div>
+    <div class="modal-buttons">
+      <button class="btn btn-ok" onclick="closeResultModal()">Fechar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const baseQuestionsData = [
+  {
+    "id": 1,
+    "cat": "ABS - Parâmetros Térmicos",
+    "q": "Qual é a faixa de temperatura recomendada para o bico (extrusora) na impressão de filamento ABS?",
+    "options": [
+      "190–215 °C",
+      "210–240 °C",
+      "230–260 °C",
+      "270–300 °C"
+    ],
+    "answerIdx": 2,
+    "rExp": "Conforme a apresentação do ABS, a temperatura de trabalho do bico extrusor situa-se entre 230 °C e 260 °C."
+  },
+  {
+    "id": 2,
+    "cat": "ABS - Limites Térmicos",
+    "q": "Em qual faixa de temperatura o filamento ABS atinge sua transição vítrea (começando a perder rigidez)?",
+    "options": [
+      "50–60 °C",
+      "80–90 °C",
+      "100–105 °C",
+      "150–160 °C"
+    ],
+    "answerIdx": 2,
+    "rExp": "O documento do ABS informa que a temperatura de uso contínuo é de 80–90 °C, enquanto a transição vítrea ocorre entre 100 °C e 105 °C."
+  },
+  {
+    "id": 3,
+    "cat": "ABS - Parâmetros de Mesa",
+    "q": "Qual é a temperatura recomendada para a mesa aquecida durante a impressão de ABS?",
+    "options": [
+      "30–60 °C",
+      "60–70 °C",
+      "70–85 °C",
+      "90–110 °C"
+    ],
+    "answerIdx": 3,
+    "rExp": "A apresentação sobre ABS especifica que a mesa aquecida deve operar entre 90 °C e 110 °C para garantir aderência e evitar empenamento."
+  },
+  {
+    "id": 4,
+    "cat": "ABS - Pós-Processamento",
+    "q": "Qual solvente é citado nas apresentações como ideal para realizar o alisamento superficial e remover linhas de camada em peças de ABS?",
+    "options": [
+      "Álcool isopropílico",
+      "Vapor de acetona",
+      "Óleo mineral",
+      "Água quente"
+    ],
+    "answerIdx": 1,
+    "rExp": "O ABS permite excelente pós-processamento, destacando-se a facilidade de lixamento sem empastar e o alisamento com vapor de acetona."
+  },
+  {
+    "id": 5,
+    "cat": "ABS - Aplicações Industriais",
+    "q": "Qual das alternativas apresenta uma aplicação típica do ABS na indústria automotiva citada no material?",
+    "options": [
+      "Pneus de alta performance e correias dentadas",
+      "Vedações de portas e juntas de motor",
+      "Suportes, acabamentos internos e componentes de painéis",
+      "Reservatórios de fluido de freio submetidos a pressão hidráulica"
+    ],
+    "answerIdx": 2,
+    "rExp": "Na apresentação do ABS, as aplicações automotivas exemplificadas são suportes, acabamentos internos e componentes de painéis."
+  },
+  {
+    "id": 6,
+    "cat": "ABS - Rendimento e Propriedades",
+    "q": "Por que o ABS costuma render mais metros de filamento por rolo de 1 kg em comparação ao PLA?",
+    "options": [
+      "Porque possui menor diâmetro padrão (1,50 mm)",
+      "Porque é um material mais leve (menor densidade)",
+      "Porque derrete a temperaturas mais baixas",
+      "Porque não absorve umidade atmosférica"
+    ],
+    "answerIdx": 1,
+    "rExp": "Segundo o comparativo 'Onde o ABS ganha do PLA', o ABS é mais leve e, consequentemente, rende mais metros de filamento por rolo."
+  },
+  {
+    "id": 7,
+    "cat": "TPU - Parâmetros de Impressão",
+    "q": "Quais são as temperaturas recomendadas para o bico e para a mesa aquecida na impressão de TPU?",
+    "options": [
+      "Bico: 210–240 °C / Mesa: 30–60 °C",
+      "Bico: 190–210 °C / Mesa: 90–110 °C",
+      "Bico: 240–270 °C / Mesa: 70–100 °C",
+      "Bico: 230–250 °C / Mesa: 70–90 °C"
+    ],
+    "answerIdx": 0,
+    "rExp": "Conforme o material sobre TPU, a temperatura de trabalho é de 210 °C a 240 °C no bico e entre 30 °C e 60 °C na mesa aquecida."
+  },
+  {
+    "id": 8,
+    "cat": "TPU - Resistência Térmica",
+    "q": "Qual faixa de temperatura uma peça já impressa em TPU consegue resistir?",
+    "options": [
+      "30 °C a 45 °C",
+      "60 °C a 80 °C",
+      "100 °C a 120 °C",
+      "130 °C a 160 °C"
+    ],
+    "answerIdx": 1,
+    "rExp": "O slide de temperatura do TPU aponta que o material impresso resiste a temperaturas entre 60 °C e 80 °C."
+  },
+  {
+    "id": 9,
+    "cat": "TPU - Características Mecânicas",
+    "q": "Qual das características abaixo NÃO pertence ao TPU segundo a apresentação?",
+    "options": [
+      "Alta flexibilidade e elasticidade",
+      "Resistência à abrasão e a riscos",
+      "Alta rigidez estrutural para substituir metais",
+      "Resistência a óleos, graxas, solventes e radiação"
+    ],
+    "answerIdx": 2,
+    "rExp": "O TPU destaca-se por características semelhantes às da borracha (flexibilidade, elasticidade, resistência à abrasão, óleos, graxas, solventes e radiação), não sendo um polímero rígido estrutural."
+  },
+  {
+    "id": 10,
+    "cat": "TPU - Aplicações Práticas",
+    "q": "Qual conjunto de exemplos representa aplicações diretas do TPU citadas na apresentação?",
+    "options": [
+      "Maquetes arquitetônicas, bustos decorativos e engrenagens",
+      "Formas de gelo, acessórios vestíveis, vedações, juntas e capas de celular",
+      "Caixas de equipamentos eletrônicos, gabaritos e dutos de motor",
+      "Cremalheiras, mancais de deslizamento e garras robóticas"
+    ],
+    "answerIdx": 1,
+    "rExp": "A apresentação lista explicitamente formas de gelo, acessórios vestíveis, vedações e juntas, capas de celular, amortecedores e proteções como aplicações do TPU."
+  },
+  {
+    "id": 11,
+    "cat": "PLA - Origem e Sustentabilidade",
+    "q": "Qual é a principal característica ambiental/de origem destacada na apresentação do PLA?",
+    "options": [
+      "É derivado exclusivamente do petróleo refinado",
+      "Possui origem renovável",
+      "É um polímero semicristalino metálico",
+      "É produzido a partir da reciclagem de pneus"
+    ],
+    "answerIdx": 1,
+    "rExp": "No tópico 'Características do PLA', destaca-se sua origem renovável, além da facilidade de impressão, boa qualidade superficial e rigidez."
+  },
+  {
+    "id": 12,
+    "cat": "PLA - Abrangência de Projetos",
+    "q": "De acordo com a apresentação do PLA, qual percentual estimado dos projetos de impressão 3D pode ser atendido com eficiência por esse material?",
+    "options": [
+      "20% dos projetos",
+      "50% dos projetos",
+      "80% dos projetos",
+      "100% dos projetos industriais pesados"
+    ],
+    "answerIdx": 2,
+    "rExp": "O slide final da apresentação resume o PLA como oferecendo 'rigidez, precisão e velocidade para 80% dos projetos'."
+  },
+  {
+    "id": 13,
+    "cat": "PLA - Limite Térmico",
+    "q": "A partir de qual temperatura peças impressas em PLA começam a deformar facilmente (como no interior de um carro ao sol)?",
+    "options": [
+      "30 °C",
+      "50 °C",
+      "85 °C",
+      "110 °C"
+    ],
+    "answerIdx": 1,
+    "rExp": "Tanto no comparativo do ABS quanto nas características do PLA, aponta-se que o PLA possui baixa resistência térmica e deforma facilmente a partir de 50 °C."
+  },
+  {
+    "id": 14,
+    "cat": "PLA - Áreas de Atuação",
+    "q": "Quais são as áreas de aplicação do PLA listadas na apresentação desse filamento?",
+    "options": [
+      "Arquitetura e construção civil, engenharia e indústria, medicina e educação, indústria automotiva, design e decoração",
+      "Apenas brinquedos infantis e artesanato doméstico",
+      "Exclusivamente peças submersas em óleo e combustíveis",
+      "Apenas componentes estruturais de motores a combustão"
+    ],
+    "answerIdx": 0,
+    "rExp": "O slide 'Aplicações do PLA em diferentes áreas' enumera exatamente essas cinco grandes áreas: arquitetura e construção civil, engenharia e indústria, medicina e educação, indústria automotiva, e design e decoração."
+  },
+  {
+    "id": 15,
+    "cat": "PLA - Comportamento Mecânico",
+    "q": "Qual é o comportamento mecânico típico do PLA ao sofrer uma queda ou impacto brusco?",
+    "options": [
+      "Deforma-se elasticamente e retorna ao formato original",
+      "Absorve o impacto como uma borracha macia",
+      "É rígido e quebradiço, podendo estilhaçar ou quebrar de forma seca",
+      "Apresenta autolubrificação superficial"
+    ],
+    "answerIdx": 2,
+    "rExp": "As apresentações de PLA, ABS e PETG ressaltam que, embora rígido e preciso, o PLA é frágil/quebradiço e estilhaça ao cair no chão."
+  },
+  {
+    "id": 16,
+    "cat": "PETG - Parâmetros Térmicos",
+    "q": "Quais são as temperaturas recomendadas para o bico extrusor e para a mesa aquecida na impressão de PETG?",
+    "options": [
+      "Bico: 190–210 °C / Mesa: 40–50 °C",
+      "Bico: 230–250 °C / Mesa: 70–90 °C",
+      "Bico: 260–290 °C / Mesa: 100–110 °C",
+      "Bico: 210–220 °C / Mesa: 20–30 °C"
+    ],
+    "answerIdx": 1,
+    "rExp": "A apresentação do PETG indica temperatura de bico entre 230 °C e 250 °C e temperatura da mesa entre 70 °C e 90 °C."
+  },
+  {
+    "id": 17,
+    "cat": "PETG - Acabamento Superficial",
+    "q": "Qual característica visual da superfície costuma diferenciar peças impressas em PETG?",
+    "options": [
+      "Superfície sempre fosca e porosa",
+      "Acabamento liso e brilhante",
+      "Textura aveludada natural",
+      "Superfície metálica opaca"
+    ],
+    "answerIdx": 1,
+    "rExp": "Entre as características do PETG listadas na apresentação está o 'acabamento brilhante: geralmente apresenta uma superfície lisa e brilhante'."
+  },
+  {
+    "id": 18,
+    "cat": "PETG - Propriedades Mecânicas",
+    "q": "Por que o PETG é considerado superior ao PLA para encaixes de pressão (snap-fits), clipes e travas?",
+    "options": [
+      "Porque é totalmente inflexível e duro como vidro",
+      "Porque permite que a peça dobre levemente e volte ao formato original, resistindo à fadiga",
+      "Porque derrete com o calor da mão para moldar o encaixe",
+      "Porque não possui aderência entre camadas"
+    ],
+    "answerIdx": 1,
+    "rExp": "O material destaca que o PETG possui flexibilidade e resistência à fadiga, permitindo dobrar levemente e retornar ao formato original sem quebrar."
+  },
+  {
+    "id": 19,
+    "cat": "PETG - Aplicações Externas",
+    "q": "Qual das opções abaixo exemplifica uma aplicação indicada especificamente para o PETG devido à sua resistência à umidade e às intempéries?",
+    "options": [
+      "Peças para jardins, equipamentos expostos ao ambiente e reservatórios",
+      "Peças solúveis em água para suporte",
+      "Isolantes térmicos para fornos industriais acima de 200 °C",
+      "Solados macios de tênis de corrida"
+    ],
+    "answerIdx": 0,
+    "rExp": "O PETG possui boa resistência à água, umidade e substâncias químicas, sendo aplicado em caixas/reservatórios resistentes à umidade e peças de uso externo para jardins."
+  },
+  {
+    "id": 20,
+    "cat": "PETG - Cuidados na Impressão",
+    "q": "Qual é uma desvantagem prática do filamento PETG durante o armazenamento e a impressão apontada no comparativo com o PLA?",
+    "options": [
+      "Libera gases altamente tóxicos de estireno",
+      "Absorve umidade do ar rapidamente e pode deixar fiapos (stringing) na impressão",
+      "Exige obrigatoriamente mesa aquecida a 110 °C e câmara fechada",
+      "Não adere entre as camadas"
+    ],
+    "answerIdx": 1,
+    "rExp": "No comparativo da apresentação de PLA contra o PETG, menciona-se que o PETG absorve umidade rapidamente, deixa fiapos e pode atrasar entregas, embora tenha excelente aderência entre camadas."
+  },
+  {
+    "id": 21,
+    "cat": "Nylon (PA) - Estrutura Polimérica",
+    "q": "Como o Nylon (Poliamida) é classificado estruturalmente na apresentação?",
+    "options": [
+      "Termofixo amorfo de baixa resistência",
+      "Termoplástico semicristalino de engenharia",
+      "Elastômero vulcanizado flexível",
+      "Biopolímero compostável de baixa temperatura"
+    ],
+    "answerIdx": 1,
+    "rExp": "O slide 2 da apresentação atualizada define o Nylon como um 'termoplástico semicristalino de engenharia (principais no FDM: PA6 e PA12)'."
+  },
+  {
+    "id": 22,
+    "cat": "Nylon (PA) - Parâmetros Térmicos",
+    "q": "Quais são as temperaturas recomendadas para o bico extrusor, mesa aquecida e câmara fechada na impressão de Nylon?",
+    "options": [
+      "Bico: 200–220 °C / Mesa: 50 °C / Câmara: 25 °C",
+      "Bico: 240–270 °C (até 300 °C em PA-CF) / Mesa: 70–100 °C / Câmara: 45–60 °C",
+      "Bico: 230–250 °C / Mesa: 30–40 °C / Câmara: aberta",
+      "Bico: 180–200 °C / Mesa: 110–120 °C / Câmara: 80 °C"
+    ],
+    "answerIdx": 1,
+    "rExp": "O slide 3 especifica bico de 240–270 °C (até 300 °C em PA6 ou versões com fibra), mesa de 70–100 °C e câmara fechada de 45–60 °C."
+  },
+  {
+    "id": 23,
+    "cat": "Nylon (PA) - Adesão na Mesa",
+    "q": "Quais superfícies de mesa são recomendadas para garantir a adesão do Nylon durante a impressão?",
+    "options": [
+      "Vidro liso limpo sem adesivo",
+      "Garolite (G10), PEI texturizado ou cola PVA",
+      "Fita crepe comum a frio",
+      "Chapa de alumínio polido sem aquecimento"
+    ],
+    "answerIdx": 1,
+    "rExp": "O slide 3 indica que a mesa aquecida (70–100 °C) exige superfície adequada como Garolite (G10), PEI texturizado ou cola PVA."
+  },
+  {
+    "id": 24,
+    "cat": "Nylon (PA) - Resfriamento (Fan)",
+    "q": "Como deve ser configurada a ventilação da peça (fan de resfriamento) ao imprimir Nylon?",
+    "options": [
+      "100% durante toda a impressão",
+      "70% a 80% após a primeira camada",
+      "0% a 20% (desligado na maior parte da peça)",
+      "50% constantes"
+    ],
+    "answerIdx": 2,
+    "rExp": "A apresentação orienta resfriamento mínimo (0% a 20%), mantendo-o desligado na maior parte da peça para maximizar a fusão entre camadas."
+  },
+  {
+    "id": 25,
+    "cat": "Nylon (PA) - Requisitos de Máquina",
+    "q": "Por que um hotend all-metal é requisito obrigatório para imprimir Nylon?",
+    "options": [
+      "Porque o Nylon é magnético",
+      "Para operar acima de 250 °C sem degradar tubos de PTFE comuns",
+      "Para resfriar o filamento antes de entrar no bico",
+      "Porque bicos metálicos impedem a absorção de umidade"
+    ],
+    "answerIdx": 1,
+    "rExp": "Conforme o slide 3, o hotend all-metal é indispensável para suportar temperaturas acima de 250 °C sem degradar tubos de PTFE."
+  },
+  {
+    "id": 26,
+    "cat": "Nylon (PA-CF) - Seleção de Bico",
+    "q": "Qual tipo de bico é obrigatório ao imprimir versões reforçadas com fibra de carbono (PA-CF) ou fibra de vidro (PA-GF)?",
+    "options": [
+      "Bico de latão padrão",
+      "Bico de alumínio macio",
+      "Bico de aço endurecido ou rubi",
+      "Bico de cobre sem revestimento"
+    ],
+    "answerIdx": 2,
+    "rExp": "As fibras de carbono e vidro desgastam rapidamente bicos de latão comuns, exigindo bico de aço endurecido ou rubi."
+  },
+  {
+    "id": 27,
+    "cat": "Nylon (PA) - Secagem Prévia",
+    "q": "Qual é o procedimento obrigatório de preparo do filamento de Nylon antes da impressão, mesmo em carretéis recém-abertos?",
+    "options": [
+      "Mergulhar o rolo em água por 2 horas",
+      "Secagem prévia de 70 °C a 80 °C por 6 a 12 horas",
+      "Congelamento a -30 °C por 24 horas",
+      "Aplicação de acetona líquida no carretel"
+    ],
+    "answerIdx": 1,
+    "rExp": "Devido à altíssima higroscopicidade, é obrigatória a secagem prévia entre 70 °C e 80 °C por 6 a 12 horas e a impressão a partir de uma caixa secadora ativa."
+  },
+  {
+    "id": 28,
+    "cat": "Nylon (PA) - Defeitos por Umidade",
+    "q": "O que acontece durante a impressão se o filamento de Nylon estiver úmido?",
+    "options": [
+      "A peça ganha brilho espelhado e maior resistência",
+      "A umidade ferve a 250 °C e vira vapor, causando estalos, bolhas, fios (stringing) e perda severa de resistência",
+      "A temperatura do bico cai automaticamente para 180 °C",
+      "O filamento torna-se condutor elétrico"
+    ],
+    "answerIdx": 1,
+    "rExp": "Conforme o slide 5, a água absorvida ferve no bico quente, gerando vapor, estalos, bolhas, fios e comprometendo a resistência mecânica."
+  },
+  {
+    "id": 29,
+    "cat": "Nylon (PA) - Efeito Plastificante",
+    "q": "Qual é o efeito da umidade na peça de Nylon DEPOIS de já estar impressa?",
+    "options": [
+      "A peça dissolve e apodrece rapidamente",
+      "A água reduz parte da rigidez (efeito plastificante), deixando a peça ainda mais flexível e resistente a impactos, com leve inchaço dimensional",
+      "A peça torna-se quebradiça como vidro",
+      "A peça encolhe em 20% do seu volume"
+    ],
+    "answerIdx": 1,
+    "rExp": "Depois de impressa, a peça não degrada nem corrói em contato com água; a umidade atua como plastificante (aumentando tenacidade e flexibilidade) e gera leve expansão dimensional."
+  },
+  {
+    "id": 30,
+    "cat": "Nylon (PA6 vs PA12) - Absorção de Água",
+    "q": "Comparando a absorção de umidade entre PA6 e PA12, qual afirmação está correta segundo o gráfico da apresentação?",
+    "options": [
+      "O PA12 absorve 6× mais água que o PA6",
+      "O PA6 absorve até ~9% de água (imerso) e ~2,5–3% (ao ar), enquanto o PA12 absorve até ~1,5% (imerso) e ~0,5–0,8% (ao ar), cerca de 6× menos água",
+      "Ambos absorvem exatamente 5% de água em qualquer ambiente",
+      "Nenhum dos dois absorve umidade após ser extrudado"
+    ],
+    "answerIdx": 1,
+    "rExp": "O gráfico do slide 6 demonstra que o PA6 atinge até ~9% de absorção em imersão contínua, enquanto o PA12 absorve até ~1,5% (aproximadamente 6× menos água)."
+  },
+  {
+    "id": 31,
+    "cat": "Nylon (PA) - Desempenho Térmico",
+    "q": "Qual variante do Nylon apresenta a maior resistência térmica para uso contínuo (130–160 °C) e HDT sob carga (150–210 °C)?",
+    "options": [
+      "PA12 puro",
+      "PA6 puro",
+      "PA-CF (Nylon com Fibra de Carbono)",
+      "Nylon misturado com PLA"
+    ],
+    "answerIdx": 2,
+    "rExp": "O gráfico 'Comparativo Térmico da Peça Pronta' (slide 4) mostra que o PA-CF suporta 130–160 °C em uso contínuo e 150–210 °C de HDT, superando o PA6 (100–120 °C contínuo) e o PA12 (80–90 °C contínuo)."
+  },
+  {
+    "id": 32,
+    "cat": "Nylon (PA12) - Frio Extremo",
+    "q": "Como o PA12 se comporta em ambientes de frio extremo (-30 °C)?",
+    "options": [
+      "Estilhaça ao menor toque",
+      "Preserva cerca de 80% da sua resistência ao impacto mesmo a -30 °C",
+      "Perde completamente sua elasticidade e derrete",
+      "Aumenta sua absorção de umidade em 10 vezes"
+    ],
+    "answerIdx": 1,
+    "rExp": "O slide 4 destaca que, enquanto plásticos comuns ficam quebradiços no frio, o PA12 preserva ~80% de sua resistência ao impacto a -30 °C."
+  },
+  {
+    "id": 33,
+    "cat": "Nylon (PA) - Pós-Processamento",
+    "q": "Qual técnica de pós-processamento estético funciona muito bem no Nylon, apesar de sua superfície ser difícil de lixar e colar?",
+    "options": [
+      "Banho de vapor de acetona",
+      "Tingimento têxtil quente",
+      "Polimento com álcool etílico",
+      "Soldagem ultrassônica a frio"
+    ],
+    "answerIdx": 1,
+    "rExp": "O slide 6 observa que a superfície escorregadia do Nylon é difícil de lixar e colar, mas em compensação aceita muito bem tingimento têxtil quente."
+  },
+  {
+    "id": 34,
+    "cat": "Nylon (PA) - Transmissão e Atrito",
+    "q": "Por que o Nylon é amplamente utilizado na fabricação de engrenagens, buchas, roldanas e mancais?",
+    "options": [
+      "Porque é o filamento mais barato do mercado",
+      "Porque possui superfície autolubrificante (baixo atrito) e excelente resistência ao desgaste contínuo",
+      "Porque possui ponto de fusão abaixo de 100 °C",
+      "Porque é altamente rígido e quebradiço"
+    ],
+    "answerIdx": 1,
+    "rExp": "A apresentação destaca o baixo atrito (superfície naturalmente escorregadia/autolubrificante) e alta resistência ao desgaste como diferenciais para peças de transmissão e movimento."
+  },
+  {
+    "id": 35,
+    "cat": "Comparativo - Prototipagem Rápida",
+    "q": "Um projetista precisa imprimir protótipos visuais e maquetes arquitetônicas rapidamente, sem cabine fechada e sem emissão de gases tóxicos. Qual filamento é o mais indicado?",
+    "options": [
+      "ABS",
+      "Nylon PA6",
+      "PLA",
+      "PA-CF"
+    ],
+    "answerIdx": 2,
+    "rExp": "O PLA oferece alta velocidade e facilidade de impressão, não empena, não exige cabine fechada, não libera gases tóxicos e tem ótimo acabamento visual para maquetes e protótipos."
+  },
+  {
+    "id": 36,
+    "cat": "Comparativo - Elastômeros",
+    "q": "Entre os cinco materiais analisados, qual deles é o único indicado para substituir componentes semelhantes à borracha, como vedações, juntas e amortecedores flexíveis?",
+    "options": [
+      "PETG",
+      "TPU",
+      "ABS",
+      "PLA"
+    ],
+    "answerIdx": 1,
+    "rExp": "O TPU é o elastômero termoplástico do grupo, caracterizado por alta flexibilidade, elasticidade semelhante à borracha e absorção de impactos."
+  },
+  {
+    "id": 37,
+    "cat": "Comparativo - Nylon vs ABS (Atrito)",
+    "q": "Se uma peça mecânica precisa trabalhar em contato direto com óleos industriais, graxas e atrito constante (como uma bucha ou engrenagem), qual é a melhor escolha entre Nylon e ABS?",
+    "options": [
+      "ABS, pois é autolubrificante e resiste à acetona",
+      "Nylon, pois é autolubrificante, possui altíssima resistência ao desgaste e tolera óleos e graxas",
+      "ABS, pois absorve menos umidade e tem menor atrito",
+      "Nenhum dos dois, devendo-se usar PLA"
+    ],
+    "answerIdx": 1,
+    "rExp": "No comparativo direto Nylon vs. ABS (slides 8 e 9), o Nylon vence em atrito/desgaste (autolubrificante) e resistência química a óleos e graxas."
+  },
+  {
+    "id": 38,
+    "cat": "Comparativo - Nylon vs ABS (Escolha)",
+    "q": "Quando o ABS deve ser preferido em relação ao Nylon, de acordo com o comparativo direto entre os dois materiais?",
+    "options": [
+      "Quando a peça exige operação contínua a 150 °C",
+      "Quando a peça sofre atrito contínuo e fadiga extrema",
+      "Quando se precisa de carcaças rígidas sem atrito contínuo, acabamento liso com lixa/acetona, rotina simples sem secagem crítica e menor custo",
+      "Quando o ambiente possui exposição constante a solventes como acetona"
+    ],
+    "answerIdx": 2,
+    "rExp": "O slide 9 ('Regra Prática') recomenda o ABS para carcaças rígidas sem atrito contínuo, acabamento estético liso (lixa/acetona), menor sensibilidade à umidade e menor custo de filamento."
+  },
+  {
+    "id": 39,
+    "cat": "Comparativo - PETG vs ABS",
+    "q": "Qual é a principal vantagem do PETG sobre o ABS durante o processo de impressão 3D?",
+    "options": [
+      "O PETG suporta temperaturas de uso contínuo superiores a 160 °C",
+      "O PETG apresenta baixa contração (pouca deformação/warping), combinando facilidade de impressão próxima à do PLA com boa resistência mecânica e química",
+      "O PETG pode ser alisado com vapor de acetona",
+      "O PETG não absorve nenhuma umidade do ar"
+    ],
+    "answerIdx": 1,
+    "rExp": "O PETG une a facilidade de impressão do PLA (baixa deformação/contração) com resistência mecânica, química e à umidade superior, evitando o empenamento severo típico do ABS."
+  },
+  {
+    "id": 40,
+    "cat": "Comparativo - Temperaturas de Bico",
+    "q": "Ordenando os materiais pela temperatura típica de bico (do menor para o maior limite superior), qual sequência está correta?",
+    "options": [
+      "Nylon (270–300 °C) < ABS (260 °C) < PLA (215 °C)",
+      "PLA (~190–230 °C) < TPU (210–240 °C) < PETG (230–250 °C) < ABS (230–260 °C) < Nylon (240–270 °C / até 300 °C)",
+      "TPU (210–240 °C) < PLA (250 °C) < PETG (280 °C)",
+      "ABS (200 °C) < PETG (210 °C) < PLA (260 °C)"
+    ],
+    "answerIdx": 1,
+    "rExp": "Pelos dados das apresentações, as faixas sobem progressivamente do PLA (~190–230 °C), TPU (210–240 °C), PETG (230–250 °C), ABS (230–260 °C) até o Nylon (240–270 °C, chegando a 300 °C no PA6/PA-CF)."
+  },
+  {
+    "id": 41,
+    "cat": "Comparativo - Aplicação Automotiva",
+    "q": "Por que o PLA não é recomendado para suportes internos de automóveis expostos ao sol, enquanto o ABS, o PETG e o Nylon são mais adequados?",
+    "options": [
+      "Porque o PLA é muito flexível e escorrega",
+      "Porque o PLA deforma facilmente a partir de 50 °C, temperatura facilmente atingida no interior de carros ao sol",
+      "Porque o PLA reage com a luz solar liberando estireno",
+      "Porque o PLA pesa dez vezes mais que o ABS"
+    ],
+    "answerIdx": 1,
+    "rExp": "A apresentação do ABS destaca exatamente esse exemplo: o PLA deforma a partir de 50 °C dentro de carros em dias quentes, enquanto o ABS suporta até 80–90 °C contínuos (100–105 °C Tg)."
+  },
+  {
+    "id": 42,
+    "cat": "Comparativo - Fragilidade vs Rigidez",
+    "q": "Qual material combina alta rigidez, ótima qualidade superficial e facilidade de impressão, mas peca pela fragilidade (estilhaça em quedas)?",
+    "options": [
+      "TPU",
+      "Nylon PA12",
+      "PLA",
+      "PETG"
+    ],
+    "answerIdx": 2,
+    "rExp": "O PLA é caracterizado por rigidez, precisão e excelente acabamento superficial, mas apresenta fragilidade mecânica e quebra de forma seca ao cair."
+  },
+  {
+    "id": 43,
+    "cat": "Comparativo - Emissão de Odores",
+    "q": "Em relação à emissão de odores e gases durante a impressão, como o Nylon se compara ao ABS?",
+    "options": [
+      "O Nylon libera muito mais estireno tóxico que o ABS",
+      "Ambos são inodoros e dispensam qualquer ventilação",
+      "O ABS libera odor forte e gases tóxicos (estireno), enquanto o Nylon apresenta baixo odor (embora ainda requeira ventilação adequada)",
+      "O PLA libera estireno e o ABS é livre de odores"
+    ],
+    "answerIdx": 2,
+    "rExp": "A tabela comparativa do slide 8 da apresentação de Nylon aponta 'Baixo odor (requer ventilação)' para o Nylon contra 'Odor forte (libera estireno)' para o ABS."
+  },
+  {
+    "id": 44,
+    "cat": "Comparativo - Requisitos de Câmara",
+    "q": "Qual par de materiais exige obrigatoriamente câmara fechada para evitar empenamento (warping) e choque térmico durante a impressão?",
+    "options": [
+      "PLA e TPU",
+      "ABS e Nylon",
+      "PLA e PETG",
+      "TPU e PLA"
+    ],
+    "answerIdx": 1,
+    "rExp": "Tanto o ABS (que racha com correntes de ar e empena) quanto o Nylon (polímero semicristalino com alta contração térmica que exige câmara a 45–60 °C) necessitam de ambiente fechado."
+  },
+  {
+    "id": 45,
+    "cat": "Comparativo - Uso Externo e Umidade",
+    "q": "Um engenheiro precisa fabricar um suporte para jardim que ficará exposto à chuva, umidade constante e variações climáticas, sem necessidade de secagem industrial extrema antes de imprimir. Qual material é mais indicado?",
+    "options": [
+      "PLA",
+      "PETG",
+      "PA6 puro sem tratamento",
+      "ABS sem acabamento"
+    ],
+    "answerIdx": 1,
+    "rExp": "A apresentação do PETG destaca sua alta resistência à água, umidade e uso externo, exemplificando justamente peças para jardins e equipamentos expostos ao ambiente."
+  },
+  {
+    "id": 46,
+    "cat": "Comparativo - Transição Vítrea (Tg)",
+    "q": "Qual fenômeno ocorre com a temperatura de transição vítrea (Tg) do Nylon puro (42–65 °C) em comparação à do ABS (100–105 °C)?",
+    "options": [
+      "O Nylon puro possui Tg mais baixa (42–65 °C), começando a perder rigidez sob carga nessa faixa, mas mantém integridade estrutural em uso contínuo (80–120 °C) por ser semicristalino; para alta rigidez térmica usa-se PA-CF ou recozimento",
+      "O Nylon puro derrete completamente a 42 °C",
+      "O ABS tem Tg menor que o PLA (30 °C)",
+      "Nenhum polímero possui temperatura de transição vítrea"
+    ],
+    "answerIdx": 0,
+    "rExp": "O slide 4 explica que o Nylon puro tem Tg entre 42 °C e 65 °C (onde perde rigidez sob carga), mas suporta uso contínuo de 80–120 °C (e 130–160 °C no PA-CF), enquanto o ABS tem Tg de 100–105 °C."
+  },
+  {
+    "id": 47,
+    "cat": "Comparativo - Temperatura de Mesa",
+    "q": "Qual das alternativas relaciona corretamente o material à sua faixa de temperatura de mesa aquecida?",
+    "options": [
+      "TPU: 90–110 °C / ABS: 30–60 °C",
+      "ABS: 90–110 °C / PETG: 70–90 °C / TPU: 30–60 °C",
+      "PLA: 100–120 °C / Nylon: 20–30 °C",
+      "PETG: 0–20 °C / TPU: 110 °C"
+    ],
+    "answerIdx": 1,
+    "rExp": "Os valores exatos das apresentações são: ABS (90–110 °C), Nylon (70–100 °C), PETG (70–90 °C), TPU (30–60 °C) e PLA (0–60 °C)."
+  },
+  {
+    "id": 48,
+    "cat": "Comparativo - Aeroespacial e Drones",
+    "q": "Para fabricar estruturas leves de drones e suportes próximos a motores submetidos a calor e esforço mecânico, qual material específico é destacado nas apresentações?",
+    "options": [
+      "PLA Gold decorativo",
+      "TPU macio",
+      "Nylon com fibra de carbono (PA-CF)",
+      "PLA sem mesa aquecida"
+    ],
+    "answerIdx": 2,
+    "rExp": "O slide 7 da apresentação de Nylon aponta aplicações automotivas e aeroespaciais como suportes próximos ao motor e estruturas leves de drones especialmente em PA-CF."
+  },
+  {
+    "id": 49,
+    "cat": "Comparativo - Lixamento e Colagem",
+    "q": "Qual característica torna o pós-processamento por lixamento e colagem mais difícil no Nylon do que no ABS?",
+    "options": [
+      "O Nylon dissolve em contato com a lixa",
+      "O Nylon possui superfície naturalmente escorregadia (baixo atrito), dificultando o lixamento e a adesão de colas, enquanto o ABS lixa facilmente sem empastar e cola/alisa com acetona",
+      "O Nylon é mais macio que a borracha",
+      "O ABS não aceita pintura nem lixamento"
+    ],
+    "answerIdx": 1,
+    "rExp": "Conforme o comparativo direto (slides 6 e 8), a natureza escorregadia e resistente a solventes do Nylon dificulta lixar e colar, ao passo que o ABS oferece pós-processamento fácil com lixa e acetona."
+  },
+  {
+    "id": 50,
+    "cat": "Comparativo - Higroscopicidade Crítica",
+    "q": "Considerando a relação entre absorção de umidade antes da impressão e desempenho mecânico, qual material exige o protocolo mais rigoroso de secagem (70–80 °C por 6–12 horas + caixa secadora ativa)?",
+    "options": [
+      "PLA",
+      "ABS",
+      "Nylon (Poliamida)",
+      "TPU"
+    ],
+    "answerIdx": 2,
+    "rExp": "Embora o PETG também absorva umidade do ar, a apresentação do Nylon destaca que sua higroscopicidade antes e durante a impressão é crítica, tornando obrigatória a secagem prévia a 70–80 °C por 6–12 h e o uso de caixa secadora ativa."
+  }
+];
+
+let gameMode = "study"; // "study" (v3) ou "exam" (v4)
+let questionsData = [];
+let currentIndex = 0;
+let score = 0;
+let correctAnswers = 0;
+let wrongAnswers = 0;
+let pendingOption = null;
+let userState = [];
+let isBlocked = false;
+
+// Controle do Cronômetro
+let elapsedSeconds = 0;
+let timerInterval = null;
+
+function formatTime(totalSecs) {
+  const hrs = String(Math.floor(totalSecs / 3600)).padStart(2, '0');
+  const mins = String(Math.floor((totalSecs % 3600) / 60)).padStart(2, '0');
+  const secs = String(totalSecs % 60).padStart(2, '0');
+  return `${hrs}:${mins}:${secs}`;
+}
+
+function startTimer() {
+  stopTimer();
+  elapsedSeconds = 0;
+  document.getElementById("timerDisplay").textContent = formatTime(elapsedSeconds);
+  timerInterval = setInterval(() => {
+    if (!isBlocked) {
+      elapsedSeconds++;
+      document.getElementById("timerDisplay").textContent = formatTime(elapsedSeconds);
+    }
+  }, 1000);
+}
+
+function stopTimer() {
+  if (timerInterval) {
+    clearInterval(timerInterval);
+    timerInterval = null;
+  }
+}
+
+// Algoritmo Fisher-Yates para embaralhamento uniforme
+function shuffleArray(array) {
+  const arr = [...array];
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
+function applyModeUI() {
+  const selectEl = document.getElementById("gameModeSelect");
+  selectEl.value = gameMode;
+
+  const descEl = document.getElementById("modeDescription");
+  const badgeEl = document.getElementById("modeBadge");
+  const errorRateEl = document.getElementById("errorRateDisplay");
+
+  if (gameMode === "exam") {
+    descEl.textContent = "Modo Avaliação: gabarito e justificativa ficam ocultos em caso de erro; bloqueia e reinicia se errar mais de 25%.";
+    badgeEl.textContent = "MODO AVALIAÇÃO (MÁX 25% ERRO)";
+    badgeEl.className = "mode-badge exam";
+    errorRateEl.style.display = "inline-block";
+  } else {
+    descEl.textContent = "Modo Estudo: exibe a alternativa correta e a justificativa técnica em todas as questões, sem bloqueio por erros.";
+    badgeEl.textContent = "MODO ESTUDO ATIVO";
+    badgeEl.className = "mode-badge study";
+    errorRateEl.style.display = "none";
+  }
+}
+
+function selectInitialMode(chosenMode) {
+  const welcomeName = document.getElementById("welcomeStudentName").value.trim();
+  if (chosenMode === "exam" && !welcomeName) {
+    alert("⚠️ No Modo Avaliação, por favor digite o nome do aluno antes de iniciar.");
+    document.getElementById("welcomeStudentName").focus();
+    return;
+  }
+  if (welcomeName) {
+    document.getElementById("studentName").value = welcomeName;
+  }
+  gameMode = chosenMode;
+  document.getElementById("welcomeModeModal").classList.remove("active");
+  applyModeUI();
+  prepareShuffledQuiz();
+  loadQuestion();
+}
+
+function handleModeChange() {
+  const newMode = document.getElementById("gameModeSelect").value;
+  if (userState.some(s => s.isCorrect !== null)) {
+    const ok = confirm("Alterar o modo reiniciará o simulado atual e embaralhará novamente as questões. Deseja continuar?");
+    if (!ok) {
+      document.getElementById("gameModeSelect").value = gameMode;
+      return;
+    }
+  }
+  gameMode = newMode;
+  applyModeUI();
+  prepareShuffledQuiz();
+  loadQuestion();
+}
+
+// Prepara as questões embaralhando a ordem das perguntas e a ordem das alternativas
+function prepareShuffledQuiz() {
+  const shuffledQuestions = shuffleArray(baseQuestionsData);
+  questionsData = shuffledQuestions.map((qItem, index) => {
+    const correctOptionText = qItem.options[qItem.answerIdx];
+    const shuffledOptions = shuffleArray(qItem.options);
+    const newAnswerIdx = shuffledOptions.indexOf(correctOptionText);
+
+    return {
+      ...qItem,
+      displayNum: String(index + 1).padStart(2, '0'),
+      options: shuffledOptions,
+      answerIdx: newAnswerIdx
+    };
+  });
+
+  currentIndex = 0;
+  score = 0;
+  correctAnswers = 0;
+  wrongAnswers = 0;
+  pendingOption = null;
+  isBlocked = false;
+
+  userState = questionsData.map(() => ({
+    userChoice: null,
+    isCorrect: null
+  }));
+
+  startTimer();
+}
+
+function resetAndShuffle() {
+  if (userState.some(s => s.isCorrect !== null)) {
+    const confirmReset = confirm("Deseja reiniciar o simulado, zerar o tempo e embaralhar novamente todas as questões e alternativas?");
+    if (!confirmReset) return;
+  }
+  prepareShuffledQuiz();
+  loadQuestion();
+}
+
+function restartAfterBlock() {
+  document.getElementById("blockModal").classList.remove("active");
+  prepareShuffledQuiz();
+  loadQuestion();
+}
+
+function updateHUD() {
+  document.getElementById("questionNum").textContent = `Questão ${currentIndex + 1} de ${questionsData.length}`;
+  document.getElementById("correctCount").textContent = `✅ Acertos: ${correctAnswers}`;
+  document.getElementById("wrongCount").textContent = `❌ Erros: ${wrongAnswers}`;
+  document.getElementById("score").textContent = `Pontos: ${score}`;
+
+  const answeredTotal = userState.filter(s => s.isCorrect !== null).length;
+  document.getElementById("answeredCount").textContent = `Respondidas: ${answeredTotal} / ${questionsData.length}`;
+
+  const errorRate = answeredTotal > 0 ? ((wrongAnswers / answeredTotal) * 100).toFixed(1) : "0.0";
+  document.getElementById("errorRateDisplay").textContent = `⚠️ Taxa de Erro: ${errorRate}% (Máx: 25%)`;
+  
+  renderSidebarGrid();
+}
+
+function renderSidebarGrid() {
+  const grid = document.getElementById("questionGrid");
+  grid.innerHTML = "";
+  
+  questionsData.forEach((q, idx) => {
+    const badge = document.createElement("div");
+    badge.className = "q-badge";
+    if (idx === currentIndex) badge.classList.add("current");
+    
+    const state = userState[idx];
+    if (state.isCorrect === true) {
+      badge.classList.add("correct");
+      badge.textContent = `${idx + 1} ✓`;
+    } else if (state.isCorrect === false) {
+      badge.classList.add("wrong");
+      badge.textContent = `${idx + 1} ✕`;
+    } else {
+      badge.textContent = idx + 1;
+    }
+
+    badge.onclick = () => {
+      if (!isBlocked) goToQuestion(idx);
+    };
+    grid.appendChild(badge);
+  });
+}
+
+function loadQuestion() {
+  const qData = questionsData[currentIndex];
+  const currentState = userState[currentIndex];
+
+  updateHUD();
+
+  document.getElementById("btnPrev").disabled = isBlocked || (currentIndex === 0);
+  document.getElementById("btnNext").disabled = isBlocked || (currentIndex === questionsData.length - 1);
+
+  document.getElementById("challengeCategory").textContent = qData.cat;
+  document.getElementById("challengeTitle").textContent = `Desafio FDM N° ${qData.displayNum}`;
+  document.getElementById("challengeText").textContent = qData.q;
+
+  const container = document.getElementById("optionsContainer");
+  container.innerHTML = "";
+
+  const correctText = qData.options[qData.answerIdx];
+
+  qData.options.forEach((optText, optIdx) => {
+    const optDiv = document.createElement("div");
+    optDiv.className = "option-card";
+    optDiv.innerHTML = `
+      <div style="font-size:11px; font-weight:bold; color:var(--senai-blue); margin-bottom:4px;">ALTERNATIVA ${String.fromCharCode(65 + optIdx)}</div>
+      <div style="font-size:15px; font-weight:bold;">${optText}</div>
+    `;
+
+    if (currentState.isCorrect !== null || isBlocked) {
+      optDiv.classList.add("disabled");
+      optDiv.style.cursor = "default";
+      
+      // No Modo Estudo mostra sempre a correta; no Modo Avaliação mostra apenas se acertou
+      const shouldShowCorrect = (gameMode === "study") || (currentState.isCorrect === true);
+
+      if (shouldShowCorrect && optText === correctText) {
+        optDiv.classList.add("correct-selected");
+      } else if (optText === currentState.userChoice && currentState.isCorrect === false) {
+        optDiv.classList.add("wrong-selected");
+      }
+    } else {
+      optDiv.onclick = () => openConfirmModal(optText, optDiv);
+    }
+
+    container.appendChild(optDiv);
+  });
+
+  const banner = document.getElementById("resultBanner");
+  const expBox = document.getElementById("explanationBox");
+
+  if (currentState.isCorrect !== null) {
+    banner.style.display = "block";
+    if (currentState.isCorrect) {
+      banner.textContent = "✅ RESPOSTA CORRETA!";
+      banner.className = "result-banner correct";
+      document.getElementById("explanationText").textContent = qData.rExp;
+      expBox.className = "explanation-box correct-exp";
+      expBox.style.display = "block";
+    } else {
+      banner.textContent = "❌ RESPOSTA INCORRETA!";
+      banner.className = "result-banner wrong";
+      if (gameMode === "study") {
+        document.getElementById("explanationText").textContent = qData.rExp;
+        expBox.className = "explanation-box";
+        expBox.style.display = "block";
+      } else {
+        expBox.style.display = "none";
+      }
+    }
+  } else {
+    banner.style.display = "none";
+    expBox.style.display = "none";
+  }
+}
+
+function openConfirmModal(optText, element) {
+  if (isBlocked) return;
+
+  if (gameMode === "exam") {
+    const studentName = document.getElementById("studentName").value.trim();
+    if (!studentName) {
+      alert("⚠️ No Modo Avaliação, digite o nome do aluno antes de responder às questões.");
+      document.getElementById("studentName").focus();
+      return;
+    }
+  }
+
+  pendingOption = { text: optText, element: element };
+  document.getElementById("selectedOptionText").textContent = `"${optText}"`;
+  document.getElementById("confirmModal").classList.add("active");
+}
+
+function closeModal() {
+  document.getElementById("confirmModal").classList.remove("active");
+  pendingOption = null;
+}
+
+function confirmSelection() {
+  if (!pendingOption || isBlocked) return;
+
+  const choiceText = pendingOption.text;
+  closeModal();
+
+  const qData = questionsData[currentIndex];
+  const currentState = userState[currentIndex];
+  
+  if (currentState.isCorrect !== null) return;
+
+  const correctText = qData.options[qData.answerIdx];
+  const isCorrect = (choiceText === correctText);
+
+  currentState.userChoice = choiceText;
+  currentState.isCorrect = isCorrect;
+
+  if (isCorrect) {
+    score += 10;
+    correctAnswers++;
+  } else {
+    wrongAnswers++;
+  }
+
+  loadQuestion();
+
+  // Verifica limite de 25% apenas no Modo Avaliação ("exam")
+  if (gameMode === "exam") {
+    const answeredTotal = userState.filter(s => s.isCorrect !== null).length;
+    const errorPercentage = (wrongAnswers / answeredTotal) * 100;
+
+    if (errorPercentage > 25) {
+      isBlocked = true;
+      stopTimer();
+      loadQuestion();
+      const studentName = document.getElementById("studentName").value.trim() || "Aluno";
+      document.getElementById("blockDetailsText").textContent =
+        `Aluno: ${studentName} | Erros: ${wrongAnswers} de ${answeredTotal} respondidas (${errorPercentage.toFixed(1)}%) | Tempo: ${formatTime(elapsedSeconds)}`;
+      document.getElementById("blockModal").classList.add("active");
+    }
+  }
+}
+
+function goToQuestion(index) {
+  if (isBlocked) return;
+  currentIndex = index;
+  loadQuestion();
+}
+
+function prevQuestion() {
+  if (!isBlocked && currentIndex > 0) {
+    currentIndex--;
+    loadQuestion();
+  }
+}
+
+function nextQuestion() {
+  if (!isBlocked && currentIndex < questionsData.length - 1) {
+    currentIndex++;
+    loadQuestion();
+  }
+}
+
+function checkFinalResult() {
+  const studentName = document.getElementById("studentName").value.trim() || "Não informado";
+  const modeLabel = gameMode === "exam" ? "Modo Avaliação (Limite 25%)" : "Modo Estudo (Livre)";
+  const answeredTotal = userState.filter(s => s.isCorrect !== null).length;
+  const percent = ((correctAnswers / questionsData.length) * 100).toFixed(1);
+  const errorPercent = answeredTotal > 0 ? ((wrongAnswers / answeredTotal) * 100).toFixed(1) : "0.0";
+
+  document.getElementById("finalResultBody").innerHTML = `
+    <p><strong>🎯 Modalidade:</strong> ${modeLabel}</p>
+    <p><strong>👤 Aluno:</strong> ${studentName}</p>
+    <p><strong>⏱️ Tempo Decorrido:</strong> ${formatTime(elapsedSeconds)}</p>
+    <p><strong>📝 Respondidas:</strong> ${answeredTotal} de ${questionsData.length}</p>
+    <p><strong>✅ Acertos:</strong> ${correctAnswers} (${percent}% do total)</p>
+    <p><strong>❌ Erros:</strong> ${wrongAnswers} (${errorPercent}% das respondidas)</p>
+    <p><strong>🏆 Pontuação Final:</strong> ${score} pontos</p>
+  `;
+  document.getElementById("resultModal").classList.add("active");
+}
+
+function closeResultModal() {
+  document.getElementById("resultModal").classList.remove("active");
+}
+
+// Inicialização padrão em segundo plano (enquanto aguarda escolha no modal inicial)
+applyModeUI();
+prepareShuffledQuiz();
+loadQuestion();
+</script>
+
+</body>
+</html>
